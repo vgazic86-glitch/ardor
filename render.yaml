@@ -1,4 +1,4 @@
-# Render Blueprint (kod je u podmapi ardor/): web aplikacija + Postgres baza (Frankfurt, najbliže BiH).
+# Render Blueprint: web aplikacija + Postgres baza (Frankfurt, najbliže BiH).
 # Besplatna baza na Renderu ističe 30 dana nakon kreiranja (+14 dana za nadogradnju).
 databases:
   - name: ardor-db
@@ -11,7 +11,6 @@ services:
   - type: web
     name: ardor
     runtime: node
-    rootDir: ardor
     plan: free
     region: frankfurt
     buildCommand: npx --yes pnpm@12.21.0 install --frozen-lockfile && npx --yes pnpm@12.21.0 run build:node
