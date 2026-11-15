@@ -1,8 +1,14 @@
 @import 'tailwindcss' source('../');
 
 @theme {
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  /* Knjiga grafičkih standarda: Ubuntu (Light, Regular, Medium, Bold), bez kurziva */
+  --font-sans: 'Ubuntu', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Ubuntu', ui-sans-serif, system-ui, sans-serif;
+
+  /* Boje brenda ARDOR */
+  --color-ardor-red: #f15a29;
+  --color-ardor-orange: #f79328;
+  --color-ardor-gray: #58595b;
 
   --color-paper: #f5f0e8;
   --color-linen: #fcfaf6;
@@ -17,13 +23,13 @@
   --color-walnut-200: #e4d8cb;
   --color-walnut-100: #efe7dd;
   --color-walnut-50: #f7f2ec;
-  --color-copper-700: #7e4720;
-  --color-copper-600: #9a5a2a;
-  --color-copper-500: #b0703b;
-  --color-copper-400: #c98d55;
-  --color-copper-200: #ecd3b8;
-  --color-copper-100: #f5e6d6;
-  --color-copper-50: #fbf3ea;
+  --color-copper-700: #b8380f;
+  --color-copper-600: #d9461a;
+  --color-copper-500: #f15a29;
+  --color-copper-400: #f79328;
+  --color-copper-200: #fbc9a2;
+  --color-copper-100: #fee5d2;
+  --color-copper-50: #fff4ec;
   --color-moss-700: #3c5438;
   --color-moss-600: #4f6b4a;
   --color-moss-100: #e3ebdf;
@@ -170,4 +176,12 @@ body {
   body {
     background: white;
   }
+}
+
+/* Brend: „list” — dvije zaobljene i dvije oštre ivice, kao znak ARDOR */
+.leaf {
+  border-radius: 28px 6px 28px 6px;
+}
+.leaf-sm {
+  border-radius: 14px 4px 14px 4px;
 }

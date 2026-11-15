@@ -112,7 +112,7 @@ export function Stat({
   const muted = tone === 'accent' ? 'text-walnut-300' : 'text-walnut-500'
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border p-4 shadow-card sm:p-5 ${box}`}
+      className={`relative overflow-hidden border p-4 shadow-card sm:p-5 ${tone === 'accent' ? 'leaf' : 'rounded-2xl'} ${box}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div
@@ -252,7 +252,7 @@ export function Button({
 
 export function Progress({
   value,
-  color = '#b0703b',
+  color = '#F15A29',
 }: {
   value: number
   color?: string

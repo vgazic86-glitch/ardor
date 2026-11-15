@@ -26,6 +26,7 @@ import { useStore } from '../lib/store'
 import { date, weekday } from '../lib/format'
 import { CommandPalette } from './CommandPalette'
 import { Avatar } from './ui'
+import { Logo } from './Logo'
 
 type NavItem = {
   to: string
@@ -75,41 +76,7 @@ const groups: { title: string; items: NavItem[] }[] = [
   },
 ]
 
-export function Logo({ light = false }: { light?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <svg viewBox="0 0 64 64" className="size-9 drop-shadow" aria-hidden>
-        <defs>
-          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#3d2f26" />
-            <stop offset="1" stopColor="#1a1410" />
-          </linearGradient>
-        </defs>
-        <rect width="64" height="64" rx="16" fill="url(#lg)" />
-        <path
-          d="M18 46 32 16l14 30M23 36h18"
-          fill="none"
-          stroke="#c98d55"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <div className="leading-none">
-        <div
-          className={`font-display text-[1.35rem] font-semibold tracking-tight ${light ? 'text-linen' : 'text-walnut-900'}`}
-        >
-          ardor
-        </div>
-        <div
-          className={`mt-1 text-[9.5px] font-semibold uppercase tracking-[0.24em] ${light ? 'text-walnut-400' : 'text-walnut-500'}`}
-        >
-          salon namještaja
-        </div>
-      </div>
-    </div>
-  )
-}
+export { Logo }
 
 function useBadges() {
   const { orders, products, today } = useStore()
@@ -301,11 +268,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <aside className="sidebar-bg sticky top-0 hidden h-screen flex-col gap-7 px-4 py-6 lg:flex">
-        <div className="px-2">
-          <Logo light />
+      <aside className="sidebar-bg sticky top-0 hidden h-screen flex-col gap-7 overflow-hidden px-4 py-6 lg:flex">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 opacity-[0.07] [mask-image:linear-gradient(to_top,black,transparent)]"
+          style={{
+            backgroundImage: 'url(/brand/ardor-znak.svg)',
+            backgroundSize: '34px 34px',
+          }}
+        />
+        <div className="leaf relative bg-white px-4 py-3 shadow-card">
+          <Logo className="h-9 w-full" />
         </div>
-        <div className="-mx-1 flex-1 overflow-y-auto px-1">
+        <div className="relative -mx-1 flex-1 overflow-y-auto px-1">
           <NavLinks />
         </div>
         <UserSwitcher />
@@ -324,7 +299,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
           <div className="sidebar-bg absolute left-0 top-0 flex h-full w-72 flex-col gap-7 p-5">
             <div className="flex items-center justify-between">
-              <Logo light />
+              <Logo light className="h-9" />
               <button
                 onClick={() => setOpen(false)}
                 className="text-walnut-300"
@@ -351,7 +326,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu className="size-6" />
           </button>
           <div className="lg:hidden">
-            <Logo />
+            <Logo className="h-8" />
           </div>
           <button
             onClick={() => setPalette(true)}

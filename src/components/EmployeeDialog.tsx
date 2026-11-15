@@ -6,8 +6,10 @@ import { Modal } from './Modal'
 import { Button, Field, inputCls } from './ui'
 
 const palette = [
+  '#F15A29',
+  '#F79328',
+  '#58595B',
   '#7c4a2d',
-  '#b0703b',
   '#4f6b4a',
   '#3f5c78',
   '#8b5a7a',

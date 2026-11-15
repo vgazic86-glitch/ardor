@@ -129,7 +129,7 @@ function DocumentPage() {
               </p>
             )}
             <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-walnut-500">
-              <span>Ardor — salon namještaja</span>
+              <span>ARDOR namještaj</span>
               <span>Verzija {doc.version}</span>
               <span>Ažurirano {date(doc.updatedAt)}</span>
               {doc.updatedBy && (

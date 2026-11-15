@@ -182,7 +182,7 @@ function DeliveriesPage() {
                             ? '#4f6b4a'
                             : o.delivery!.status === 'odgođena'
                               ? '#be123c'
-                              : '#c98d55',
+                              : '#F79328',
                       }}
                     />
                   ))}

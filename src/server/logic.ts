@@ -3,7 +3,12 @@ import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
-import { ensureDocumentsSeeded, ensureHrSeeded, listDocuments } from './hr'
+import {
+  ensureBrandBook,
+  ensureDocumentsSeeded,
+  ensureHrSeeded,
+  listDocuments,
+} from './hr'
 import type {
   Category,
   DeliveryStatus,
@@ -50,6 +55,7 @@ async function ensureSeeded() {
 export async function loadSnapshot(): Promise<Snapshot> {
   await ensureSeeded()
   await ensureDocumentsSeeded()
+  await ensureBrandBook()
   await ensureHrSeeded()
   const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs] =
     await Promise.all([

@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
-import { Logo } from './AppShell'
+import { Logo } from './Logo'
 
 /**
  * Mali, siguran prikaz Markdowna za dokumente (bez HTML-a iz teksta):
@@ -8,14 +8,17 @@ import { Logo } from './AppShell'
  */
 
 export const BRAND_COLORS = [
-  { name: 'Orah 900', hex: '#2b211b', text: 'light' },
-  { name: 'Orah 700', hex: '#5a463a', text: 'light' },
-  { name: 'Orah 300', hex: '#c9b8a8', text: 'dark' },
-  { name: 'Bakar 500', hex: '#b0703b', text: 'light' },
-  { name: 'Bakar 400', hex: '#c98d55', text: 'dark' },
-  { name: 'Mahovina 600', hex: '#4f6b4a', text: 'light' },
-  { name: 'Papir', hex: '#f5f0e8', text: 'dark' },
-  { name: 'Lan', hex: '#fcfaf6', text: 'dark' },
+  { name: 'ARDOR narandžasta', hex: '#F15A29', cmyk: 'C0 M80 Y95 K0' },
+  { name: 'ARDOR žuta', hex: '#F79328', cmyk: 'C0 M50 Y95 K0' },
+  { name: 'ARDOR siva', hex: '#58595B', cmyk: 'C0 M0 Y0 K80' },
+] as const
+
+/** Pomoćne boje aplikacije (topli smeđi tonovi uz boje brenda). */
+export const APP_COLORS = [
+  { name: 'Orah (tamna podloga)', hex: '#2B211B' },
+  { name: 'Orah srednji', hex: '#5A463A' },
+  { name: 'Papir (pozadina)', hex: '#F5F0E8' },
+  { name: 'Mahovina (pozitivno)', hex: '#4F6B4A' },
 ] as const
 
 function hexToRgb(hex: string) {
@@ -25,24 +28,52 @@ function hexToRgb(hex: string) {
 
 function Swatches() {
   return (
-    <div className="not-prose my-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {BRAND_COLORS.map((c) => (
-        <div
-          key={c.hex}
-          className="overflow-hidden rounded-xl border border-walnut-200 bg-white"
-        >
-          <div className="h-20" style={{ background: c.hex }} />
-          <div className="px-3 py-2 text-xs">
-            <div className="font-semibold text-walnut-900">{c.name}</div>
-            <div className="font-mono text-walnut-500">
-              {c.hex.toUpperCase()}
-            </div>
-            <div className="font-mono text-walnut-400">
-              RGB {hexToRgb(c.hex)}
+    <div className="not-prose my-5 space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {BRAND_COLORS.map((c, i) => (
+          <div
+            key={c.hex}
+            className="overflow-hidden border border-walnut-200 bg-white"
+            style={{
+              borderRadius:
+                i === 1
+                  ? '28px 6px 28px 6px'
+                  : i === 0
+                    ? '6px 6px 28px 28px'
+                    : '6px',
+            }}
+          >
+            <div className="h-24" style={{ background: c.hex }} />
+            <div className="px-3 py-2.5 text-xs">
+              <div className="font-semibold text-walnut-900">{c.name}</div>
+              <div className="font-mono text-walnut-600">HEX {c.hex}</div>
+              <div className="font-mono text-walnut-500">
+                RGB {hexToRgb(c.hex)}
+              </div>
+              <div className="font-mono text-walnut-500">CMYK {c.cmyk}</div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {APP_COLORS.map((c) => (
+          <div
+            key={c.hex}
+            className="flex items-center gap-2.5 rounded-xl border border-walnut-200 bg-white p-2 text-[11px]"
+          >
+            <span
+              className="size-8 shrink-0 rounded-lg border border-walnut-200"
+              style={{ background: c.hex }}
+            />
+            <span>
+              <span className="block font-semibold text-walnut-800">
+                {c.name}
+              </span>
+              <span className="font-mono text-walnut-500">{c.hex}</span>
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -50,11 +81,11 @@ function Swatches() {
 function LogoBlock() {
   return (
     <div className="not-prose my-5 grid gap-3 sm:grid-cols-2">
-      <div className="grid h-36 place-items-center rounded-xl border border-walnut-200 bg-linen">
-        <Logo />
+      <div className="grid h-40 place-items-center rounded-xl border border-walnut-200 bg-white">
+        <Logo className="h-14" />
       </div>
-      <div className="sidebar-bg grid h-36 place-items-center rounded-xl">
-        <Logo light />
+      <div className="grid h-40 place-items-center rounded-xl bg-[#58595B]">
+        <Logo light className="h-14" />
       </div>
     </div>
   )

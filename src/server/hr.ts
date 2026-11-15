@@ -11,7 +11,9 @@ import {
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
-import { seedDocuments } from '../../db/documents.js'
+import { KGS_BODY, seedDocuments } from '../../db/documents.js'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { DEFAULT_POLICY, type BonusPolicy } from '../lib/bonus'
 import type {
   Bonus,
@@ -182,6 +184,45 @@ export async function ensureDocumentsSeeded() {
   for (const d of seedDocuments)
     await db.insert(t.documents).values(d).onConflictDoNothing()
   await setMeta('docs_seeded', today())
+}
+
+/**
+ * Knjiga grafičkih standarda: zamjenjuje radni prijedlog sažetkom službene knjige (2019)
+ * i prilaže originalni PDF (public/brand) ako je dostupan na poslužitelju.
+ */
+export async function ensureBrandBook() {
+  if (await meta('kgs_2019')) return
+  const [doc] = await db
+    .select()
+    .from(t.documents)
+    .where(eq(t.documents.slug, 'knjiga-grafickih-standarda'))
+  if (!doc) return
+  let fileId = doc.fileId
+  if (!fileId) {
+    const name = 'ardor-knjiga-grafickih-standarda.pdf'
+    const path = [
+      join(process.cwd(), 'public', 'brand', name),
+      join(process.cwd(), 'dist', 'client', 'brand', name),
+    ].find((p) => existsSync(p))
+    if (path)
+      fileId = await storeFile(
+        'ARDOR Knjiga grafičkih standarda (2019).pdf',
+        'application/pdf',
+        readFileSync(path).toString('base64'),
+      )
+  }
+  await db
+    .update(t.documents)
+    .set({
+      body: KGS_BODY,
+      version: '2019',
+      summary:
+        'Službena knjiga grafičkih standarda ARDOR namještaj (2019): logotip, znak, boje, tipografija i primjena. Originalni PDF je u prilogu.',
+      fileId,
+      updatedAt: new Date(),
+    })
+    .where(eq(t.documents.id, doc.id))
+  await setMeta('kgs_2019', fileId ? 'pdf' : 'tekst')
 }
 
 export async function listDocuments(): Promise<CompanyDocument[]> {

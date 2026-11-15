@@ -11,9 +11,9 @@ import { AdminProvider } from '../lib/admin'
 
 import '../styles.css'
 
-const siteName = 'Ardor — prodaja, zalihe i knjigovodstvo'
+const siteName = 'ARDOR namještaj — prodaja, zalihe i knjigovodstvo'
 const siteDescription =
-  'Interna aplikacija salona namještaja Ardor: prodaja po zaposleniku, prijem robe i zalihe, dostave, uplate i knjigovodstveni pregled na jednom mjestu.'
+  'Interna aplikacija ARDOR namještaj: prodaja po zaposleniku, prijem robe i zalihe, dostave, uplate i knjigovodstveni pregled na jednom mjestu.'
 
 export const Route = createRootRoute({
   loader: () => getSnapshot(),
@@ -38,7 +38,7 @@ export const Route = createRootRoute({
       },
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,50&family=Manrope:wght@400;500;600;700&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap',
       },
     ],
   }),

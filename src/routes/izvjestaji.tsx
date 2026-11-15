@@ -164,7 +164,7 @@ function SupplierTable({ rows }: { rows: SupplierRow[] }) {
                       <div className="mt-1 w-full max-w-[180px]">
                         <Progress
                           value={total ? r.net / total : 0}
-                          color="#b0703b"
+                          color="#F79328"
                         />
                       </div>
                     </td>
@@ -461,7 +461,7 @@ function ReportsPage() {
               {
                 label: 'Marža',
                 values: trend.map((t) => t.net - t.cogs),
-                color: '#b0703b',
+                color: '#F79328',
               },
             ]}
           />
@@ -553,7 +553,7 @@ function ReportsPage() {
                         : m === 'Kartica'
                           ? '#3d2f26'
                           : m === 'Virman'
-                            ? '#b0703b'
+                            ? '#F79328'
                             : '#8b7464'
                     }
                   />

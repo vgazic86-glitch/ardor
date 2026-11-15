@@ -1,6 +1,20 @@
-import { type AnyPgColumn, boolean, bytea, date, index, integer, numeric, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import {
+  type AnyPgColumn,
+  boolean,
+  bytea,
+  date,
+  index,
+  integer,
+  numeric,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 
-const money = (name: string) => numeric(name, { precision: 12, scale: 2, mode: 'number' })
+const money = (name: string) =>
+  numeric(name, { precision: 12, scale: 2, mode: 'number' })
 
 export const employees = pgTable('employees', {
   id: serial().primaryKey(),
@@ -9,7 +23,13 @@ export const employees = pgTable('employees', {
   initials: text().notNull(),
   color: text().notNull().default('#7c4a2d'),
   monthlyTarget: money('monthly_target').notNull().default(0),
-  commissionRate: numeric('commission_rate', { precision: 6, scale: 4, mode: 'number' }).notNull().default(0),
+  commissionRate: numeric('commission_rate', {
+    precision: 6,
+    scale: 4,
+    mode: 'number',
+  })
+    .notNull()
+    .default(0),
   phone: text().notNull().default(''),
   active: boolean().notNull().default(true),
 })
@@ -30,10 +50,16 @@ export const products = pgTable('products', {
   price: money('price').notNull(),
   purchasePrice: money('purchase_price').notNull().default(0),
   minStock: integer('min_stock').notNull().default(0),
-  supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  supplierId: integer('supplier_id').references(() => suppliers.id, {
+    onDelete: 'set null',
+  }),
   /** Slika artikla (do 1200 px) i sličica za popise (240 px). */
-  imageId: integer('image_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
-  thumbId: integer('thumb_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
+  imageId: integer('image_id').references((): AnyPgColumn => files.id, {
+    onDelete: 'set null',
+  }),
+  thumbId: integer('thumb_id').references((): AnyPgColumn => files.id, {
+    onDelete: 'set null',
+  }),
   active: boolean().notNull().default(true),
   createdAt: timestamp('created_at').defaultNow(),
 })
@@ -54,26 +80,43 @@ export const orders = pgTable(
     id: serial().primaryKey(),
     number: text().notNull().unique(),
     date: date({ mode: 'string' }).notNull(),
-    customerId: integer('customer_id').notNull().references(() => customers.id),
-    employeeId: integer('employee_id').notNull().references(() => employees.id),
+    customerId: integer('customer_id')
+      .notNull()
+      .references(() => customers.id),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employees.id),
     status: text().notNull(),
     paymentMethod: text('payment_method').notNull(),
     note: text().notNull().default(''),
     issuedAt: date('issued_at', { mode: 'string' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (t) => [index('orders_date_idx').on(t.date), index('orders_employee_idx').on(t.employeeId)],
+  (t) => [
+    index('orders_date_idx').on(t.date),
+    index('orders_employee_idx').on(t.employeeId),
+  ],
 )
 
 export const orderItems = pgTable(
   'order_items',
   {
     id: serial().primaryKey(),
-    orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
-    productId: integer('product_id').notNull().references(() => products.id),
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    productId: integer('product_id')
+      .notNull()
+      .references(() => products.id),
     qty: integer().notNull(),
     unitPrice: money('unit_price').notNull(),
-    discountPct: numeric('discount_pct', { precision: 5, scale: 2, mode: 'number' }).notNull().default(0),
+    discountPct: numeric('discount_pct', {
+      precision: 5,
+      scale: 2,
+      mode: 'number',
+    })
+      .notNull()
+      .default(0),
   },
   (t) => [index('order_items_order_idx').on(t.orderId)],
 )
@@ -82,7 +125,9 @@ export const payments = pgTable(
   'payments',
   {
     id: serial().primaryKey(),
-    orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
     date: date({ mode: 'string' }).notNull(),
     amount: money('amount').notNull(),
     method: text().notNull(),
@@ -94,12 +139,17 @@ export const payments = pgTable(
 
 export const deliveries = pgTable('deliveries', {
   id: serial().primaryKey(),
-  orderId: integer('order_id').notNull().unique().references(() => orders.id, { onDelete: 'cascade' }),
+  orderId: integer('order_id')
+    .notNull()
+    .unique()
+    .references(() => orders.id, { onDelete: 'cascade' }),
   date: date({ mode: 'string' }).notNull(),
   slot: text().notNull(),
   address: text().notNull(),
   city: text().notNull(),
-  driverId: integer('driver_id').notNull().references(() => employees.id),
+  driverId: integer('driver_id')
+    .notNull()
+    .references(() => employees.id),
   assembly: boolean().notNull().default(false),
   status: text().notNull().default('zakazana'),
 })
@@ -109,7 +159,9 @@ export const receipts = pgTable('receipts', {
   id: serial().primaryKey(),
   number: text().notNull().unique(),
   date: date({ mode: 'string' }).notNull(),
-  supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  supplierId: integer('supplier_id').references(() => suppliers.id, {
+    onDelete: 'set null',
+  }),
   documentNumber: text('document_number').notNull().default(''),
   note: text().notNull().default(''),
   employeeId: integer('employee_id').references(() => employees.id),
@@ -121,18 +173,27 @@ export const stockMovements = pgTable(
   'stock_movements',
   {
     id: serial().primaryKey(),
-    productId: integer('product_id').notNull().references(() => products.id),
+    productId: integer('product_id')
+      .notNull()
+      .references(() => products.id),
     date: date({ mode: 'string' }).notNull(),
     type: text().notNull(),
     qty: integer().notNull(),
     unitCost: money('unit_cost').notNull().default(0),
-    receiptId: integer('receipt_id').references(() => receipts.id, { onDelete: 'cascade' }),
-    orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }),
+    receiptId: integer('receipt_id').references(() => receipts.id, {
+      onDelete: 'cascade',
+    }),
+    orderId: integer('order_id').references(() => orders.id, {
+      onDelete: 'cascade',
+    }),
     employeeId: integer('employee_id').references(() => employees.id),
     note: text().notNull().default(''),
     createdAt: timestamp('created_at').defaultNow(),
   },
-  (t) => [index('stock_movements_product_idx').on(t.productId), index('stock_movements_order_idx').on(t.orderId)],
+  (t) => [
+    index('stock_movements_product_idx').on(t.productId),
+    index('stock_movements_order_idx').on(t.orderId),
+  ],
 )
 
 export const appMeta = pgTable('app_meta', {
@@ -158,7 +219,9 @@ export const documents = pgTable('documents', {
   category: text().notNull(),
   summary: text().notNull().default(''),
   body: text().notNull().default(''),
-  fileId: integer('file_id').references(() => files.id, { onDelete: 'set null' }),
+  fileId: integer('file_id').references(() => files.id, {
+    onDelete: 'set null',
+  }),
   version: text().notNull().default('1.0'),
   sortOrder: integer('sort_order').notNull().default(100),
   archived: boolean().notNull().default(false),
@@ -171,13 +234,17 @@ export const employeeFiles = pgTable(
   'employee_files',
   {
     id: serial().primaryKey(),
-    employeeId: integer('employee_id').notNull().references(() => employees.id),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employees.id),
     category: text().notNull(),
     title: text().notNull(),
     validFrom: date('valid_from', { mode: 'string' }),
     validUntil: date('valid_until', { mode: 'string' }),
     note: text().notNull().default(''),
-    fileId: integer('file_id').references(() => files.id, { onDelete: 'set null' }),
+    fileId: integer('file_id').references(() => files.id, {
+      onDelete: 'set null',
+    }),
     uploadedBy: integer('uploaded_by').references(() => employees.id),
     createdAt: timestamp('created_at').defaultNow(),
   },
@@ -189,7 +256,9 @@ export const salaries = pgTable(
   'salaries',
   {
     id: serial().primaryKey(),
-    employeeId: integer('employee_id').notNull().references(() => employees.id),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employees.id),
     validFrom: date('valid_from', { mode: 'string' }).notNull(),
     gross: money('gross').notNull(),
     net: money('net').notNull(),
@@ -206,7 +275,9 @@ export const bonuses = pgTable(
   'bonuses',
   {
     id: serial().primaryKey(),
-    employeeId: integer('employee_id').notNull().references(() => employees.id),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employees.id),
     month: text().notNull(),
     fixedGross: money('fixed_gross').notNull().default(0),
     proposed: money('proposed').notNull().default(0),
@@ -234,7 +305,9 @@ export const expenses = pgTable(
     vat: money('vat').notNull().default(0),
     paymentMethod: text('payment_method').notNull().default('Virman'),
     recurring: boolean().notNull().default(false),
-    fileId: integer('file_id').references(() => files.id, { onDelete: 'set null' }),
+    fileId: integer('file_id').references(() => files.id, {
+      onDelete: 'set null',
+    }),
     createdBy: integer('created_by').references(() => employees.id),
     createdAt: timestamp('created_at').defaultNow(),
   },

@@ -10,8 +10,15 @@ import * as schema from './schema.js'
 function create() {
   const url = process.env.DATABASE_URL
   if (url) {
-    const ssl = /sslmode=require|\.render\.com|neon\.tech/.test(url) && !/sslmode=disable/.test(url) ? { rejectUnauthorized: false } : undefined
-    return pgDrizzle({ client: new pg.Pool({ connectionString: url, ssl, max: 5 }), schema }) as unknown as ReturnType<typeof netlifyDrizzle<typeof schema>>
+    const ssl =
+      /sslmode=require|\.render\.com|neon\.tech/.test(url) &&
+      !/sslmode=disable/.test(url)
+        ? { rejectUnauthorized: false }
+        : undefined
+    return pgDrizzle({
+      client: new pg.Pool({ connectionString: url, ssl, max: 5 }),
+      schema,
+    }) as unknown as ReturnType<typeof netlifyDrizzle<typeof schema>>
   }
   return netlifyDrizzle({ schema })
 }

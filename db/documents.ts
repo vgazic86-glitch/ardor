@@ -14,12 +14,97 @@ export interface SeedDocument {
   body: string
 }
 
+/** Sažetak službene knjige grafičkih standarda (ARDOR_KGS, 4. 9. 2019.). Originalni PDF je prilog dokumenta. */
+export const KGS_BODY = `> Za dosljednu primjenu logotipa i boja u svim vidovima vizuelne komunikacije neophodno je pridržavati se pravila koja su jasno definisana i ne mogu se mijenjati. Ovo je sažetak — **originalna knjiga (PDF, 33 str.) je u prilogu** ovog dokumenta (dugme gore desno).
+
+## 1. Logotip
+
+[[logo]]
+
+Ključni element logotipa je **kvadrat sa dvije zaobljene ivice** — kao savršen simbol četiri zida (prostorije i doma), a oblik koji u potpunosti izjednačava estetiku i funkcionalnost dizajna. Naglašavanjem oblika na način da je dva puta postavljen — jednom u simbol, a jednom u tipografiju (slovo O) — ukazuje se na važnost prihvatanja estetike i funkcionalnosti u radu Ardora.
+
+| Dio | Značenje |
+|---|---|
+| Kvadrat sa zaobljenim ivicama (narandžasta) | **Estetika** i udobnost |
+| Kvadrat s oštrim ivicama (siva) | **Funkcionalnost** i profesionalnost |
+| Preklapanje dva kvadrata | Jedinstvo estetike i funkcionalnosti |
+
+## 2. Konstrukcija i zona integriteta
+
+- Logotip se konstruiše na mreži; kada nije moguće koristiti elektronski zapis, prenosi se pomoću mreže.
+- **Zona integriteta** (prazan prostor oko logotipa) jednaka je veličini označenoj s *x* u knjizi — u njoj nema teksta, slika ni drugih elemenata, kako bi logotip uvijek bio vidljiv i čitljiv.
+
+## 3. Alternativni znak i slogan
+
+- **Alternativni znak** — samo znak (dva kvadrata) ili samo natpis „ARDOR”. Koristi se kao propratni element na mjestima gdje nije potreban osnovni logotip, ali treba naglasiti povezanost (npr. uzorak, kesa, fascikla, favicon aplikacije).
+- **Logotip sa sloganom**: **NAMJEŠTAJ ZA SVAČIJI DŽEP** — slogan stoji ispod logotipa, poravnat prema konstrukciji iz knjige.
+
+## 4. Definicija boja
+
+Boje nose dva značenja: **estetiku** (narandžasta) i **funkcionalnost i profesionalni pristup** (siva). Nije dozvoljeno korištenje alternativnih varijanti ili drugih nijansi.
+
+[[colors]]
+
+| Boja | CMYK | RGB | HEX |
+|---|---|---|---|
+| **ARDOR narandžasta** | C0 M80 Y95 K0 | 241 / 90 / 42 | #F15A29 |
+| **ARDOR žuta** | C0 M50 Y95 K0 | 247 / 147 / 40 | #F79328 |
+| **ARDOR siva** | C0 M0 Y0 K80 | 88 / 89 / 91 | #58595B |
+
+U aplikaciji Ardor boje brenda koriste se za akcente (dugmad, istaknuti brojevi, grafikoni), a topli smeđi tonovi (orah, papir) za podloge — kao dopunska paleta, ne umjesto boja brenda.
+
+## 5. Pozitiv, negativ i podloge
+
+- **Pozitiv** — logotip u boji ili jednobojno tamno na svijetloj podlozi.
+- **Negativ** — bijeli logotip na tamnoj podlozi.
+- Na jednobojnim podlogama u bojama brenda (narandžasta, žuta, siva) koristi se logotip prilagođen podlozi prema str. 15 knjige.
+- Logotip u **bijeloj boji** koristi se na podlogama od **40–100 % crne**. Na fotografijama vidljivost podloge treba sniziti; ako su dominantne boje podloge slične bojama brenda, logotip se primjenjuje u pozitivu ili negativu.
+
+## 6. Nedozvoljene primjene
+
+- mijenjanje boja unutar logotipa,
+- pozicioniranje elemenata logotipa na druge načine,
+- samo horizontalno ili samo vertikalno razvlačenje logotipa,
+- dodavanje efekata (sjene, obrisi, 3D).
+
+Dozvoljene su samo varijante prikazane u knjizi (osnovni logotip, natpis bez znaka, samo znak).
+
+## 7. Tipografija
+
+Primarna tipografija je **Ubuntu** u svojim težinskim varijantama — **Light, Regular, Medium i Bold**. **Kurziv nije dozvoljen** za primarno pismo. Ubuntu je besplatan font (Google Fonts) i koristi se i u aplikaciji Ardor.
+
+## 8. Poslovna dokumentacija
+
+| Materijal | Pravilo |
+|---|---|
+| Vizit karta | Prednja strana bijela s imenom, funkcijom i kontaktima; uz desni rub veliki znak; poleđina siva s negativ logotipom. |
+| Memorandum | Logotip gore lijevo, linijski znak gore desno, u dnu podaci firme i traka u tri boje brenda (kolor i monohromatska verzija). |
+| Koverta | Logotip gore lijevo, linijski znak na poleđini. |
+| Blok A5, fascikla, olovke | Narandžasta podloga s uzorkom znaka ili bijela s logotipom; olovke narandžaste, crne i bijele s logotipom. |
+| Kesa | Bijela s logotipom i velikim znakom te adresom www.ardornamjestaj.com. |
+
+## 9. Uzorak (pattern)
+
+Znak se ponavlja kao uzorak — u boji na bijeloj podlozi ili kao linijski crtež na sivoj podlozi. Koristi se za ambalažu, poleđine, pozadine i promotivni materijal.
+
+## 10. Brendiranje prodajnog centra
+
+| Element | Sadržaj |
+|---|---|
+| Radno vrijeme | PON–PET 08:00–20:30 · SUBOTA 08:00–19:00 |
+| Ograda | Fotografija, logotip i putokaz s udaljenošću (npr. „350 m”) |
+| Ulaz / kapija | „Dobrodošli” i „Hvala na posjeti.” uz znak |
+| Reklama na krovu | Logotip „ARDOR namještaj” i natpis PRODAJNI CENTAR |
+| Naljepnica na ulaznim vratima | PRODAJNI CENTAR · logotip · Vojvode Pere Krece 21, Banja Luka |
+`
+
 export const seedDocuments: SeedDocument[] = [
   {
     slug: 'kodeks-ponasanja',
     title: 'Kodeks ponašanja',
     category: 'Pravila i ponašanje',
-    summary: 'Vrijednosti salona i pravila ponašanja prema kupcima, kolegama, dobavljačima i imovini salona.',
+    summary:
+      'Vrijednosti salona i pravila ponašanja prema kupcima, kolegama, dobavljačima i imovini salona.',
     version: '1.0',
     sortOrder: 10,
     body: `> Radni prijedlog. Prije usvajanja uskladiti s pravilnikom o radu i ugovorima o radu. Kodeks potpisuje svaki zaposlenik pri zapošljavanju.
@@ -103,87 +188,18 @@ Ime i prezime: ______________________ Datum: ____________ Potpis: ______________
     slug: 'knjiga-grafickih-standarda',
     title: 'Knjiga grafičkih standarda',
     category: 'Brend i komunikacija',
-    summary: 'Logo, boje, tipografija, ton komunikacije i primjena vizuelnog identiteta u salonu, na vozilima i na mrežama.',
-    version: '1.0',
+    summary:
+      'Službena knjiga grafičkih standarda ARDOR namještaj (2019): logotip, znak, boje, tipografija i primjena. Originalni PDF je u prilogu.',
+    version: '2019',
     sortOrder: 20,
-    body: `> Vizuelni identitet Ardora: topao, prirodan i uredan — kao dobar komad masivnog drveta. Ova knjiga pokazuje kako se brend koristi da bi svugdje izgledao isto.
-
-## 1. Logo
-
-Logo se sastoji od **znaka** (slovo A u bakarnoj liniji na tamnom orahu, zaobljeni kvadrat) i **natpisa** „ardor” malim slovima s podnaslovom „salon namještaja”.
-
-[[logo]]
-
-**Pravila korištenja**
-
-- Najmanja širina znaka: 24 px na ekranu, 10 mm u štampi.
-- Zaštitna zona oko logotipa jednaka je visini slova „a” u natpisu — u toj zoni nema teksta ni drugih elemenata.
-- Na tamnoj podlozi koristi se svijetla verzija natpisa (lan), na svijetloj tamna (orah).
-- Logo se ne rasteže, ne rotira, ne mijenja mu se boja, ne dodaje mu se sjena i ne stavlja se na nemirnu fotografiju bez tamne podloge.
-
-## 2. Boje
-
-Paleta je inspirisana drvetom, bakrom i lanom. Osnova su tamni orah i bakar; mahovina se koristi za pozitivne poruke (plaćeno, dostavljeno).
-
-[[colors]]
-
-| Uloga | Boja | Upotreba |
-|---|---|---|
-| Primarna tamna | Orah 900 | Tekst, bočna traka, tamne pozadine, logo |
-| Akcent | Bakar 500 | Dugmad za akciju, istaknuti brojevi, linija u logu |
-| Pozadina | Papir / Lan | Pozadine dokumenata, ekrana i ambalaže |
-| Pozitivno | Mahovina 600 | Potvrde, „plaćeno”, „dostavljeno” |
-
-Pravilo: na jednoj površini najviše **10 % bakra**. Ostalo su orah i svijetle pozadine.
-
-## 3. Tipografija
-
-| Namjena | Font | Napomena |
-|---|---|---|
-| Naslovi | **Fraunces** (serif, polumasni 600) | Topli serif za naslove, cijene na plakatima |
-| Tekst i brojevi | **Manrope** (400–700) | Sav ostali tekst, tablice, ponude |
-| Zamjena (ako fontovi nisu dostupni) | Georgia / Arial | Samo u e-mailu i Word dokumentima |
-
-Oba fonta su besplatna (Google Fonts). Brojevi u tablicama poravnati su desno; iznosi se pišu s tačkom za hiljade i zarezom za decimale: **12.450,00 KM**.
-
-## 4. Ton komunikacije
-
-- **Topao, jasan, stručan.** Govorimo kao iskusan stolar koji voli svoj posao — bez žargona i bez pretjerivanja.
-- Obraćamo se sa „Vi”.
-- Kratke rečenice. Prvo korist za kupca, onda tehnički podatak.
-- Izbjegavamo uzvičnike, velika slova i riječi „najjeftinije”, „hit”, „ludo sniženje”.
-
-| Umjesto | Pišemo |
-|---|---|
-| „SUPER AKCIJA!!! -30% SAMO DANAS” | „Ugaone garniture uz 30 % popusta do subote” |
-| „Ultra kvalitetan madrac” | „Madrac s džepičastim oprugama i 7 zona potpore” |
-| „Isporuka brzo” | „Dostava i montaža u roku od 10 dana” |
-
-## 5. Primjena
-
-**Salon i izlozi.** Cjenovnici na izloženim komadima: bijela kartica A6, naslov u Fraunces, cijena u bakru, sitni tekst (dimenzije, materijal, rok isporuke) u Manrope. Popust se prikazuje precrtanom starom cijenom, nikad samo postotkom.
-
-**Radna odjeća.** Prodavači: tamna košulja ili džemper (orah), mali logo na grudima. Dostava i montaža: tamna radna jakna, logo na leđima, bakarna traka na rukavu.
-
-**Vozila.** Tamna podloga ili bijelo vozilo s tamnom trakom; znak i natpis „ardor — salon namještaja” na bočnim stranama, telefon salona na zadnjim vratima.
-
-**Dokumenti.** Ponude, otpremnice i računi iz aplikacije koriste logo u gornjem lijevom uglu, Manrope za tekst, tablicu stavki s desno poravnatim iznosima.
-
-**Društvene mreže.** Fotografije namještaja u prirodnom svjetlu, toplih tonova. Na objavi najviše jedan kratki naslov. Logo u donjem desnom uglu, svijetla verzija na tamnoj fotografiji.
-
-## 6. Šta ne radimo
-
-- Ne koristimo neonske ili hladne plave i ljubičaste boje u materijalima salona.
-- Ne miješamo više od dva fonta.
-- Ne objavljujemo fotografije loše osvijetljenih ili neurednih izložbenih prostora.
-- Ne prepravljamo logo „za priliku” (praznični šeširi, sjenke, 3D efekti).
-`,
+    body: KGS_BODY,
   },
   {
     slug: 'prirucnik-za-prodavace',
     title: 'Priručnik za prodavače',
     category: 'Prodaja',
-    summary: 'Od pozdrava do naplate: kako vodimo kupca kroz salon, pravimo ponudu, odobravamo popust i unosimo prodaju u Ardor.',
+    summary:
+      'Od pozdrava do naplate: kako vodimo kupca kroz salon, pravimo ponudu, odobravamo popust i unosimo prodaju u Ardor.',
     version: '1.0',
     sortOrder: 30,
     body: `> Cilj priručnika: da svaki kupac, bez obzira kojem prodavaču dođe, dobije isti nivo usluge — i da svaka prodaja bude tačno evidentirana.
@@ -276,7 +292,8 @@ Svaka ponuda starija od 3 dana dobija poziv kupcu. Aplikacija ih prikazuje u **P
     slug: 'standard-dostave-i-montaze',
     title: 'Standard dostave i montaže',
     category: 'Dostava i servis',
-    summary: 'Priprema, utovar, ponašanje kod kupca, montaža, primopredaja i evidencija statusa u aplikaciji.',
+    summary:
+      'Priprema, utovar, ponašanje kod kupca, montaža, primopredaja i evidencija statusa u aplikaciji.',
     version: '1.0',
     sortOrder: 40,
     body: `## 1. Dan prije dostave
@@ -335,7 +352,8 @@ Status se mijenja **odmah**, s terena — ne na kraju dana.
     slug: 'procedura-reklamacija-i-povrata',
     title: 'Procedura reklamacija i povrata',
     category: 'Dostava i servis',
-    summary: 'Kako primamo, evidentiramo i rješavamo reklamacije kupaca i povrate robe, s rokovima.',
+    summary:
+      'Kako primamo, evidentiramo i rješavamo reklamacije kupaca i povrate robe, s rokovima.',
     version: '1.0',
     sortOrder: 50,
     body: `> Uskladiti s važećim propisima o zaštiti potrošača i uslovima garancije dobavljača.
@@ -387,7 +405,8 @@ Kupca obavještavamo o svakom koraku, i kada nema novosti („Dobavljač još ni
     slug: 'uvod-za-nove-zaposlenike',
     title: 'Uvod za nove zaposlenike',
     category: 'Zaposlenici',
-    summary: 'Plan prvih 30 dana, kontrolna lista dokumenata i obuka za rad u aplikaciji Ardor.',
+    summary:
+      'Plan prvih 30 dana, kontrolna lista dokumenata i obuka za rad u aplikaciji Ardor.',
     version: '1.0',
     sortOrder: 60,
     body: `## Dobro došli u Ardor
@@ -410,7 +429,7 @@ Ugovor o radu, potpisani Kodeks ponašanja i ostali kadrovski dokumenti čuvaju 
 
 - Upoznavanje s timom i obilazak salona i skladišta.
 - Radna odjeća, ključevi, pristup aplikaciji Ardor.
-- Čitanje: *Kodeks ponašanja*, *Knjiga grafičkih standarda* (poglavlja 4 i 5).
+- Čitanje: *Kodeks ponašanja*, *Knjiga grafičkih standarda* (logotip, boje, tipografija).
 - Potpis Kodeksa ponašanja.
 
 ## Prva sedmica

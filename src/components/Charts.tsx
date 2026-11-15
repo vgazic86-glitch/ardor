@@ -19,7 +19,7 @@ ChartJS.register(
   Tooltip,
   Legend,
 )
-ChartJS.defaults.font.family = 'Manrope, system-ui, sans-serif'
+ChartJS.defaults.font.family = 'Ubuntu, system-ui, sans-serif'
 ChartJS.defaults.color = '#5a463a'
 
 /** Chart.js treba canvas iz preglednika — renderiramo tek nakon hidracije. */
@@ -74,7 +74,7 @@ export function RevenueChart({
               data: values,
               backgroundColor: values.map((_, i) =>
                 highlightLast && i === values.length - 1
-                  ? '#b0703b'
+                  ? '#F15A29'
                   : '#3d2f26',
               ),
               borderRadius: 8,
@@ -167,12 +167,12 @@ export function EmployeeChart({
 }
 
 export const categoryColors = [
-  '#2b211b',
-  '#b0703b',
-  '#4f6b4a',
+  '#3d2f26',
+  '#F15A29',
+  '#F79328',
+  '#58595B',
   '#8b7464',
   '#c9b8a8',
-  '#3f5c78',
 ]
 
 export function CategoryChart({

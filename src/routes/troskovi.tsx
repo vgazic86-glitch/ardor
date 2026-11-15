@@ -536,7 +536,7 @@ function ProfitTab({ data, month }: { data: FinanceData; month: string }) {
                       <span>{c}</span>
                       <span className="font-semibold tabular">{money(v)}</span>
                     </div>
-                    <Progress value={v / costMax} color="#b0703b" />
+                    <Progress value={v / costMax} color="#F79328" />
                   </li>
                 ))}
               </ul>
@@ -588,7 +588,7 @@ function ProfitTab({ data, month }: { data: FinanceData; month: string }) {
             {
               label: 'Dobit',
               values: year.map((y) => y.profitBeforeTax),
-              color: '#b0703b',
+              color: '#F79328',
             },
           ]}
         />
@@ -1081,7 +1081,7 @@ function ExpensesTab({
                     <span className="truncate">{c}</span>
                     <span className="font-semibold tabular">{money(v)}</span>
                   </div>
-                  <Progress value={totNet ? v / totNet : 0} color="#b0703b" />
+                  <Progress value={totNet ? v / totNet : 0} color="#F79328" />
                 </li>
               ))}
           </ul>
