@@ -1,9 +1,13 @@
 import {
   HeadContent,
+  Link,
   Outlet,
   Scripts,
   createRootRoute,
+  useRouterState,
 } from '@tanstack/react-router'
+import { LoginPage } from '../components/LoginPage'
+import { areaOf, canSee } from '../lib/access'
 import { AppShell } from '../components/AppShell'
 import { getSnapshot } from '../server/api'
 import { StoreProvider } from '../lib/store'
@@ -57,15 +61,28 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  const data = Route.useLoaderData()
+  const { user, data } = Route.useLoaderData()
+  const path = useRouterState({ select: (s) => s.location.pathname })
+  if (!user || !data) return <LoginPage />
+  const area = areaOf(path)
   return (
-    <StoreProvider data={data}>
-      <AdminProvider>
-        <AppShell>
-          <Outlet />
-        </AppShell>
+    <StoreProvider data={data} user={user}>
+      <AdminProvider sessionHr={user.hrAccess}>
+        <AppShell>{area && !canSee(user, area) ? <NoAccess /> : <Outlet />}</AppShell>
       </AdminProvider>
     </StoreProvider>
+  )
+}
+
+function NoAccess() {
+  return (
+    <div className="mx-auto mt-16 max-w-md text-center">
+      <h1 className="font-display text-2xl font-bold">Nemate pristup ovom dijelu</h1>
+      <p className="mt-2 text-sm text-walnut-600">Ako vam treba, obratite se administratoru.</p>
+      <Link to="/" className="mt-5 inline-block font-semibold text-copper-600 hover:underline">
+        Na početnu
+      </Link>
+    </div>
   )
 }
 

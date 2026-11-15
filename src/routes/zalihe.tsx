@@ -8,6 +8,7 @@ import {
   PackageX,
   Search,
   Tag,
+  Send,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { ProductCard } from '../components/ProductCard'
@@ -51,7 +52,7 @@ function stateOf(p: Product, free: number) {
 }
 
 function StockPage() {
-  const { orders, products, suppliers, movements, productById } = useStore()
+  const { orders, products, suppliers, movements, productById, restricted } = useStore()
   const { artikal } = Route.useSearch()
   const navigate = useNavigate({ from: '/zalihe' })
   const [cat, setCat] = useState<'sve' | Category>('sve')
@@ -104,7 +105,14 @@ function StockPage() {
         title="Zalihe"
         description="Stanje se računa iz svih kretanja: početno stanje, prijemi, izlazi kupcima, povrati i inventura. Rezervisano je ono što je prodano, a još nije izašlo iz salona."
         actions={
-          <>
+          restricted ? undefined : <>
+            <Link
+              to="/nabava"
+              search={{ nova: true }}
+              className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
+            >
+              <Send className="size-4" /> Naruči
+            </Link>
             <Link
               to="/inventura"
               className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
@@ -123,18 +131,21 @@ function StockPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {!restricted && (
+          <Stat
+            tone="accent"
+            icon={Warehouse}
+            label="Vrijednost zaliha"
+            value={money(valueCost)}
+            hint="po prosječnoj nabavnoj cijeni"
+          />
+        )}
         <Stat
-          tone="accent"
-          icon={Warehouse}
-          label="Vrijednost zaliha"
-          value={money(valueCost)}
-          hint="po prosječnoj nabavnoj cijeni"
-        />
-        <Stat
+          tone={restricted ? 'accent' : 'default'}
           icon={Tag}
           label="Po maloprodajnoj"
           value={money(valueRetail)}
-          hint={`razlika u cijeni ${money(netOf(valueRetail) - valueCost)}`}
+          hint={restricted ? 'vrijednost robe na stanju' : `razlika u cijeni ${money(netOf(valueRetail) - valueCost)}`}
         />
         <Stat
           icon={Package}
@@ -191,8 +202,14 @@ function StockPage() {
                   <th className="text-right">Na stanju</th>
                   <th className="text-right">Rezervisano</th>
                   <th className="text-right">Slobodno</th>
-                  <th className="text-right">Prosj. nabavna</th>
-                  <th className="text-right">Vrijednost</th>
+                  {restricted ? (
+                    <th className="text-right">Cijena</th>
+                  ) : (
+                    <>
+                      <th className="text-right">Prosj. nabavna</th>
+                      <th className="text-right">Vrijednost</th>
+                    </>
+                  )}
                   <th className="pl-6">Stanje</th>
                 </tr>
               </thead>
@@ -229,12 +246,18 @@ function StockPage() {
                       >
                         {free}
                       </td>
-                      <td className="text-right tabular text-walnut-700">
-                        {money(p.avgCost)}
-                      </td>
-                      <td className="text-right tabular">
-                        {money(Math.max(0, p.stock) * p.avgCost)}
-                      </td>
+                      {restricted ? (
+                        <td className="text-right tabular">{money(p.price)}</td>
+                      ) : (
+                        <>
+                          <td className="text-right tabular text-walnut-700">
+                            {money(p.avgCost)}
+                          </td>
+                          <td className="text-right tabular">
+                            {money(Math.max(0, p.stock) * p.avgCost)}
+                          </td>
+                        </>
+                      )}
                       <td className="pl-6">
                         <Badge tone={st.tone}>{st.label}</Badge>
                       </td>
@@ -287,15 +310,16 @@ function StockPage() {
                     </ul>
                   </div>
                 ))}
-                <Button
-                  variant="copper"
-                  className="w-full"
-                  onClick={() =>
-                    navigate({ to: '/primke', search: { nova: true } })
-                  }
-                >
-                  <PackagePlus className="size-4" /> Zaprimi robu
-                </Button>
+                {!restricted && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="copper" onClick={() => navigate({ to: '/nabava', search: { nova: true } })}>
+                      <Send className="size-4" /> Naruči
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate({ to: '/primke', search: { nova: true } })}>
+                      <PackagePlus className="size-4" /> Zaprimi
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </Card>

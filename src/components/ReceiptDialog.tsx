@@ -12,17 +12,27 @@ type Line = { productId: string; qty: string; unitCost: string }
 export function ReceiptDialog({
   onClose,
   onSaved,
+  initial,
 }: {
   onClose: () => void
-  onSaved?: (number: string) => void
+  onSaved?: (number: string, id: string) => void
+  /** Npr. prijem po narudžbi dobavljaču. */
+  initial?: { supplierId: string; note: string; lines: { productId: string; qty: number; unitCost: number }[] }
 }) {
   const { suppliers, products, today, productById, addReceipt, busy } =
     useStore()
-  const [supplierId, setSupplierId] = useState(suppliers[0]?.id ?? '')
+  const [supplierId, setSupplierId] = useState(initial?.supplierId ?? suppliers[0]?.id ?? '')
   const [date, setDate] = useState(today)
   const [doc, setDoc] = useState('')
-  const [note, setNote] = useState('')
-  const [lines, setLines] = useState<Line[]>([])
+  const [note, setNote] = useState(initial?.note ?? '')
+  const [lines, setLines] = useState<Line[]>(
+    () =>
+      initial?.lines.map((l) => ({
+        productId: l.productId,
+        qty: String(l.qty),
+        unitCost: l.unitCost ? String(l.unitCost) : '',
+      })) ?? [],
+  )
   const [newProduct, setNewProduct] = useState(false)
   const [onlySupplier, setOnlySupplier] = useState(true)
 
@@ -79,7 +89,7 @@ export function ReceiptDialog({
       })),
     })
     if (res) {
-      onSaved?.(res.number)
+      onSaved?.(res.number, res.id)
       onClose()
     }
   }

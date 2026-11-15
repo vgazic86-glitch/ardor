@@ -32,7 +32,9 @@ export function NewOrderDialog({
     productById,
     me,
     busy,
+    restricted,
   } = useStore()
+  const maxDiscount = restricted ? 10 : 50
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? '')
   const [employeeId, setEmployeeId] = useState(
     me && me.role !== 'Dostava i montaža' ? me.id : (salesPeople[0]?.id ?? ''),
@@ -150,6 +152,7 @@ export function NewOrderDialog({
             <select
               className={inputCls}
               value={employeeId}
+              disabled={restricted}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
               {salesPeople.map((s) => (
@@ -263,12 +266,12 @@ export function NewOrderDialog({
                     className={inputCls}
                     type="number"
                     min={0}
-                    max={50}
+                    max={maxDiscount}
                     value={it.discountPct}
                     onChange={(e) =>
                       update(i, {
                         discountPct: Math.min(
-                          50,
+                          maxDiscount,
                           Math.max(0, Number(e.target.value)),
                         ),
                       })

@@ -303,3 +303,112 @@ export function itemsTotal(items: OrderItem[]) {
     0,
   )
 }
+
+/* ───────────── narudžbe dobavljačima, kartice dobavljača, radno vrijeme ───────────── */
+
+export type PurchaseStatus = 'nacrt' | 'zakljucena' | 'zaprimljena' | 'otkazana'
+
+export const PURCHASE_STATUS_LABEL: Record<PurchaseStatus, string> = {
+  nacrt: 'Nacrt',
+  zakljucena: 'Zaključena',
+  zaprimljena: 'Zaprimljena',
+  otkazana: 'Otkazana',
+}
+
+export interface PurchaseLine {
+  productId: string | null
+  code: string
+  name: string
+  qty: number
+  unit: string
+  /** Očekivana nabavna cijena bez PDV-a; null = nije navedena. */
+  price: number | null
+  note: string
+}
+
+export interface PurchaseOrder {
+  id: string
+  number: string
+  date: string
+  supplierId: string
+  status: PurchaseStatus
+  note: string
+  deliveryBy: string | null
+  createdById: string | null
+  createdByName: string
+  closedAt: string | null
+  receiptId: string | null
+  lines: PurchaseLine[]
+}
+
+export type LedgerKind = 'uplata' | 'zaduzenje' | 'odobrenje' | 'pocetno'
+
+export const LEDGER_KIND_LABEL: Record<LedgerKind | 'primka', string> = {
+  primka: 'Primka (roba)',
+  zaduzenje: 'Račun / zaduženje',
+  uplata: 'Uplata dobavljaču',
+  odobrenje: 'Odobrenje / povrat',
+  pocetno: 'Početno stanje',
+}
+
+export interface LedgerEntry {
+  id: string
+  supplierId: string
+  date: string
+  kind: LedgerKind
+  /** Uvijek pozitivan iznos s PDV-om; smjer određuje vrsta. */
+  amount: number
+  document: string
+  note: string
+  createdByName: string
+}
+
+export type WorkKind = 'rad' | 'godisnji' | 'bolovanje' | 'slobodan' | 'praznik'
+
+export const WORK_KIND_LABEL: Record<WorkKind, string> = {
+  rad: 'Rad',
+  godisnji: 'Godišnji odmor',
+  bolovanje: 'Bolovanje',
+  slobodan: 'Slobodan dan',
+  praznik: 'Praznik',
+}
+
+export interface WorkDay {
+  id: string
+  employeeId: string
+  date: string
+  kind: WorkKind
+  start: string
+  end: string
+  breakMin: number
+  note: string
+  updatedByName: string
+}
+
+export interface CompanyInfo {
+  name: string
+  legalName: string
+  address: string
+  city: string
+  phone: string
+  email: string
+  web: string
+  jib: string
+  vatNumber: string
+  bankAccount: string
+  bank: string
+}
+
+export const DEFAULT_COMPANY: CompanyInfo = {
+  name: 'ARDOR namještaj',
+  legalName: 'ARDOR namještaj',
+  address: 'Vojvode Pere Krece 21',
+  city: '78000 Banja Luka',
+  phone: '',
+  email: '',
+  web: 'www.ardornamjestaj.com',
+  jib: '',
+  vatNumber: '',
+  bankAccount: '',
+  bank: '',
+}

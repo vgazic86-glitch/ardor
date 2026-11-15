@@ -45,7 +45,7 @@ export const Route = createFileRoute('/narudzbe')({
 const PAGE = 25
 
 function OrdersPage() {
-  const { orders, salesPeople, customerById, employeeById, currentMonth, me } =
+  const { orders, salesPeople, customerById, employeeById, currentMonth, me, restricted } =
     useStore()
   const { nova, otvori, q: initialQ } = Route.useSearch()
   const navigate = useNavigate({ from: '/narudzbe' })
@@ -76,6 +76,7 @@ function OrdersPage() {
   }, [orders, q, status, emp, month, customerById])
 
   const revenue = filtered
+    .filter((o) => !restricted || o.employeeId === me?.id)
     .filter(isRevenue)
     .reduce((s, o) => s + orderTotal(o), 0)
   const due = filtered.reduce((s, o) => s + outstanding(o), 0)
@@ -115,9 +116,11 @@ function OrdersPage() {
         description="Sve ponude i narudžbe salona — od prve ponude do isporuke i naplate."
         actions={
           <>
-            <Button variant="outline" onClick={exportCsv}>
-              <Download className="size-4" /> Izvoz CSV
-            </Button>
+            {!restricted && (
+              <Button variant="outline" onClick={exportCsv}>
+                <Download className="size-4" /> Izvoz CSV
+              </Button>
+            )}
             <Button onClick={() => navigate({ search: { nova: true } })}>
               <Plus className="size-4" /> Nova narudžba
             </Button>
@@ -135,9 +138,9 @@ function OrdersPage() {
         />
         <Stat
           icon={Wallet}
-          label="Promet"
+          label={restricted ? 'Moj promet' : 'Promet'}
           value={money(revenue)}
-          hint="bez ponuda i otkazanih"
+          hint={restricted ? 'vaše prodaje u prikazu' : 'bez ponuda i otkazanih'}
         />
         <Stat
           tone="warn"
@@ -190,7 +193,7 @@ function OrdersPage() {
               Moje prodaje
             </Button>
           )}
-          <Select
+          {!restricted && <Select
             label="Prodavač"
             value={emp}
             onChange={setEmp}
@@ -198,7 +201,7 @@ function OrdersPage() {
               { value: 'svi', label: 'Svi prodavači' },
               ...salesPeople.map((e) => ({ value: e.id, label: e.name })),
             ]}
-          />
+          />}
           <Select
             label="Mjesec"
             value={month}

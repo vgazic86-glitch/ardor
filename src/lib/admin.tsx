@@ -50,7 +50,7 @@ function writeToken(t: string | null) {
   }
 }
 
-export function AdminProvider({ children }: { children: ReactNode }) {
+export function AdminProvider({ children, sessionHr = false }: { children: ReactNode; sessionHr?: boolean }) {
   const [token, setToken] = useState<string | null>(null)
   const [status, setStatus] = useState<Admin['status']>(null)
 
@@ -68,7 +68,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Admin>(
     () => ({
-      token,
+      // Korisnik s pravom pristupa plaćama/troškovima ne treba posebnu lozinku (server provjerava sesiju).
+      token: sessionHr ? 'sesija' : token,
       status,
       async login(password) {
         const r = await adminLoginFn({ data: { password } })
@@ -89,7 +90,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       logout: () => apply(null),
       expire: () => apply(null),
     }),
-    [token, status, apply],
+    [token, status, apply, sessionHr],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

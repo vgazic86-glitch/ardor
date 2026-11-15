@@ -21,7 +21,7 @@ const readMinutes = (md: string) =>
   Math.max(1, Math.round(md.split(/\s+/).length / 200))
 
 function DocumentsPage() {
-  const { documents } = useStore()
+  const { documents, restricted } = useStore()
   const navigate = useNavigate()
   const [cat, setCat] = useState('sve')
   const [q, setQ] = useState('')
@@ -41,11 +41,13 @@ function DocumentsPage() {
       <PageHeader
         eyebrow="Ljudi i dokumenti"
         title="Opći dokumenti"
-        description="Pravila, standardi i priručnici salona na jednom mjestu. Svaki zaposlenik ih može čitati i odštampati; uređivanje je zaštićeno upravljačkom lozinkom."
+        description="Pravila, standardi i priručnici salona na jednom mjestu. Svaki zaposlenik ih može čitati i odštampati; uređuje ih uprava."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="size-4" /> Novi dokument
-          </Button>
+          restricted ? undefined : (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="size-4" /> Novi dokument
+            </Button>
+          )
         }
       />
 

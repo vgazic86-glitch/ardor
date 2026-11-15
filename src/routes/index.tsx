@@ -8,6 +8,7 @@ import {
   HandCoins,
   TrendingUp,
   Truck,
+  Clock,
 } from 'lucide-react'
 import {
   CategoryChart,
@@ -60,22 +61,25 @@ function Overview() {
     employeeById,
     productById,
     me,
+    restricted,
   } = useStore()
+  /** Trgovac vidi samo svoje brojke. */
+  const mine = restricted ? orders.filter((o) => o.employeeId === me?.id) : orders
   const months = lastMonths(currentMonth, 12)
-  const monthly = months.map((k) => revenueIn(orders, k))
-  const thisMonth = revenueIn(orders, currentMonth)
-  const prevMonth = revenueIn(orders, previousMonthKey(currentMonth))
-  const monthOrders = orders.filter(
+  const monthly = months.map((k) => revenueIn(mine, k))
+  const thisMonth = revenueIn(mine, currentMonth)
+  const prevMonth = revenueIn(mine, previousMonthKey(currentMonth))
+  const monthOrders = mine.filter(
     (o) => monthKey(o.date) === currentMonth && isRevenue(o),
   )
   const avg = monthOrders.length ? thisMonth / monthOrders.length : 0
-  const receivable = orders.reduce((s, o) => s + outstanding(o), 0)
-  const openOffers = orders.filter((o) => o.status === 'ponuda')
+  const receivable = mine.reduce((s, o) => s + outstanding(o), 0)
+  const openOffers = mine.filter((o) => o.status === 'ponuda')
   const team = employeeStats(orders, currentMonth, salesPeople).sort(
     (a, b) => b.revenue - a.revenue,
   )
   const teamTarget = salesPeople.reduce((s, e) => s + e.monthlyTarget, 0)
-  const cats = categoryRevenue(orders, months.slice(-3), productById)
+  const cats = categoryRevenue(mine, months.slice(-3), productById)
   const catTotal = cats.reduce((s, [, v]) => s + v, 0)
 
   const upcoming = orders
@@ -102,9 +106,16 @@ function Overview() {
       <PageHeader
         eyebrow={`${monthLong(curM)} ${currentMonth.slice(0, 4)}.`}
         title={me ? `Dobar dan, ${me.name.split(' ')[0]}` : 'Dobar dan'}
-        description="Pregled prometa, narudžbi i dostava salona na jednom mjestu."
+        description={restricted ? 'Vaše prodaje, cilj, dostave i roba koju treba pratiti.' : 'Pregled prometa, narudžbi i dostava salona na jednom mjestu.'}
         actions={
-          <Link
+          restricted ? (
+            <Link
+              to="/radno-vrijeme"
+              className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
+            >
+              <Clock className="size-4 text-copper-600" /> Dolazak / odlazak
+            </Link>
+          ) : <Link
             to="/izvjestaji"
             className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
           >
@@ -117,7 +128,7 @@ function Overview() {
         <Stat
           tone="accent"
           icon={TrendingUp}
-          label="Promet ovog mjeseca"
+          label={restricted ? 'Moj promet ovog mjeseca' : 'Promet ovog mjeseca'}
           value={money(thisMonth)}
           hint={
             <>
@@ -128,7 +139,7 @@ function Overview() {
         />
         <Stat
           icon={ClipboardList}
-          label="Narudžbe ovog mjeseca"
+          label={restricted ? 'Moje narudžbe ovog mjeseca' : 'Narudžbe ovog mjeseca'}
           value={count(monthOrders.length)}
           hint={`Prosjek ${money(avg)}`}
         />
@@ -149,7 +160,7 @@ function Overview() {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <Card
-          title="Promet — zadnjih 12 mjeseci"
+          title={restricted ? 'Moj promet — zadnjih 12 mjeseci' : 'Promet — zadnjih 12 mjeseci'}
           action={
             <span className="text-xs text-walnut-500">
               bez ponuda i otkazanih
@@ -162,7 +173,22 @@ function Overview() {
           />
         </Card>
 
-        <Card
+        {restricted ? (
+          <Card title="Moj cilj ovaj mjesec">
+            <div className="font-display text-3xl font-semibold tabular">{money(thisMonth)}</div>
+            <div className="mt-1 text-sm text-walnut-600">od cilja {money(me?.monthlyTarget ?? 0)}</div>
+            <div className="mt-4">
+              <Progress value={me?.monthlyTarget ? thisMonth / me.monthlyTarget : 0} />
+            </div>
+            <p className="mt-3 text-xs text-walnut-500">
+              {me?.monthlyTarget
+                ? thisMonth >= me.monthlyTarget
+                  ? 'Cilj je ostvaren. Odlično!'
+                  : `Do cilja nedostaje ${money(me.monthlyTarget - thisMonth)}.`
+                : 'Cilj još nije postavljen.'}
+            </p>
+          </Card>
+        ) : <Card
           title="Tim ovaj mjesec"
           action={
             <Link
@@ -206,7 +232,7 @@ function Overview() {
               </li>
             ))}
           </ul>
-        </Card>
+        </Card>}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
@@ -376,13 +402,15 @@ function Overview() {
         </Card>
       </div>
 
-      <Card title="Promet po zaposleniku — ovaj mjesec" className="mt-6">
-        <EmployeeChart
-          labels={team.map((t) => t.employee.name)}
-          values={team.map((t) => t.revenue)}
-          colors={team.map((t) => t.employee.color)}
-        />
-      </Card>
+      {!restricted && (
+        <Card title="Promet po zaposleniku — ovaj mjesec" className="mt-6">
+          <EmployeeChart
+            labels={team.map((t) => t.employee.name)}
+            values={team.map((t) => t.revenue)}
+            colors={team.map((t) => t.employee.color)}
+          />
+        </Card>
+      )}
     </div>
   )
 }

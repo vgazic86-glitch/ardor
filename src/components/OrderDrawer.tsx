@@ -49,6 +49,7 @@ export function OrderDrawer({
     customerById,
     employeeById,
     productById,
+    restricted,
   } = useStore()
   const [amount, setAmount] = useState('')
   const order = orders.find((o) => o.id === orderId)
@@ -144,9 +145,11 @@ export function OrderDrawer({
               <div className="text-xs text-walnut-500">{e.role}</div>
             </div>
           </div>
-          <div className="mt-2 text-xs text-walnut-700">
-            Provizija: {money2(total * e.commissionRate)}
-          </div>
+          {!restricted && (
+            <div className="mt-2 text-xs text-walnut-700">
+              Provizija: {money2(total * e.commissionRate)}
+            </div>
+          )}
         </div>
       </div>
 

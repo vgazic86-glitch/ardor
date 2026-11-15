@@ -1,4 +1,7 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
+import { canSee, ROLE_LABEL, type Area } from '../lib/access'
+import { logoutFn } from '../server/api'
+import { ChangePasswordDialog } from './ChangePasswordDialog'
 import {
   BarChart3,
   BookOpen,
@@ -7,6 +10,11 @@ import {
   Boxes,
   CheckCircle2,
   ChevronsUpDown,
+  Clock,
+  KeyRound,
+  LogOut,
+  Send,
+  ShieldCheck,
   ClipboardCheck,
   ClipboardList,
   Factory,
@@ -33,45 +41,44 @@ type NavItem = {
   label: string
   icon: typeof LayoutDashboard
   badge?: 'orders' | 'deliveries' | 'low'
+  area: Area
 }
 
 const groups: { title: string; items: NavItem[] }[] = [
   {
     title: 'Prodaja',
     items: [
-      { to: '/', label: 'Pregled', icon: LayoutDashboard },
-      {
-        to: '/narudzbe',
-        label: 'Narudžbe',
-        icon: ClipboardList,
-        badge: 'orders',
-      },
-      { to: '/dostave', label: 'Dostave', icon: Truck, badge: 'deliveries' },
+      { to: '/', label: 'Pregled', icon: LayoutDashboard, area: 'pregled' },
+      { to: '/narudzbe', label: 'Narudžbe kupaca', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
+      { to: '/dostave', label: 'Dostave', icon: Truck, badge: 'deliveries', area: 'dostave' },
     ],
   },
   {
     title: 'Roba',
     items: [
-      { to: '/zalihe', label: 'Zalihe', icon: Package, badge: 'low' },
-      { to: '/primke', label: 'Prijem robe', icon: PackagePlus },
-      { to: '/artikli', label: 'Artikli', icon: Boxes },
-      { to: '/inventura', label: 'Inventura', icon: ClipboardCheck },
+      { to: '/zalihe', label: 'Zalihe', icon: Package, badge: 'low', area: 'zalihe' },
+      { to: '/nabava', label: 'Narudžbe dobavljačima', icon: Send, area: 'nabava' },
+      { to: '/primke', label: 'Prijem robe', icon: PackagePlus, area: 'primke' },
+      { to: '/artikli', label: 'Artikli', icon: Boxes, area: 'artikli' },
+      { to: '/inventura', label: 'Inventura', icon: ClipboardCheck, area: 'inventura' },
     ],
   },
   {
     title: 'Poslovanje',
     items: [
-      { to: '/izvjestaji', label: 'Izvještaji', icon: BarChart3 },
-      { to: '/troskovi', label: 'Troškovi i zarada', icon: Calculator },
-      { to: '/dobavljaci', label: 'Dobavljači', icon: Factory },
+      { to: '/izvjestaji', label: 'Izvještaji', icon: BarChart3, area: 'izvjestaji' },
+      { to: '/troskovi', label: 'Troškovi i zarada', icon: Calculator, area: 'troskovi' },
+      { to: '/dobavljaci', label: 'Dobavljači i kartice', icon: Factory, area: 'dobavljaci' },
     ],
   },
   {
     title: 'Ljudi i dokumenti',
     items: [
-      { to: '/zaposlenici', label: 'Zaposlenici', icon: Users },
-      { to: '/kadrovska', label: 'Kadrovska', icon: LockKeyhole },
-      { to: '/dokumenti', label: 'Dokumenti', icon: BookOpen },
+      { to: '/zaposlenici', label: 'Zaposlenici', icon: Users, area: 'zaposlenici' },
+      { to: '/radno-vrijeme', label: 'Radno vrijeme', icon: Clock, area: 'radno' },
+      { to: '/kadrovska', label: 'Kadrovska', icon: LockKeyhole, area: 'kadrovska' },
+      { to: '/dokumenti', label: 'Dokumenti', icon: BookOpen, area: 'dokumenti' },
+      { to: '/korisnici', label: 'Korisnici i pristup', icon: ShieldCheck, area: 'korisnici' },
     ],
   },
 ]
@@ -97,9 +104,13 @@ function useBadges() {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const path = useRouterState({ select: (s) => s.location.pathname })
   const badges = useBadges()
+  const { user } = useStore()
+  const visible = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => canSee(user, i.area)) }))
+    .filter((g) => g.items.length > 0)
   return (
     <nav className="flex flex-col gap-5" aria-label="Glavna navigacija">
-      {groups.map((g) => (
+      {visible.map((g) => (
         <div key={g.title}>
           <div className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-walnut-500">
             {g.title}
@@ -148,56 +159,76 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function UserSwitcher() {
-  const { me, employees, setMe } = useStore()
+  const { me, employees, setMe, user, restricted } = useStore()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
-  if (!me) return null
+  const [pw, setPw] = useState(false)
+  async function logout() {
+    await logoutFn()
+    await router.invalidate()
+  }
   return (
     <div className="relative">
       {open && (
         <>
-          <button
-            className="fixed inset-0 z-10 cursor-default"
-            aria-label="Zatvori"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute bottom-full left-0 right-0 z-20 mb-2 overflow-hidden rounded-xl border border-white/10 bg-walnut-800 p-1.5 shadow-lift">
-            <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-walnut-400">
-              Ko radi u aplikaciji?
-            </div>
-            {employees.map((e) => (
-              <button
-                key={e.id}
-                onClick={() => {
-                  setMe(e.id)
-                  setOpen(false)
-                }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${e.id === me.id ? 'bg-white/10 text-linen' : 'text-walnut-200 hover:bg-white/5'}`}
-              >
-                <Avatar employee={e} size="sm" />
-                <span className="flex-1 truncate">{e.name}</span>
-                {e.id === me.id && (
-                  <CheckCircle2 className="size-4 text-copper-400" />
-                )}
-              </button>
-            ))}
+          <button className="fixed inset-0 z-10 cursor-default" aria-label="Zatvori" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-full left-0 right-0 z-20 mb-2 max-h-[70vh] overflow-y-auto rounded-xl border border-white/10 bg-walnut-800 p-1.5 shadow-lift">
+            {!restricted && me && (
+              <>
+                <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-walnut-400">
+                  Prodaju unosi
+                </div>
+                {employees.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => {
+                      setMe(e.id)
+                      setOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${e.id === me.id ? 'bg-white/10 text-linen' : 'text-walnut-200 hover:bg-white/5'}`}
+                  >
+                    <Avatar employee={e} size="sm" />
+                    <span className="flex-1 truncate">{e.name}</span>
+                    {e.id === me.id && <CheckCircle2 className="size-4 text-copper-400" />}
+                  </button>
+                ))}
+                <div className="my-1.5 h-px bg-white/10" />
+              </>
+            )}
+            <button
+              onClick={() => {
+                setPw(true)
+                setOpen(false)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-walnut-200 hover:bg-white/5"
+            >
+              <KeyRound className="size-4 text-walnut-400" /> Promijeni lozinku
+            </button>
+            <button onClick={logout} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-walnut-200 hover:bg-white/5">
+              <LogOut className="size-4 text-walnut-400" /> Odjava
+            </button>
           </div>
         </>
       )}
       <button
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-2.5 rounded-xl border border-white/5 bg-white/[0.04] p-3 text-left transition-colors hover:bg-white/[0.08]"
-        aria-haspopup="listbox"
+        aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Avatar employee={me} />
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-copper-500 text-sm font-bold text-white">
+          {user.name.slice(0, 1).toUpperCase()}
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-linen">
-            {me.name}
+          <div className="truncate text-sm font-semibold text-linen">{user.name}</div>
+          <div className="truncate text-[11px] text-walnut-400">
+            {ROLE_LABEL[user.role]}
+            {!restricted && me ? ` · prodaja: ${me.name}` : ''}
           </div>
-          <div className="truncate text-[11px] text-walnut-400">{me.role}</div>
         </div>
         <ChevronsUpDown className="size-4 text-walnut-400" />
       </button>
+      {pw && <ChangePasswordDialog onClose={() => setPw(false)} />}
     </div>
   )
 }
@@ -246,7 +277,7 @@ function Toaster() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [palette, setPalette] = useState(false)
-  const { today: TODAY, busy } = useStore()
+  const { today: TODAY, busy, restricted } = useStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -351,6 +382,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {weekday(TODAY)}, {date(TODAY)}
               </div>
             </div>
+            {!restricted && (
             <button
               onClick={() =>
                 navigate({ to: '/primke', search: { nova: true } })
@@ -359,6 +391,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <PackagePlus className="size-4 text-copper-600" /> Prijem robe
             </button>
+            )}
             <button
               onClick={() =>
                 navigate({ to: '/narudzbe', search: { nova: true } })

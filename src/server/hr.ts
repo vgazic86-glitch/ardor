@@ -15,6 +15,7 @@ import { KGS_BODY, seedDocuments } from '../../db/documents.js'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DEFAULT_POLICY, type BonusPolicy } from '../lib/bonus'
+import { currentUser, requireManager } from './auth'
 import type {
   Bonus,
   BonusStatus,
@@ -46,11 +47,11 @@ export async function setMeta(key: string, value: string) {
 
 /* ───────────────────────── lozinka ───────────────────────── */
 
-function hashPassword(pw: string) {
+export function hashPassword(pw: string) {
   const salt = randomBytes(16).toString('hex')
   return `${salt}:${scryptSync(pw, salt, 32).toString('hex')}`
 }
-function verifyPassword(pw: string, stored: string) {
+export function verifyPassword(pw: string, stored: string) {
   const [salt, hash] = stored.split(':')
   if (!salt || !hash) return false
   const a = scryptSync(pw, salt, 32)
@@ -102,6 +103,10 @@ export async function adminLogin(password: string) {
 }
 
 export async function requireAdmin(token: string | null | undefined) {
+  // Prijavljeni korisnik s pravom pristupa plaćama i troškovima ne treba posebnu lozinku.
+  const user = await currentUser()
+  if (user?.hrAccess) return
+  if (!user || user.role === 'trgovac') throw new Error('Nemate pristup ovom dijelu.')
   const s = await secret()
   const [exp, mac] = String(token ?? '').split('.')
   const n = Number(exp)
@@ -279,7 +284,7 @@ export interface DocumentInput {
 }
 
 export async function saveDocument(input: DocumentInput) {
-  await requireAdmin(input.token)
+  await requireManager()
   const title = input.title.trim()
   if (!title) throw new Error('Naslov dokumenta je obavezan.')
   const fileId = input.file
@@ -316,8 +321,8 @@ export async function saveDocument(input: DocumentInput) {
   return { slug }
 }
 
-export async function archiveDocument(token: string, id: string) {
-  await requireAdmin(token)
+export async function archiveDocument(_token: string, id: string) {
+  await requireManager()
   await db
     .update(t.documents)
     .set({ archived: true })

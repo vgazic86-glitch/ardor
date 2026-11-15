@@ -313,3 +313,113 @@ export const expenses = pgTable(
   },
   (t) => [index('expenses_date_idx').on(t.date)],
 )
+
+/** Korisnici aplikacije (prijava). Lozinka se postavlja pri prvoj prijavi uz jednokratni aktivacijski kod. */
+export const users = pgTable('users', {
+  id: serial().primaryKey(),
+  username: text().notNull().unique(),
+  name: text().notNull(),
+  /** admin | uprava | trgovac */
+  role: text().notNull().default('uprava'),
+  /** Za trgovce: zaposlenik na kojeg se upisuju njihove prodaje. */
+  employeeId: integer('employee_id').references(() => employees.id),
+  /** Pristup plaćama, ugovorima, troškovima i zaradi. */
+  hrAccess: boolean('hr_access').notNull().default(false),
+  /** Kontakt koji se ispisuje na narudžbama dobavljačima. */
+  phone: text().notNull().default(''),
+  email: text().notNull().default(''),
+  passwordHash: text('password_hash'),
+  activationCode: text('activation_code'),
+  active: boolean().notNull().default(true),
+  lastLoginAt: timestamp('last_login_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+/** Narudžbe salona prema dobavljačima. Status: nacrt → zakljucena → zaprimljena (ili otkazana). */
+export const purchaseOrders = pgTable(
+  'purchase_orders',
+  {
+    id: serial().primaryKey(),
+    number: text().notNull().unique(),
+    date: date({ mode: 'string' }).notNull(),
+    supplierId: integer('supplier_id')
+      .notNull()
+      .references(() => suppliers.id),
+    status: text().notNull().default('nacrt'),
+    note: text().notNull().default(''),
+    /** Željeni rok isporuke (neobavezno). */
+    deliveryBy: date('delivery_by', { mode: 'string' }),
+    createdBy: integer('created_by').references(() => users.id),
+    createdByName: text('created_by_name').notNull().default(''),
+    closedAt: timestamp('closed_at'),
+    receiptId: integer('receipt_id').references(() => receipts.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => [index('purchase_orders_supplier_idx').on(t.supplierId)],
+)
+
+export const purchaseOrderItems = pgTable(
+  'purchase_order_items',
+  {
+    id: serial().primaryKey(),
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => purchaseOrders.id, { onDelete: 'cascade' }),
+    position: integer().notNull().default(0),
+    /** Artikl iz kataloga; prazno za stavku koje još nema u katalogu. */
+    productId: integer('product_id').references(() => products.id, {
+      onDelete: 'set null',
+    }),
+    code: text().notNull().default(''),
+    name: text().notNull(),
+    qty: integer().notNull(),
+    unit: text().notNull().default('kom'),
+    /** Očekivana nabavna cijena bez PDV-a (neobavezno). */
+    price: money('price'),
+    note: text().notNull().default(''),
+  },
+  (t) => [index('purchase_order_items_order_idx').on(t.orderId)],
+)
+
+/** Kartica dobavljača: ručna zaduženja (računi) i uplate. Primke se računaju automatski. */
+export const supplierLedger = pgTable(
+  'supplier_ledger',
+  {
+    id: serial().primaryKey(),
+    supplierId: integer('supplier_id')
+      .notNull()
+      .references(() => suppliers.id),
+    date: date({ mode: 'string' }).notNull(),
+    /** uplata | zaduzenje | odobrenje | pocetno */
+    kind: text().notNull(),
+    amount: money('amount').notNull(),
+    document: text().notNull().default(''),
+    note: text().notNull().default(''),
+    createdByName: text('created_by_name').notNull().default(''),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => [index('supplier_ledger_supplier_idx').on(t.supplierId)],
+)
+
+/** Evidencija radnog vremena: jedan zapis po zaposleniku i danu. */
+export const workTime = pgTable(
+  'work_time',
+  {
+    id: serial().primaryKey(),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    date: date({ mode: 'string' }).notNull(),
+    /** rad | godisnji | bolovanje | slobodan | praznik */
+    kind: text().notNull().default('rad'),
+    start: text().notNull().default(''),
+    end: text().notNull().default(''),
+    breakMin: integer('break_min').notNull().default(0),
+    note: text().notNull().default(''),
+    updatedByName: text('updated_by_name').notNull().default(''),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (t) => [uniqueIndex('work_time_employee_date_idx').on(t.employeeId, t.date)],
+)

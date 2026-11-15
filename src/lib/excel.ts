@@ -409,3 +409,29 @@ export async function exportReport(x: ExportInput) {
     fontSize: 11,
   }).toFile(`ardor-izvjestaj-${x.period.from}-${x.period.to}.xlsx`)
 }
+
+/** Jednostavan izvoz jedne ili više tablica (kartica dobavljača, radno vrijeme…). */
+export type SimpleCell = string | number | { date: string } | { bold: string } | null
+export async function exportTables(
+  fileName: string,
+  tables: { sheet: string; header: string[]; rows: SimpleCell[][]; widths?: number[]; title?: string }[],
+) {
+  const { default: writeXlsxFile } = await import('write-excel-file/browser')
+  const cell = (v: SimpleCell): Cell => {
+    if (v == null || v === '') return null
+    if (typeof v === 'number') return num(v)
+    if (typeof v === 'string') return { value: v }
+    if ('date' in v) return day(v.date)
+    return bold(v.bold)
+  }
+  const sheets = tables.map((t) => ({
+    sheet: t.sheet.slice(0, 31),
+    data: [
+      ...(t.title ? [[{ value: t.title, fontWeight: 'bold', fontSize: 13 } as Cell], []] : []),
+      head(t.header),
+      ...t.rows.map((r) => r.map(cell)),
+    ],
+    columns: (t.widths ?? t.header.map(() => 16)).map((width) => ({ width })),
+  }))
+  await writeXlsxFile(sheets as never, { fontFamily: 'Calibri', fontSize: 11 }).toFile(fileName)
+}

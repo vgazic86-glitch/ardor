@@ -1,0 +1,111 @@
+import { useRouter } from '@tanstack/react-router'
+import { KeyRound, LogIn, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { activateFn, loginFn } from '../server/api'
+import { BrandMark, Logo } from './Logo'
+import { Button, Field, inputCls } from './ui'
+
+/** Prijava u aplikaciju; prva prijava = aktivacijski kod + nova lozinka. */
+export function LoginPage() {
+  const router = useRouter()
+  const [step, setStep] = useState<'login' | 'activate'>('login')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
+  const [pw1, setPw1] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [err, setErr] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setErr(null)
+    setBusy(true)
+    try {
+      if (step === 'login') {
+        const r = await loginFn({ data: { username, password } })
+        if ('needsActivation' in r) {
+          setStep('activate')
+          return
+        }
+      } else {
+        if (pw1 !== pw2) throw new Error('Lozinke se ne podudaraju.')
+        await activateFn({ data: { username, code, password: pw1 } })
+      }
+      await router.invalidate()
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : 'Prijava nije uspjela.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+      <div className="sidebar-bg relative hidden overflow-hidden lg:block">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.07]"
+          style={{ backgroundImage: 'url(/brand/ardor-znak.svg)', backgroundSize: '64px 64px' }}
+        />
+        <div className="relative flex h-full flex-col justify-between p-12">
+          <Logo light className="h-12 w-auto self-start" />
+          <div>
+            <BrandMark className="size-24" />
+            <h1 className="mt-6 max-w-md font-display text-4xl font-bold leading-tight text-linen">Prodaja, zalihe i poslovanje na jednom mjestu.</h1>
+            <p className="mt-3 text-sm uppercase tracking-[0.25em] text-copper-400">Namještaj za svačiji džep</p>
+          </div>
+          <p className="text-xs text-walnut-400">Vojvode Pere Krece 21, Banja Luka</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center p-6">
+        <form onSubmit={submit} className="w-full max-w-sm">
+          <Logo className="mb-10 h-10 lg:hidden" />
+          <h2 className="font-display text-3xl font-bold">{step === 'login' ? 'Prijava' : 'Prva prijava'}</h2>
+          <p className="mt-1.5 text-sm text-walnut-600">
+            {step === 'login'
+              ? 'Unesite korisničko ime i lozinku.'
+              : 'Unesite aktivacijski kod koji ste dobili od administratora i postavite svoju lozinku.'}
+          </p>
+
+          <div className="mt-7 space-y-4">
+            <Field label="Korisničko ime">
+              <input className={inputCls} autoComplete="username" autoFocus required value={username} onChange={(e) => setUsername(e.target.value)} disabled={step === 'activate'} placeholder="npr. trgovac1" />
+            </Field>
+            {step === 'login' ? (
+              <Field label="Lozinka" hint="Prvi put? Ostavite prazno i kliknite Prijava.">
+                <input className={inputCls} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </Field>
+            ) : (
+              <>
+                <Field label="Aktivacijski kod">
+                  <input className={`${inputCls} font-mono uppercase tracking-widest`} required autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder="XXXX-XXXX" />
+                </Field>
+                <Field label="Nova lozinka (najmanje 8 znakova)">
+                  <input className={inputCls} type="password" autoComplete="new-password" required value={pw1} onChange={(e) => setPw1(e.target.value)} />
+                </Field>
+                <Field label="Ponovite lozinku">
+                  <input className={inputCls} type="password" autoComplete="new-password" required value={pw2} onChange={(e) => setPw2(e.target.value)} />
+                </Field>
+              </>
+            )}
+            {err && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</p>}
+            <Button type="submit" variant="copper" className="w-full py-2.5" disabled={busy}>
+              {step === 'login' ? <LogIn className="size-4" /> : <ShieldCheck className="size-4" />}
+              {busy ? 'Provjeravam…' : step === 'login' ? 'Prijava' : 'Postavi lozinku i uđi'}
+            </Button>
+            {step === 'activate' && (
+              <button type="button" className="w-full text-center text-xs font-semibold text-walnut-500 hover:text-walnut-800" onClick={() => setStep('login')}>
+                Nazad na prijavu
+              </button>
+            )}
+          </div>
+          <p className="mt-10 flex items-center gap-2 text-xs text-walnut-500">
+            <KeyRound className="size-3.5" /> Zaboravljena lozinka? Administrator vam može dati novi aktivacijski kod.
+          </p>
+        </form>
+      </div>
+    </div>
+  )
+}

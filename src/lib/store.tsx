@@ -32,6 +32,7 @@ import type {
   SupplierInput,
 } from '../server/logic'
 import type { ProductImageUpload } from '../server/images'
+import type { SessionUser } from '../server/auth'
 import type {
   Customer,
   DeliveryStatus,
@@ -50,6 +51,10 @@ import type {
 type Without<T> = Omit<T, 'actorId'>
 
 interface Store extends Snapshot {
+  /** Prijavljeni korisnik. */
+  user: SessionUser
+  /** Trgovac: ograničen prikaz. */
+  restricted: boolean
   currentMonth: string
   salesPeople: Employee[]
   drivers: Employee[]
@@ -140,9 +145,11 @@ const unknownProduct: Product = {
 
 export function StoreProvider({
   data,
+  user,
   children,
 }: {
   data: Snapshot
+  user: SessionUser
   children: ReactNode
 }) {
   const router = useRouter()
@@ -184,12 +191,19 @@ export function StoreProvider({
     const pro = new Map(data.products.map((p) => [p.id, p]))
     const sup = new Map(data.suppliers.map((s) => [s.id, s]))
     const salesPeople = data.employees.filter(
-      (e) => e.role !== 'Dostava i montaža',
+      (e) => e.role !== 'Dostava i montaža' && e.id !== '0',
     )
-    const me = (meId && emp.get(meId)) || data.employees[0] || null
+    const restricted = user.role === 'trgovac'
+    const me =
+      (restricted && user.employeeId ? emp.get(user.employeeId) : null) ||
+      (meId && emp.get(meId)) ||
+      data.employees[0] ||
+      null
     const actorId = me?.id ?? null
     return {
       ...data,
+      user,
+      restricted,
       currentMonth: data.today.slice(0, 7),
       salesPeople,
       drivers: data.employees.filter((e) => e.role === 'Dostava i montaža'),
@@ -276,7 +290,7 @@ export function StoreProvider({
           'Primjerni promet je obrisan.',
         )),
     }
-  }, [data, meId, busy, error, toast, notify, run])
+  }, [data, user, meId, busy, error, toast, notify, run])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

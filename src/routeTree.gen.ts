@@ -16,11 +16,16 @@ import { Route as DostaveRouteImport } from './routes/dostave'
 import { Route as InventuraRouteImport } from './routes/inventura'
 import { Route as IzvjestajiRouteImport } from './routes/izvjestaji'
 import { Route as KadrovskaRouteImport } from './routes/kadrovska'
+import { Route as KorisniciRouteImport } from './routes/korisnici'
+import { Route as NabavaRouteImport } from './routes/nabava'
 import { Route as NarudzbeRouteImport } from './routes/narudzbe'
 import { Route as PrimkeRouteImport } from './routes/primke'
+import { Route as RadnoVrijemeRouteImport } from './routes/radno-vrijeme'
 import { Route as TroskoviRouteImport } from './routes/troskovi'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
+import { Route as DobavljaciIndexRouteImport } from './routes/dobavljaci/index'
+import { Route as DobavljaciIdRouteImport } from './routes/dobavljaci/$id'
 import { Route as DokumentiIndexRouteImport } from './routes/dokumenti/index'
 import { Route as DokumentiSlugRouteImport } from './routes/dokumenti/$slug'
 import { Route as ApiSlikeIdRouteImport } from './routes/api.slike.$id'
@@ -60,6 +65,16 @@ const KadrovskaRoute = KadrovskaRouteImport.update({
   path: '/kadrovska',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KorisniciRoute = KorisniciRouteImport.update({
+  id: '/korisnici',
+  path: '/korisnici',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NabavaRoute = NabavaRouteImport.update({
+  id: '/nabava',
+  path: '/nabava',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NarudzbeRoute = NarudzbeRouteImport.update({
   id: '/narudzbe',
   path: '/narudzbe',
@@ -68,6 +83,11 @@ const NarudzbeRoute = NarudzbeRouteImport.update({
 const PrimkeRoute = PrimkeRouteImport.update({
   id: '/primke',
   path: '/primke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadnoVrijemeRoute = RadnoVrijemeRouteImport.update({
+  id: '/radno-vrijeme',
+  path: '/radno-vrijeme',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TroskoviRoute = TroskoviRouteImport.update({
@@ -84,6 +104,16 @@ const ZaposleniciRoute = ZaposleniciRouteImport.update({
   id: '/zaposlenici',
   path: '/zaposlenici',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DobavljaciIndexRoute = DobavljaciIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DobavljaciRoute,
+} as any)
+const DobavljaciIdRoute = DobavljaciIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DobavljaciRoute,
 } as any)
 const DokumentiIndexRoute = DokumentiIndexRouteImport.update({
   id: '/dokumenti/',
@@ -104,34 +134,43 @@ const ApiSlikeIdRoute = ApiSlikeIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/artikli': typeof ArtikliRoute
-  '/dobavljaci': typeof DobavljaciRoute
+  '/dobavljaci': typeof DobavljaciRouteWithChildren
   '/dostave': typeof DostaveRoute
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
+  '/korisnici': typeof KorisniciRoute
+  '/nabava': typeof NabavaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
+  '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
+  '/dobavljaci/': typeof DobavljaciIndexRoute
   '/dokumenti/': typeof DokumentiIndexRoute
   '/api/slike/$id': typeof ApiSlikeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/artikli': typeof ArtikliRoute
-  '/dobavljaci': typeof DobavljaciRoute
   '/dostave': typeof DostaveRoute
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
+  '/korisnici': typeof KorisniciRoute
+  '/nabava': typeof NabavaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
+  '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
+  '/dobavljaci': typeof DobavljaciIndexRoute
   '/dokumenti': typeof DokumentiIndexRoute
   '/api/slike/$id': typeof ApiSlikeIdRoute
 }
@@ -139,17 +178,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/artikli': typeof ArtikliRoute
-  '/dobavljaci': typeof DobavljaciRoute
+  '/dobavljaci': typeof DobavljaciRouteWithChildren
   '/dostave': typeof DostaveRoute
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
+  '/korisnici': typeof KorisniciRoute
+  '/nabava': typeof NabavaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
+  '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
+  '/dobavljaci/': typeof DobavljaciIndexRoute
   '/dokumenti/': typeof DokumentiIndexRoute
   '/api/slike/$id': typeof ApiSlikeIdRoute
 }
@@ -163,29 +207,38 @@ export interface FileRouteTypes {
     | '/inventura'
     | '/izvjestaji'
     | '/kadrovska'
+    | '/korisnici'
+    | '/nabava'
     | '/narudzbe'
     | '/primke'
+    | '/radno-vrijeme'
     | '/troskovi'
     | '/zalihe'
     | '/zaposlenici'
+    | '/dobavljaci/$id'
     | '/dokumenti/$slug'
+    | '/dobavljaci/'
     | '/dokumenti/'
     | '/api/slike/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/artikli'
-    | '/dobavljaci'
     | '/dostave'
     | '/inventura'
     | '/izvjestaji'
     | '/kadrovska'
+    | '/korisnici'
+    | '/nabava'
     | '/narudzbe'
     | '/primke'
+    | '/radno-vrijeme'
     | '/troskovi'
     | '/zalihe'
     | '/zaposlenici'
+    | '/dobavljaci/$id'
     | '/dokumenti/$slug'
+    | '/dobavljaci'
     | '/dokumenti'
     | '/api/slike/$id'
   id:
@@ -197,12 +250,17 @@ export interface FileRouteTypes {
     | '/inventura'
     | '/izvjestaji'
     | '/kadrovska'
+    | '/korisnici'
+    | '/nabava'
     | '/narudzbe'
     | '/primke'
+    | '/radno-vrijeme'
     | '/troskovi'
     | '/zalihe'
     | '/zaposlenici'
+    | '/dobavljaci/$id'
     | '/dokumenti/$slug'
+    | '/dobavljaci/'
     | '/dokumenti/'
     | '/api/slike/$id'
   fileRoutesById: FileRoutesById
@@ -210,13 +268,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ArtikliRoute: typeof ArtikliRoute
-  DobavljaciRoute: typeof DobavljaciRoute
+  DobavljaciRoute: typeof DobavljaciRouteWithChildren
   DostaveRoute: typeof DostaveRoute
   InventuraRoute: typeof InventuraRoute
   IzvjestajiRoute: typeof IzvjestajiRoute
   KadrovskaRoute: typeof KadrovskaRoute
+  KorisniciRoute: typeof KorisniciRoute
+  NabavaRoute: typeof NabavaRoute
   NarudzbeRoute: typeof NarudzbeRoute
   PrimkeRoute: typeof PrimkeRoute
+  RadnoVrijemeRoute: typeof RadnoVrijemeRoute
   TroskoviRoute: typeof TroskoviRoute
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
@@ -276,6 +337,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KadrovskaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/korisnici': {
+      id: '/korisnici'
+      path: '/korisnici'
+      fullPath: '/korisnici'
+      preLoaderRoute: typeof KorisniciRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nabava': {
+      id: '/nabava'
+      path: '/nabava'
+      fullPath: '/nabava'
+      preLoaderRoute: typeof NabavaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/narudzbe': {
       id: '/narudzbe'
       path: '/narudzbe'
@@ -288,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: '/primke'
       fullPath: '/primke'
       preLoaderRoute: typeof PrimkeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radno-vrijeme': {
+      id: '/radno-vrijeme'
+      path: '/radno-vrijeme'
+      fullPath: '/radno-vrijeme'
+      preLoaderRoute: typeof RadnoVrijemeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/troskovi': {
@@ -310,6 +392,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/zaposlenici'
       preLoaderRoute: typeof ZaposleniciRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dobavljaci/': {
+      id: '/dobavljaci/'
+      path: '/'
+      fullPath: '/dobavljaci/'
+      preLoaderRoute: typeof DobavljaciIndexRouteImport
+      parentRoute: typeof DobavljaciRoute
+    }
+    '/dobavljaci/$id': {
+      id: '/dobavljaci/$id'
+      path: '/$id'
+      fullPath: '/dobavljaci/$id'
+      preLoaderRoute: typeof DobavljaciIdRouteImport
+      parentRoute: typeof DobavljaciRoute
     }
     '/dokumenti/': {
       id: '/dokumenti/'
@@ -335,16 +431,33 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DobavljaciRouteChildren {
+  DobavljaciIdRoute: typeof DobavljaciIdRoute
+  DobavljaciIndexRoute: typeof DobavljaciIndexRoute
+}
+
+const DobavljaciRouteChildren: DobavljaciRouteChildren = {
+  DobavljaciIdRoute: DobavljaciIdRoute,
+  DobavljaciIndexRoute: DobavljaciIndexRoute,
+}
+
+const DobavljaciRouteWithChildren = DobavljaciRoute._addFileChildren(
+  DobavljaciRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArtikliRoute: ArtikliRoute,
-  DobavljaciRoute: DobavljaciRoute,
+  DobavljaciRoute: DobavljaciRouteWithChildren,
   DostaveRoute: DostaveRoute,
   InventuraRoute: InventuraRoute,
   IzvjestajiRoute: IzvjestajiRoute,
   KadrovskaRoute: KadrovskaRoute,
+  KorisniciRoute: KorisniciRoute,
+  NabavaRoute: NabavaRoute,
   NarudzbeRoute: NarudzbeRoute,
   PrimkeRoute: PrimkeRoute,
+  RadnoVrijemeRoute: RadnoVrijemeRoute,
   TroskoviRoute: TroskoviRoute,
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,

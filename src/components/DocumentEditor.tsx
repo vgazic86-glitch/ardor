@@ -6,7 +6,6 @@ import { ACCEPT, fileSize, toUpload } from '../lib/files'
 import { useStore } from '../lib/store'
 import { DOCUMENT_CATEGORIES, type CompanyDocument } from '../lib/types'
 import { saveDocumentFn } from '../server/api'
-import { AdminGate } from './AdminGate'
 import { Markdown } from './Markdown'
 import { Modal } from './Modal'
 import { Button, Field, Segmented, inputCls } from './ui'
@@ -45,7 +44,7 @@ function Editor({
       const upload = file ? await toUpload(file) : null
       const r = await saveDocumentFn({
         data: {
-          token: token!,
+          token: token ?? 'sesija',
           actorId: me?.id ?? null,
           id: doc?.id ?? null,
           title,
@@ -203,12 +202,9 @@ export function DocumentEditor({
     <Modal
       wide
       title={doc ? `Uredi: ${doc.title}` : 'Novi dokument'}
-      subtitle="Uređivanje dokumenata zahtijeva upravljačku lozinku."
       onClose={onClose}
     >
-      <AdminGate title="Uređivanje dokumenata">
-        <Editor doc={doc} onClose={onClose} onSaved={onSaved} />
-      </AdminGate>
+      <Editor doc={doc} onClose={onClose} onSaved={onSaved} />
     </Modal>
   )
 }

@@ -24,7 +24,7 @@ export function ProductCard({
   productId: string
   onClose: () => void
 }) {
-  const { products, movements, orders, receipts, employeeById } = useStore()
+  const { products, movements, orders, receipts, employeeById, restricted } = useStore()
   const [edit, setEdit] = useState(false)
   const p = products.find((x) => x.id === productId)
   if (!p) return null
@@ -55,15 +55,23 @@ export function ProductCard({
         }
         onClose={onClose}
         footer={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setEdit(true)}>
-              <Pencil className="size-4" /> Uredi artikal
-            </Button>
-          </div>
+          restricted ? undefined : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEdit(true)}>
+                <Pencil className="size-4" /> Uredi artikal
+              </Button>
+            </div>
+          )
         }
       >
         <div className="mb-4">
-          <ProductImageEditor product={p} />
+          {restricted ? (
+            p.imageId ? (
+              <img src={`/api/slike/${p.imageId}`} alt={p.name} className="aspect-[4/3] w-full rounded-xl border border-walnut-200 object-cover" />
+            ) : null
+          ) : (
+            <ProductImageEditor product={p} />
+          )}
         </div>
         <div className="grid grid-cols-3 gap-3">
           {[
@@ -100,18 +108,22 @@ export function ProductCard({
           <dd className="text-right font-semibold tabular">
             {money2(p.price)}
           </dd>
-          <dt className="text-walnut-500">Prosječna nabavna</dt>
-          <dd className="text-right font-semibold tabular">
-            {money2(p.avgCost)}
-          </dd>
-          <dt className="text-walnut-500">Marža (bez PDV-a)</dt>
-          <dd className="text-right font-semibold tabular text-moss-600">
-            {net ? pct((net - p.avgCost) / net) : '—'}
-          </dd>
-          <dt className="text-walnut-500">Vrijednost zalihe (nabavna)</dt>
-          <dd className="text-right font-semibold tabular">
-            {money(Math.max(0, p.stock) * p.avgCost)}
-          </dd>
+          {!restricted && (
+            <>
+              <dt className="text-walnut-500">Prosječna nabavna</dt>
+              <dd className="text-right font-semibold tabular">
+                {money2(p.avgCost)}
+              </dd>
+              <dt className="text-walnut-500">Marža (bez PDV-a)</dt>
+              <dd className="text-right font-semibold tabular text-moss-600">
+                {net ? pct((net - p.avgCost) / net) : '—'}
+              </dd>
+              <dt className="text-walnut-500">Vrijednost zalihe (nabavna)</dt>
+              <dd className="text-right font-semibold tabular">
+                {money(Math.max(0, p.stock) * p.avgCost)}
+              </dd>
+            </>
+          )}
           <dt className="text-walnut-500">Minimalna zaliha</dt>
           <dd className="text-right font-semibold tabular">{p.minStock}</dd>
           <dt className="text-walnut-500">Dobavljač</dt>

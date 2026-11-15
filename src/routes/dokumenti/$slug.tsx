@@ -29,7 +29,7 @@ export const Route = createFileRoute('/dokumenti/$slug')({
 
 function DocumentPage() {
   const { slug } = Route.useParams()
-  const { documents, employeeById, notify } = useStore()
+  const { documents, employeeById, notify, restricted } = useStore()
   const { token, expire } = useAdmin()
   const router = useRouter()
   const navigate = useNavigate()
@@ -62,9 +62,8 @@ function DocumentPage() {
   }
 
   async function archive() {
-    if (!token) return setEdit(true)
     try {
-      await archiveDocumentFn({ data: { token, id: doc!.id } })
+      await archiveDocumentFn({ data: { token: token ?? 'sesija', id: doc!.id } })
       await router.invalidate()
       notify('Dokument je arhiviran.')
       navigate({ to: '/dokumenti' })
@@ -95,10 +94,12 @@ function DocumentPage() {
           <Button variant="outline" onClick={() => window.print()}>
             <Printer className="size-4" /> Ispis / PDF
           </Button>
+          {!restricted && (
           <Button variant="outline" onClick={() => setEdit(true)}>
             <Pencil className="size-4" /> Uredi
           </Button>
-          {confirm ? (
+          )}
+          {restricted ? null : confirm ? (
             <Button variant="danger" onClick={archive}>
               Potvrdi arhiviranje
             </Button>

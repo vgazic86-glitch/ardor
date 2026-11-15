@@ -824,3 +824,34 @@ export async function clearTransactions() {
       .onConflictDoUpdate({ target: t.appMeta.key, set: { value: todayIso() } })
   })
 }
+
+/**
+ * Pogled za trgovca: bez prometa po drugim zaposlenicima, bez nabavnih cijena i marži,
+ * bez primki. Tuđe narudžbe ostaju vidljive (zbog usluge kupcima), ali bez imena prodavača.
+ */
+export function forTrader(s: Snapshot, employeeId: string | null): Snapshot {
+  const OTHER = '0'
+  const own = (id: string | null) => (id && id === employeeId ? id : null)
+  const keepEmployee = (id: string | null) => {
+    if (!id) return null
+    const e = s.employees.find((x) => x.id === id)
+    return id === employeeId || e?.role === 'Dostava i montaža' ? id : OTHER
+  }
+  return {
+    ...s,
+    employees: [
+      ...s.employees
+        .filter((e) => e.id === employeeId || e.role === 'Dostava i montaža')
+        .map((e) => (e.id === employeeId ? e : { ...e, monthlyTarget: 0, commissionRate: 0 })),
+      { id: OTHER, name: 'Drugi trgovac', role: 'Prodavač', initials: '·', color: '#a8927f', monthlyTarget: 0, commissionRate: 0, phone: '' },
+    ],
+    products: s.products.map((p) => ({ ...p, purchasePrice: 0, avgCost: 0 })),
+    orders: s.orders.map((o) => ({
+      ...o,
+      employeeId: o.employeeId === employeeId ? o.employeeId : OTHER,
+      payments: o.payments.map((p) => ({ ...p, employeeId: keepEmployee(p.employeeId) })),
+    })),
+    movements: s.movements.map((m) => ({ ...m, unitCost: 0, employeeId: own(m.employeeId) })),
+    receipts: [],
+  }
+}

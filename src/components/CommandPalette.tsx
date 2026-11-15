@@ -6,6 +6,8 @@ import {
   CornerDownLeft,
   Search,
   User,
+  Clock,
+  Send,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { money, orderStatusLabel } from '../lib/format'
@@ -28,7 +30,7 @@ const fold = (s: string) =>
 
 /** Brza pretraga (Ctrl+K) po narudžbama, kupcima i artiklima. */
 export function CommandPalette({ onClose }: { onClose: () => void }) {
-  const { orders, customers, products, customerById } = useStore()
+  const { orders, customers, products, customerById, restricted } = useStore()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [sel, setSel] = useState(0)
@@ -54,6 +56,20 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           ),
         },
         {
+          key: 'p5',
+          icon: Clock,
+          title: 'Radno vrijeme',
+          meta: 'Upiši dolazak ili odlazak',
+          go: close(() => navigate({ to: '/radno-vrijeme' })),
+        },
+        {
+          key: 'p6',
+          icon: Send,
+          title: 'Narudžba dobavljaču',
+          meta: 'Nova narudžba robe kod dobavljača, PDF za slanje',
+          go: close(() => navigate({ to: '/nabava', search: { nova: true } })),
+        },
+        {
           key: 'p2',
           icon: Boxes,
           title: 'Prijem robe',
@@ -74,7 +90,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           meta: 'Marže, PDV, dugovanja, izvoz u Excel',
           go: close(() => navigate({ to: '/izvjestaji' })),
         },
-      ]
+      ].filter((h) => !restricted || h.key === 'p1' || h.key === 'p5')
     }
     const out: Hit[] = []
     for (const o of orders) {
@@ -113,7 +129,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           ),
         })
     return out.slice(0, 14)
-  }, [q, orders, customers, products, customerById, navigate, onClose])
+  }, [q, orders, customers, products, customerById, navigate, onClose, restricted])
 
   useEffect(() => setSel(0), [q])
 
