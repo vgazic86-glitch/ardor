@@ -55,6 +55,9 @@ export interface Product {
   supplierId: string | null
   supplier: string
   leadTimeDays: number
+  /** Id slike (do 1200 px) i sličice; prikaz preko /api/slike/:id. */
+  imageId: string | null
+  thumbId: string | null
 }
 
 export interface Customer {
@@ -177,6 +180,53 @@ export interface CompanyDocument {
   file: FileMeta | null
   updatedAt: string
   updatedBy: string | null
+}
+
+export const EXPENSE_CATEGORIES = [
+  'Zakup prostora',
+  'Režije (struja, voda, grijanje)',
+  'Telefon i internet',
+  'Gorivo',
+  'Održavanje vozila',
+  'Marketing i reklama',
+  'Knjigovodstvo i pravne usluge',
+  'Bankarske naknade',
+  'Osiguranje',
+  'Održavanje prostora i opreme',
+  'Ambalaža i potrošni materijal',
+  'Plaće (ručno uneseno)',
+  'Porezi i takse',
+  'Ostalo',
+] as const
+
+export interface Expense {
+  id: string
+  date: string
+  category: string
+  description: string
+  supplier: string
+  documentNumber: string
+  /** Iznos bez PDV-a. */
+  net: number
+  vat: number
+  paymentMethod: string
+  recurring: boolean
+  file: FileMeta | null
+}
+
+export interface FinanceSettings {
+  /** Uključi plaće, topli obrok, prijevoz i odobrene bonuse iz kadrovske evidencije. */
+  includePayroll: boolean
+  /** Doprinosi na teret poslodavca, kao udio bruto plaće (ako se plaćaju povrh bruta). */
+  employerContribPct: number
+  /** Stopa poreza na dobit za procjenu. */
+  profitTaxPct: number
+}
+
+export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
+  includePayroll: true,
+  employerContribPct: 0,
+  profitTaxPct: 0.1,
 }
 
 export const DOCUMENT_CATEGORIES = [

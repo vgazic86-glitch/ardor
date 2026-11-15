@@ -31,11 +31,11 @@ const today = () =>
     new Date(),
   )
 
-async function meta(key: string) {
+export async function meta(key: string) {
   const [row] = await db.select().from(t.appMeta).where(eq(t.appMeta.key, key))
   return row?.value ?? null
 }
-async function setMeta(key: string, value: string) {
+export async function setMeta(key: string, value: string) {
   await db
     .insert(t.appMeta)
     .values({ key, value })
@@ -134,7 +134,7 @@ export async function adminChange(
 
 /* ───────────────────────── datoteke ───────────────────────── */
 
-async function storeFile(name: string, mime: string, dataB64: string) {
+export async function storeFile(name: string, mime: string, dataB64: string) {
   const data = Buffer.from(dataB64, 'base64')
   if (!data.length) throw new Error('Datoteka je prazna.')
   if (data.length > MAX_FILE_BYTES) throw new Error('Datoteka je veća od 4 MB.')
@@ -150,7 +150,7 @@ async function storeFile(name: string, mime: string, dataB64: string) {
   return f.id
 }
 
-async function readFile(id: number) {
+export async function readFile(id: number) {
   const [f] = await db.select().from(t.files).where(eq(t.files.id, id))
   if (!f) throw new Error('Datoteka nije pronađena.')
   return {

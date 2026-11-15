@@ -12,6 +12,7 @@ import {
 import { useState } from 'react'
 import { ProductCard } from '../components/ProductCard'
 import { ProductDialog } from '../components/ProductDialog'
+import { ProductImage } from '../components/ProductImage'
 import {
   Badge,
   Button,
@@ -138,13 +139,18 @@ function ProductsPage() {
                   <tr key={p.id}>
                     <td>
                       <button
-                        className="text-left"
+                        className="flex items-center gap-3 text-left"
                         onClick={() => setCard(p.id)}
                       >
-                        <div className="font-semibold hover:text-copper-600">
-                          {p.name}
-                        </div>
-                        <div className="text-xs text-walnut-500">{p.sku}</div>
+                        <ProductImage product={p} />
+                        <span>
+                          <span className="block font-semibold hover:text-copper-600">
+                            {p.name}
+                          </span>
+                          <span className="block text-xs text-walnut-500">
+                            {p.sku}
+                          </span>
+                        </span>
                       </button>
                     </td>
                     <td className="text-walnut-700">{p.category}</td>

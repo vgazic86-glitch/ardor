@@ -120,7 +120,7 @@ export function marginBy(
   sales: SaleRow[],
   movements: StockMovement[],
   productById: (id: string) => Product,
-  by: 'category' | 'product',
+  by: 'category' | 'product' | 'supplier',
 ): Group[] {
   const map = new Map<string, Group>()
   const cost = new Map<string, number>()
@@ -130,10 +130,22 @@ export function marginBy(
   for (const s of sales) {
     for (const i of s.order.items) {
       const p = productById(i.productId)
-      const key = by === 'category' ? p.category : p.id
+      const key =
+        by === 'category'
+          ? p.category
+          : by === 'supplier'
+            ? (p.supplierId ?? 'bez')
+            : p.id
       const g = map.get(key) ?? {
         key,
-        label: by === 'category' ? p.category : `${p.name}`,
+        label:
+          by === 'category'
+            ? p.category
+            : by === 'supplier'
+              ? p.supplierId
+                ? p.supplier
+                : 'Bez dobavljača'
+              : `${p.name}`,
         net: 0,
         cogs: 0,
         margin: 0,
@@ -249,4 +261,47 @@ export function advances(orders: Order[]) {
 
 export function stockValue(products: Product[]) {
   return sum(products, (p) => Math.max(0, p.stock) * p.avgCost)
+}
+
+export interface SupplierRow extends Group {
+  /** Nabavna vrijednost robe zaprimljene od dobavljača u periodu (primke, bez PDV-a). */
+  purchased: number
+  receipts: number
+}
+
+/** Prodaja po dobavljačima (realizacija) + nabava od dobavljača u istom periodu. */
+export function salesBySupplier(
+  sales: SaleRow[],
+  movements: StockMovement[],
+  receipts: Receipt[],
+  productById: (id: string) => Product,
+  supplierName: (id: string) => string,
+  p: Period,
+): SupplierRow[] {
+  const rows = new Map<string, SupplierRow>(
+    marginBy(sales, movements, productById, 'supplier').map((g) => [
+      g.key,
+      { ...g, purchased: 0, receipts: 0 },
+    ]),
+  )
+  for (const r of receipts) {
+    if (!inPeriod(r.date, p)) continue
+    const key = r.supplierId ?? 'bez'
+    const row = rows.get(key) ?? {
+      key,
+      label: r.supplierId ? supplierName(r.supplierId) : 'Bez dobavljača',
+      net: 0,
+      cogs: 0,
+      margin: 0,
+      qty: 0,
+      purchased: 0,
+      receipts: 0,
+    }
+    row.purchased += receiptNet(r)
+    row.receipts += 1
+    rows.set(key, row)
+  }
+  return [...rows.values()].sort(
+    (a, b) => b.net - a.net || b.purchased - a.purchased,
+  )
 }

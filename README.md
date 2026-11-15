@@ -11,11 +11,12 @@ Interna web aplikacija salona namještaja **Ardor**: narudžbe, dostave i monta�
 **Roba**
 - **Zalihe** (`/zalihe`) — stanje, rezervisano, slobodno, vrijednost po nabavnoj, lista za naručiti po dobavljaču, kartica artikla sa svim kretanjima.
 - **Prijem robe** (`/primke`) — primke od dobavljača (dokument, količine, nabavne cijene, PDV); roba odmah ulazi na zalihu.
-- **Artikli** (`/artikli`) — šifrarnik s cijenama, maržom, minimalnom zalihom, dobavljačem; novi / uredi / arhiviraj.
+- **Artikli** (`/artikli`) — šifrarnik sa slikama, cijenama, maržom, minimalnom zalihom, dobavljačem; novi / uredi / arhiviraj. Slika se dodaje u dijalogu ili kartici artikla (klik ili povlačenje), automatski se smanjuje (1200 px + sličica 240 px, WebP) i poslužuje s `/api/slike/:id` — ta adresa vraća samo slike artikala.
 - **Inventura** (`/inventura`) — upis prebrojanih količina, manjak/višak, knjiženje korekcija odjednom.
 
 **Poslovanje**
-- **Izvještaji** (`/izvjestaji`) — realizacija po periodu, nabavna vrijednost, bruto marža, PDV (izlazni − ulazni), naplata po načinu plaćanja, potraživanja i avansi, marža po kategoriji/prodavaču/artiklu, izvoz u Excel (10 listova).
+- **Izvještaji** (`/izvjestaji`) — realizacija po periodu, nabavna vrijednost, bruto marža, PDV (izlazni − ulazni), naplata po načinu plaćanja, potraživanja i avansi, marža po kategoriji/prodavaču/artiklu, prodaja i nabava po dobavljačima, izvoz u Excel (11 listova).
+- **Troškovi i zarada** (`/troskovi`, lozinka) — unos troškova (bez PDV-a + PDV, kategorija, dobavljač, račun u prilogu, fiksni mjesečni troškovi s prenosom u novi mjesec) i mjesečni obračun zarade: prihod − nabavna vrijednost − troškovi − plaće i bonusi iz kadrovske = dobit; PDV s ulaznim PDV-om iz troškova, 12 mjeseci, Excel.
 - **Zaposlenici** (`/zaposlenici`) — promet, ciljevi, provizije; dodavanje i uređivanje zaposlenika.
 - **Dobavljači** (`/dobavljaci`) — kontakti, rokovi isporuke, nabava i zaliha po dobavljaču.
 

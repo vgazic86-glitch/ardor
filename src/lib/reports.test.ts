@@ -23,6 +23,8 @@ const product: Product = {
   supplierId: null,
   supplier: '—',
   leadTimeDays: 0,
+  imageId: null,
+  thumbId: null,
 }
 const order = (o: Partial<Order>): Order => ({
   id: '10',

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { ProductCard } from '../components/ProductCard'
+import { ProductImage } from '../components/ProductImage'
 import {
   Badge,
   Button,
@@ -207,9 +208,14 @@ function StockPage() {
                       onClick={() => setOpen(p.id)}
                     >
                       <td>
-                        <div className="font-semibold">{p.name}</div>
-                        <div className="text-xs text-walnut-500">
-                          {p.sku} · {p.category} · {p.supplier}
+                        <div className="flex items-center gap-3">
+                          <ProductImage product={p} />
+                          <div>
+                            <div className="font-semibold">{p.name}</div>
+                            <div className="text-xs text-walnut-500">
+                              {p.sku} · {p.category} · {p.supplier}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="text-right font-semibold tabular">

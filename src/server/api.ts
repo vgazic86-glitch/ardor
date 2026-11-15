@@ -2,6 +2,9 @@ import { createServerFn } from '@tanstack/react-start'
 import type { DeliveryStatus, OrderStatus, PaymentMethod } from '../lib/types'
 import * as logic from './logic'
 import * as hr from './hr'
+import * as images from './images'
+import * as finance from './finance'
+import type { FinanceSettings } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 
 const pass =
@@ -176,3 +179,49 @@ export const saveBonusesFn = createServerFn({ method: 'POST' })
 export const savePolicyFn = createServerFn({ method: 'POST' })
   .validator(pass<{ token: string; policy: BonusPolicy }>())
   .handler(({ data }) => hr.savePolicy(data.token, data.policy))
+
+export const setProductImageFn = createServerFn({ method: 'POST' })
+  .validator(
+    pass<{ productId: string; image: images.ProductImageUpload | null }>(),
+  )
+  .handler(({ data }) => images.setProductImage(data.productId, data.image))
+
+/* ───────── troškovi i obračun zarade ───────── */
+
+export const getFinanceFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string }>())
+  .handler(({ data }) => finance.getFinance(data.token))
+
+export const saveExpenseFn = createServerFn({ method: 'POST' })
+  .validator(pass<finance.ExpenseInput>())
+  .handler(({ data }) => finance.saveExpense(data))
+
+export const deleteExpenseFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; id: string }>())
+  .handler(({ data }) => finance.deleteExpense(data.token, data.id))
+
+export const downloadExpenseFileFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; id: string }>())
+  .handler(({ data }) => finance.downloadExpenseFile(data.token, data.id))
+
+export const copyRecurringFn = createServerFn({ method: 'POST' })
+  .validator(
+    pass<{
+      token: string
+      fromMonth: string
+      toMonth: string
+      actorId: string | null
+    }>(),
+  )
+  .handler(({ data }) =>
+    finance.copyRecurring(
+      data.token,
+      data.fromMonth,
+      data.toMonth,
+      data.actorId,
+    ),
+  )
+
+export const saveFinanceSettingsFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; settings: FinanceSettings }>())
+  .handler(({ data }) => finance.saveFinanceSettings(data.token, data.settings))

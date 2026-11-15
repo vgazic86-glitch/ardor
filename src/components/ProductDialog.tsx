@@ -1,4 +1,7 @@
+import { ImagePlus } from 'lucide-react'
 import { useState } from 'react'
+import { prepareImage } from '../lib/image'
+import { ProductImageEditor } from './ProductImage'
 import { CATEGORIES, type Category, type Product } from '../lib/types'
 import { money2, netOf, parseAmount, pct, VAT_RATE } from '../lib/format'
 import { useStore } from '../lib/store'
@@ -15,7 +18,13 @@ export function ProductDialog({
   onClose: () => void
   onSaved?: (id: string) => void
 }) {
-  const { suppliers, products, saveProduct, busy } = useStore()
+  const { suppliers, products, saveProduct, setProductImage, notify, busy } =
+    useStore()
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const live = product
+    ? (products.find((p) => p.id === product.id) ?? product)
+    : null
   const nextSku = () => {
     const nums = products
       .map((p) => Number(p.sku.replace(/\D/g, '')))
@@ -54,6 +63,13 @@ export function ProductDialog({
       openingStock: product ? 0 : Number(opening) || 0,
     })
     if (res) {
+      if (!product && newImage) {
+        try {
+          await setProductImage(res.id, await prepareImage(newImage))
+        } catch (err) {
+          notify(err instanceof Error ? err.message : 'Slika nije spremljena.')
+        }
+      }
       onSaved?.(res.id)
       onClose()
     }
@@ -84,6 +100,40 @@ export function ProductDialog({
         onSubmit={submit}
         className="grid gap-4 sm:grid-cols-2"
       >
+        {live ? (
+          <div className="sm:col-span-2 sm:mx-auto sm:w-80">
+            <ProductImageEditor product={live} />
+          </div>
+        ) : (
+          <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-walnut-300 bg-walnut-50 p-3 hover:bg-white sm:col-span-2">
+            <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-walnut-200 bg-white">
+              {preview ? (
+                <img src={preview} alt="" className="size-full object-cover" />
+              ) : (
+                <ImagePlus className="size-6 text-walnut-400" />
+              )}
+            </span>
+            <span className="text-sm">
+              <span className="block font-semibold text-walnut-900">
+                {newImage ? newImage.name : 'Dodaj sliku artikla'}
+              </span>
+              <span className="block text-xs text-walnut-500">
+                JPG, PNG ili WebP — slika se automatski smanjuje.
+              </span>
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null
+                setNewImage(f)
+                if (preview) URL.revokeObjectURL(preview)
+                setPreview(f ? URL.createObjectURL(f) : null)
+              }}
+            />
+          </label>
+        )}
         <Field label="Šifra">
           <input
             className={inputCls}

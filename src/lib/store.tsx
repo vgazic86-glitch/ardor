@@ -13,6 +13,7 @@ import {
   adjustStockFn,
   adjustStockManyFn,
   archiveProductFn,
+  setProductImageFn,
   clearTransactionsFn,
   createOrderFn,
   createReceiptFn,
@@ -30,6 +31,7 @@ import type {
   ReceiptInput,
   SupplierInput,
 } from '../server/logic'
+import type { ProductImageUpload } from '../server/images'
 import type {
   Customer,
   DeliveryStatus,
@@ -78,6 +80,11 @@ interface Store extends Snapshot {
   ) => Promise<{ id: string; number: string } | null>
   saveProduct: (p: Without<ProductInput>) => Promise<{ id: string } | null>
   archiveProduct: (id: string) => Promise<void>
+  /** Postavlja (ili uz null briše) sliku artikla. */
+  setProductImage: (
+    productId: string,
+    image: ProductImageUpload | null,
+  ) => Promise<boolean>
   adjustStock: (
     productId: string,
     counted: number,
@@ -127,6 +134,8 @@ const unknownProduct: Product = {
   supplierId: null,
   supplier: '—',
   leadTimeDays: 0,
+  imageId: null,
+  thumbId: null,
 }
 
 export function StoreProvider({
@@ -232,6 +241,11 @@ export function StoreProvider({
           () => saveProductFn({ data: { ...p, actorId } }),
           'Artikal je spremljen.',
         ),
+      setProductImage: async (productId, image) =>
+        (await run(
+          () => setProductImageFn({ data: { productId, image } }),
+          image ? 'Slika je spremljena.' : 'Slika je uklonjena.',
+        )) !== null,
       archiveProduct: async (id) =>
         void (await run(
           () => archiveProductFn({ data: { id } }),

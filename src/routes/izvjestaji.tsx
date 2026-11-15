@@ -38,6 +38,8 @@ import {
   debts,
   marginBy,
   marginBySeller,
+  salesBySupplier,
+  type SupplierRow,
   monthRange,
   paymentsByMethod,
   paymentsIn,
@@ -123,6 +125,106 @@ function MarginTable({
   )
 }
 
+function SupplierTable({ rows }: { rows: SupplierRow[] }) {
+  const total = sum(rows, (r) => r.net)
+  const t = (k: 'qty' | 'net' | 'cogs' | 'margin' | 'purchased') =>
+    sum(rows, (r) => r[k])
+  return (
+    <Card
+      title="Prodaja po dobavljačima"
+      subtitle="Prodana roba po dobavljaču (realizacija u periodu) i roba zaprimljena od dobavljača u istom periodu"
+      flush
+    >
+      {rows.length === 0 ? (
+        <p className="px-5 pb-5 text-sm text-walnut-500">
+          Nema prodaje ni nabave u periodu.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="data-table min-w-[860px]">
+            <thead>
+              <tr>
+                <th>Dobavljač</th>
+                <th className="text-right">Prodano kom.</th>
+                <th className="text-right">Prihod bez PDV-a</th>
+                <th className="text-right">Udio</th>
+                <th className="text-right">Nabavna prodanog</th>
+                <th className="text-right">Marža</th>
+                <th className="text-right">%</th>
+                <th className="text-right">Nabava u periodu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const m = r.net ? r.margin / r.net : 0
+                return (
+                  <tr key={r.key}>
+                    <td>
+                      <div className="font-medium">{r.label}</div>
+                      <div className="mt-1 w-full max-w-[180px]">
+                        <Progress
+                          value={total ? r.net / total : 0}
+                          color="#b0703b"
+                        />
+                      </div>
+                    </td>
+                    <td className="text-right tabular text-walnut-700">
+                      {r.qty}
+                    </td>
+                    <td className="text-right font-semibold tabular">
+                      {money(r.net)}
+                    </td>
+                    <td className="text-right tabular text-walnut-600">
+                      {total ? pct(r.net / total) : '—'}
+                    </td>
+                    <td className="text-right tabular text-walnut-700">
+                      {money(r.cogs)}
+                    </td>
+                    <td className="text-right font-semibold tabular">
+                      {money(r.margin)}
+                    </td>
+                    <td className="text-right">
+                      {r.net ? (
+                        <Badge
+                          tone={m < 0.15 ? 'bad' : m < 0.25 ? 'warn' : 'good'}
+                        >
+                          {pct(m)}
+                        </Badge>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="text-right tabular">
+                      {r.purchased ? money(r.purchased) : '—'}
+                      {r.receipts > 0 && (
+                        <div className="text-[11px] text-walnut-500">
+                          {r.receipts} primki
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+              <tr className="!bg-walnut-50 font-bold">
+                <td>Ukupno</td>
+                <td className="text-right tabular">{t('qty')}</td>
+                <td className="text-right tabular">{money(t('net'))}</td>
+                <td />
+                <td className="text-right tabular">{money(t('cogs'))}</td>
+                <td className="text-right tabular">{money(t('margin'))}</td>
+                <td className="text-right">
+                  {t('net') ? pct(t('margin') / t('net')) : '—'}
+                </td>
+                <td className="text-right tabular">{money(t('purchased'))}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 function ReportsPage() {
   const store = useStore()
   const {
@@ -173,6 +275,18 @@ function ReportsPage() {
     () => marginBySeller(sales, employeeById),
     [sales, employeeById],
   )
+  const bySupplier = useMemo(
+    () =>
+      salesBySupplier(
+        sales,
+        movements,
+        receipts,
+        productById,
+        (id) => supplierById(id)?.name ?? '—',
+        period,
+      ),
+    [sales, movements, receipts, productById, supplierById, period],
+  )
   const debtList = useMemo(
     () => debts(orders, customerById, today),
     [orders, customerById, today],
@@ -214,6 +328,7 @@ function ReportsPage() {
         payments: pays,
         byCategory,
         bySeller,
+        bySupplier,
         debts: debtList,
         advances: adv,
         products,
@@ -506,6 +621,10 @@ function ReportsPage() {
       </div>
 
       <div className="mt-6">
+        <SupplierTable rows={bySupplier} />
+      </div>
+
+      <div className="mt-6">
         <MarginTable
           title="Najprodavaniji artikli (top 10)"
           rows={byProduct}
@@ -581,7 +700,7 @@ function ReportsPage() {
 
       <div className="mt-6 flex justify-center">
         <Button variant="outline" onClick={doExport} disabled={exporting}>
-          <Download className="size-4" /> Preuzmi sve tablice u Excelu (10
+          <Download className="size-4" /> Preuzmi sve tablice u Excelu (11
           listova)
         </Button>
       </div>

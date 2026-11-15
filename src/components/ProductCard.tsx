@@ -13,6 +13,7 @@ import { reservedQty } from '../lib/stats'
 import { useStore } from '../lib/store'
 import { Modal } from './Modal'
 import { ProductDialog } from './ProductDialog'
+import { ProductImageEditor } from './ProductImage'
 import { Badge, Button } from './ui'
 
 /** Kartica artikla: stanje, cijene i sva kretanja s tekućim saldom. */
@@ -61,6 +62,9 @@ export function ProductCard({
           </div>
         }
       >
+        <div className="mb-4">
+          <ProductImageEditor product={p} />
+        </div>
         <div className="grid grid-cols-3 gap-3">
           {[
             [

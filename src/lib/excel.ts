@@ -1,7 +1,7 @@
 /** Izvoz izvještaja u Excel (.xlsx) za knjigovodstvo. Učitava se tek na klik. */
 import type { Cell, Row, Sheet } from 'write-excel-file/browser'
 import { CURRENCY, orderStatusLabel, VAT_RATE } from './format'
-import type { Debt, Group, Period, SaleRow } from './reports'
+import type { Debt, Group, Period, SaleRow, SupplierRow } from './reports'
 import { receiptNet } from './reports'
 import type {
   Customer,
@@ -52,6 +52,7 @@ export interface ExportInput {
   payments: (Payment & { order: Order })[]
   byCategory: Group[]
   bySeller: Group[]
+  bySupplier: SupplierRow[]
   debts: Debt[]
   advances: number
   products: Product[]
@@ -361,6 +362,33 @@ export async function exportReport(x: ExportInput) {
       sheet: 'Marža po prodavaču',
       data: groups('Prodavač', x.bySeller, 'Narudžbi'),
       columns: [24, 10, 18, 18, 16, 10].map((width) => ({ width })),
+    },
+    {
+      sheet: 'Po dobavljačima',
+      data: [
+        head([
+          'Dobavljač',
+          'Prodano kom.',
+          'Prihod bez PDV-a',
+          'Nabavna prodanog',
+          'Marža',
+          'Marža %',
+          'Nabava u periodu',
+          'Primki',
+        ]),
+        ...x.bySupplier.map((r) => [
+          r.label,
+          int(r.qty),
+          num(r.net),
+          num(r.cogs),
+          num(r.margin),
+          pct(r.net ? r.margin / r.net : 0),
+          num(r.purchased),
+          int(r.receipts),
+        ]),
+      ],
+      columns: [26, 12, 18, 18, 16, 10, 18, 8].map((width) => ({ width })),
+      stickyRowsCount: 1,
     },
     {
       sheet: 'Dugovanja',

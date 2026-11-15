@@ -10,6 +10,7 @@ import {
 import { money, money2, parseAmount } from '../lib/format'
 import { useStore } from '../lib/store'
 import { Modal } from './Modal'
+import { ProductImage } from './ProductImage'
 import { Button, inputCls } from './ui'
 
 const lbl = 'flex flex-col gap-1 text-xs font-semibold text-walnut-700'
@@ -217,8 +218,11 @@ export function NewOrderDialog({
             {items.map((it, i) => (
               <div
                 key={i}
-                className="grid grid-cols-[1fr_70px_80px_auto] items-end gap-2 rounded-xl border border-walnut-200 bg-linen p-3 sm:grid-cols-[1fr_70px_80px_110px_auto]"
+                className="grid grid-cols-[1fr_70px_80px_auto] items-end gap-2 rounded-xl border border-walnut-200 bg-linen p-3 sm:grid-cols-[44px_1fr_70px_80px_110px_auto]"
               >
+                <span className="hidden sm:block">
+                  <ProductImage product={productById(it.productId)} />
+                </span>
                 <label className={lbl}>
                   Artikal
                   <select

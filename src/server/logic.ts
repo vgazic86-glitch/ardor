@@ -138,6 +138,8 @@ export async function loadSnapshot(): Promise<Snapshot> {
         supplierId: str(p.supplierId),
         supplier: s?.name ?? '—',
         leadTimeDays: s?.leadTimeDays ?? 0,
+        imageId: str(p.imageId),
+        thumbId: str(p.thumbId),
       }
     }),
     customers: custs.map((c) => ({
@@ -807,6 +809,9 @@ export async function clearTransactions() {
       sql`truncate table stock_movements, receipts, deliveries, payments, order_items, orders, customers, bonuses restart identity cascade`,
     )
     await tx.execute(sql`delete from salaries where note = 'Primjerni podatak'`)
+    await tx.execute(
+      sql`delete from expenses where description like '%(primjer)%'`,
+    )
     await tx
       .insert(t.appMeta)
       .values({ key: 'cleared', value: todayIso() })

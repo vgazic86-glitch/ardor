@@ -1,4 +1,4 @@
-import { boolean, bytea, date, index, integer, numeric, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { type AnyPgColumn, boolean, bytea, date, index, integer, numeric, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 const money = (name: string) => numeric(name, { precision: 12, scale: 2, mode: 'number' })
 
@@ -31,6 +31,9 @@ export const products = pgTable('products', {
   purchasePrice: money('purchase_price').notNull().default(0),
   minStock: integer('min_stock').notNull().default(0),
   supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  /** Slika artikla (do 1200 px) i sličica za popise (240 px). */
+  imageId: integer('image_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
+  thumbId: integer('thumb_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
   active: boolean().notNull().default(true),
   createdAt: timestamp('created_at').defaultNow(),
 })
@@ -215,4 +218,25 @@ export const bonuses = pgTable(
     updatedAt: timestamp('updated_at').defaultNow(),
   },
   (t) => [uniqueIndex('bonuses_employee_month_idx').on(t.employeeId, t.month)],
+)
+
+/** Troškovi poslovanja (zakup, režije, gorivo, marketing…). Iznos je bez PDV-a; PDV se vodi zasebno. */
+export const expenses = pgTable(
+  'expenses',
+  {
+    id: serial().primaryKey(),
+    date: date({ mode: 'string' }).notNull(),
+    category: text().notNull(),
+    description: text().notNull().default(''),
+    supplier: text().notNull().default(''),
+    documentNumber: text('document_number').notNull().default(''),
+    net: money('net').notNull(),
+    vat: money('vat').notNull().default(0),
+    paymentMethod: text('payment_method').notNull().default('Virman'),
+    recurring: boolean().notNull().default(false),
+    fileId: integer('file_id').references(() => files.id, { onDelete: 'set null' }),
+    createdBy: integer('created_by').references(() => employees.id),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => [index('expenses_date_idx').on(t.date)],
 )

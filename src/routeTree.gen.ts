@@ -18,10 +18,12 @@ import { Route as IzvjestajiRouteImport } from './routes/izvjestaji'
 import { Route as KadrovskaRouteImport } from './routes/kadrovska'
 import { Route as NarudzbeRouteImport } from './routes/narudzbe'
 import { Route as PrimkeRouteImport } from './routes/primke'
+import { Route as TroskoviRouteImport } from './routes/troskovi'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
 import { Route as DokumentiIndexRouteImport } from './routes/dokumenti/index'
 import { Route as DokumentiSlugRouteImport } from './routes/dokumenti/$slug'
+import { Route as ApiSlikeIdRouteImport } from './routes/api.slike.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -68,6 +70,11 @@ const PrimkeRoute = PrimkeRouteImport.update({
   path: '/primke',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TroskoviRoute = TroskoviRouteImport.update({
+  id: '/troskovi',
+  path: '/troskovi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ZaliheRoute = ZaliheRouteImport.update({
   id: '/zalihe',
   path: '/zalihe',
@@ -88,6 +95,11 @@ const DokumentiSlugRoute = DokumentiSlugRouteImport.update({
   path: '/dokumenti/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSlikeIdRoute = ApiSlikeIdRouteImport.update({
+  id: '/api/slike/$id',
+  path: '/api/slike/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,10 +111,12 @@ export interface FileRoutesByFullPath {
   '/kadrovska': typeof KadrovskaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
+  '/troskovi': typeof TroskoviRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dokumenti/': typeof DokumentiIndexRoute
+  '/api/slike/$id': typeof ApiSlikeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -114,10 +128,12 @@ export interface FileRoutesByTo {
   '/kadrovska': typeof KadrovskaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
+  '/troskovi': typeof TroskoviRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dokumenti': typeof DokumentiIndexRoute
+  '/api/slike/$id': typeof ApiSlikeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -130,10 +146,12 @@ export interface FileRoutesById {
   '/kadrovska': typeof KadrovskaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
+  '/troskovi': typeof TroskoviRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dokumenti/': typeof DokumentiIndexRoute
+  '/api/slike/$id': typeof ApiSlikeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,10 +165,12 @@ export interface FileRouteTypes {
     | '/kadrovska'
     | '/narudzbe'
     | '/primke'
+    | '/troskovi'
     | '/zalihe'
     | '/zaposlenici'
     | '/dokumenti/$slug'
     | '/dokumenti/'
+    | '/api/slike/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -162,10 +182,12 @@ export interface FileRouteTypes {
     | '/kadrovska'
     | '/narudzbe'
     | '/primke'
+    | '/troskovi'
     | '/zalihe'
     | '/zaposlenici'
     | '/dokumenti/$slug'
     | '/dokumenti'
+    | '/api/slike/$id'
   id:
     | '__root__'
     | '/'
@@ -177,10 +199,12 @@ export interface FileRouteTypes {
     | '/kadrovska'
     | '/narudzbe'
     | '/primke'
+    | '/troskovi'
     | '/zalihe'
     | '/zaposlenici'
     | '/dokumenti/$slug'
     | '/dokumenti/'
+    | '/api/slike/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -193,10 +217,12 @@ export interface RootRouteChildren {
   KadrovskaRoute: typeof KadrovskaRoute
   NarudzbeRoute: typeof NarudzbeRoute
   PrimkeRoute: typeof PrimkeRoute
+  TroskoviRoute: typeof TroskoviRoute
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
   DokumentiSlugRoute: typeof DokumentiSlugRoute
   DokumentiIndexRoute: typeof DokumentiIndexRoute
+  ApiSlikeIdRoute: typeof ApiSlikeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrimkeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/troskovi': {
+      id: '/troskovi'
+      path: '/troskovi'
+      fullPath: '/troskovi'
+      preLoaderRoute: typeof TroskoviRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/zalihe': {
       id: '/zalihe'
       path: '/zalihe'
@@ -292,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DokumentiSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slike/$id': {
+      id: '/api/slike/$id'
+      path: '/api/slike/$id'
+      fullPath: '/api/slike/$id'
+      preLoaderRoute: typeof ApiSlikeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -305,10 +345,12 @@ const rootRouteChildren: RootRouteChildren = {
   KadrovskaRoute: KadrovskaRoute,
   NarudzbeRoute: NarudzbeRoute,
   PrimkeRoute: PrimkeRoute,
+  TroskoviRoute: TroskoviRoute,
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,
   DokumentiSlugRoute: DokumentiSlugRoute,
   DokumentiIndexRoute: DokumentiIndexRoute,
+  ApiSlikeIdRoute: ApiSlikeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -11,6 +11,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { money, orderStatusLabel } from '../lib/format'
 import { orderTotal } from '../lib/stats'
 import { useStore } from '../lib/store'
+import type { Product } from '../lib/types'
+import { ProductImage } from './ProductImage'
 
 type Hit = {
   key: string
@@ -18,6 +20,7 @@ type Hit = {
   title: string
   meta: string
   go: () => void
+  product?: Product
 }
 
 const fold = (s: string) =>
@@ -102,6 +105,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         out.push({
           key: 'a' + p.id,
           icon: Boxes,
+          product: p,
           title: p.name,
           meta: `${p.sku} · na stanju ${p.stock} · ${money(p.price)}`,
           go: close(() =>
@@ -164,11 +168,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
                 onClick={h.go}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left ${i === sel ? 'bg-walnut-900 text-linen' : 'text-walnut-900'}`}
               >
-                <span
-                  className={`grid size-8 place-items-center rounded-lg ${i === sel ? 'bg-white/10 text-copper-400' : 'bg-walnut-100 text-walnut-600'}`}
-                >
-                  <h.icon className="size-4" />
-                </span>
+                {h.product?.thumbId ? (
+                  <ProductImage product={h.product} size="xs" />
+                ) : (
+                  <span
+                    className={`grid size-8 place-items-center rounded-lg ${i === sel ? 'bg-white/10 text-copper-400' : 'bg-walnut-100 text-walnut-600'}`}
+                  >
+                    <h.icon className="size-4" />
+                  </span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">
                     {h.title}
