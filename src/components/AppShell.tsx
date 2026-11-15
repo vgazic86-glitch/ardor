@@ -1,6 +1,8 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
+  BookOpen,
+  LockKeyhole,
   Boxes,
   CheckCircle2,
   ChevronsUpDown,
@@ -58,8 +60,15 @@ const groups: { title: string; items: NavItem[] }[] = [
     title: 'Poslovanje',
     items: [
       { to: '/izvjestaji', label: 'Izvještaji', icon: BarChart3 },
-      { to: '/zaposlenici', label: 'Zaposlenici', icon: Users },
       { to: '/dobavljaci', label: 'Dobavljači', icon: Factory },
+    ],
+  },
+  {
+    title: 'Ljudi i dokumenti',
+    items: [
+      { to: '/zaposlenici', label: 'Zaposlenici', icon: Users },
+      { to: '/kadrovska', label: 'Kadrovska', icon: LockKeyhole },
+      { to: '/dokumenti', label: 'Dokumenti', icon: BookOpen },
     ],
   },
 ]

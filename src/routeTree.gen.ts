@@ -15,10 +15,13 @@ import { Route as DobavljaciRouteImport } from './routes/dobavljaci'
 import { Route as DostaveRouteImport } from './routes/dostave'
 import { Route as InventuraRouteImport } from './routes/inventura'
 import { Route as IzvjestajiRouteImport } from './routes/izvjestaji'
+import { Route as KadrovskaRouteImport } from './routes/kadrovska'
 import { Route as NarudzbeRouteImport } from './routes/narudzbe'
 import { Route as PrimkeRouteImport } from './routes/primke'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
+import { Route as DokumentiIndexRouteImport } from './routes/dokumenti/index'
+import { Route as DokumentiSlugRouteImport } from './routes/dokumenti/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,6 +53,11 @@ const IzvjestajiRoute = IzvjestajiRouteImport.update({
   path: '/izvjestaji',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KadrovskaRoute = KadrovskaRouteImport.update({
+  id: '/kadrovska',
+  path: '/kadrovska',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NarudzbeRoute = NarudzbeRouteImport.update({
   id: '/narudzbe',
   path: '/narudzbe',
@@ -70,6 +78,16 @@ const ZaposleniciRoute = ZaposleniciRouteImport.update({
   path: '/zaposlenici',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DokumentiIndexRoute = DokumentiIndexRouteImport.update({
+  id: '/dokumenti/',
+  path: '/dokumenti/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DokumentiSlugRoute = DokumentiSlugRouteImport.update({
+  id: '/dokumenti/$slug',
+  path: '/dokumenti/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,10 +96,13 @@ export interface FileRoutesByFullPath {
   '/dostave': typeof DostaveRoute
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
+  '/kadrovska': typeof KadrovskaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/dokumenti/$slug': typeof DokumentiSlugRoute
+  '/dokumenti/': typeof DokumentiIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,10 +111,13 @@ export interface FileRoutesByTo {
   '/dostave': typeof DostaveRoute
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
+  '/kadrovska': typeof KadrovskaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/dokumenti/$slug': typeof DokumentiSlugRoute
+  '/dokumenti': typeof DokumentiIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,10 +127,13 @@ export interface FileRoutesById {
   '/dostave': typeof DostaveRoute
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
+  '/kadrovska': typeof KadrovskaRoute
   '/narudzbe': typeof NarudzbeRoute
   '/primke': typeof PrimkeRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/dokumenti/$slug': typeof DokumentiSlugRoute
+  '/dokumenti/': typeof DokumentiIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,10 +144,13 @@ export interface FileRouteTypes {
     | '/dostave'
     | '/inventura'
     | '/izvjestaji'
+    | '/kadrovska'
     | '/narudzbe'
     | '/primke'
     | '/zalihe'
     | '/zaposlenici'
+    | '/dokumenti/$slug'
+    | '/dokumenti/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,10 +159,13 @@ export interface FileRouteTypes {
     | '/dostave'
     | '/inventura'
     | '/izvjestaji'
+    | '/kadrovska'
     | '/narudzbe'
     | '/primke'
     | '/zalihe'
     | '/zaposlenici'
+    | '/dokumenti/$slug'
+    | '/dokumenti'
   id:
     | '__root__'
     | '/'
@@ -141,10 +174,13 @@ export interface FileRouteTypes {
     | '/dostave'
     | '/inventura'
     | '/izvjestaji'
+    | '/kadrovska'
     | '/narudzbe'
     | '/primke'
     | '/zalihe'
     | '/zaposlenici'
+    | '/dokumenti/$slug'
+    | '/dokumenti/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,10 +190,13 @@ export interface RootRouteChildren {
   DostaveRoute: typeof DostaveRoute
   InventuraRoute: typeof InventuraRoute
   IzvjestajiRoute: typeof IzvjestajiRoute
+  KadrovskaRoute: typeof KadrovskaRoute
   NarudzbeRoute: typeof NarudzbeRoute
   PrimkeRoute: typeof PrimkeRoute
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
+  DokumentiSlugRoute: typeof DokumentiSlugRoute
+  DokumentiIndexRoute: typeof DokumentiIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IzvjestajiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kadrovska': {
+      id: '/kadrovska'
+      path: '/kadrovska'
+      fullPath: '/kadrovska'
+      preLoaderRoute: typeof KadrovskaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/narudzbe': {
       id: '/narudzbe'
       path: '/narudzbe'
@@ -232,6 +278,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ZaposleniciRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dokumenti/': {
+      id: '/dokumenti/'
+      path: '/dokumenti'
+      fullPath: '/dokumenti/'
+      preLoaderRoute: typeof DokumentiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dokumenti/$slug': {
+      id: '/dokumenti/$slug'
+      path: '/dokumenti/$slug'
+      fullPath: '/dokumenti/$slug'
+      preLoaderRoute: typeof DokumentiSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -242,10 +302,13 @@ const rootRouteChildren: RootRouteChildren = {
   DostaveRoute: DostaveRoute,
   InventuraRoute: InventuraRoute,
   IzvjestajiRoute: IzvjestajiRoute,
+  KadrovskaRoute: KadrovskaRoute,
   NarudzbeRoute: NarudzbeRoute,
   PrimkeRoute: PrimkeRoute,
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,
+  DokumentiSlugRoute: DokumentiSlugRoute,
+  DokumentiIndexRoute: DokumentiIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

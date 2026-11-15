@@ -1,6 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import type { DeliveryStatus, OrderStatus, PaymentMethod } from '../lib/types'
 import * as logic from './logic'
+import * as hr from './hr'
+import type { BonusPolicy } from '../lib/bonus'
 
 const pass =
   <T>() =>
@@ -99,3 +101,78 @@ export const clearTransactionsFn = createServerFn({ method: 'POST' })
     if (data.confirm !== 'OBRIŠI') throw new Error('Potvrda nije ispravna.')
     return logic.clearTransactions()
   })
+
+/* ───────── upravljačka lozinka, dokumenti, kadrovska ───────── */
+
+export const adminStatusFn = createServerFn({ method: 'GET' }).handler(() =>
+  hr.adminStatus(),
+)
+
+export const adminSetupFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ password: string }>())
+  .handler(({ data }) => hr.adminSetup(data.password))
+
+export const adminLoginFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ password: string }>())
+  .handler(({ data }) => hr.adminLogin(data.password))
+
+export const adminChangeFn = createServerFn({ method: 'POST' })
+  .validator(
+    pass<{ token: string; oldPassword: string; newPassword: string }>(),
+  )
+  .handler(({ data }) =>
+    hr.adminChange(data.token, data.oldPassword, data.newPassword),
+  )
+
+export const saveDocumentFn = createServerFn({ method: 'POST' })
+  .validator(pass<hr.DocumentInput>())
+  .handler(({ data }) => hr.saveDocument(data))
+
+export const archiveDocumentFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; id: string }>())
+  .handler(({ data }) => hr.archiveDocument(data.token, data.id))
+
+export const downloadDocumentFileFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ id: string }>())
+  .handler(({ data }) => hr.downloadDocumentFile(data.id))
+
+export const getHrFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string }>())
+  .handler(({ data }) => hr.getHr(data.token))
+
+export const addEmployeeFileFn = createServerFn({ method: 'POST' })
+  .validator(pass<hr.EmployeeFileInput>())
+  .handler(({ data }) => hr.addEmployeeFile(data))
+
+export const deleteEmployeeFileFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; id: string }>())
+  .handler(({ data }) => hr.deleteEmployeeFile(data.token, data.id))
+
+export const downloadEmployeeFileFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; id: string }>())
+  .handler(({ data }) => hr.downloadEmployeeFile(data.token, data.id))
+
+export const saveSalaryFn = createServerFn({ method: 'POST' })
+  .validator(pass<hr.SalaryInput>())
+  .handler(({ data }) => hr.saveSalary(data))
+
+export const deleteSalaryFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; id: string }>())
+  .handler(({ data }) => hr.deleteSalary(data.token, data.id))
+
+export const saveBonusesFn = createServerFn({ method: 'POST' })
+  .validator(
+    pass<{
+      token: string
+      month: string
+      rows: hr.BonusRowInput[]
+      actorId: string | null
+    }>(),
+  )
+  .handler(({ data }) =>
+    hr.saveBonuses(data.token, data.month, data.rows, data.actorId),
+  )
+
+export const savePolicyFn = createServerFn({ method: 'POST' })
+  .validator(pass<{ token: string; policy: BonusPolicy }>())
+  .handler(({ data }) => hr.savePolicy(data.token, data.policy))

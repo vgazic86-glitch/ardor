@@ -158,6 +158,83 @@ export interface Receipt {
   lines: ReceiptLine[]
 }
 
+export interface FileMeta {
+  id: string
+  name: string
+  mime: string
+  size: number
+}
+
+export interface CompanyDocument {
+  id: string
+  slug: string
+  title: string
+  category: string
+  summary: string
+  body: string
+  version: string
+  sortOrder: number
+  file: FileMeta | null
+  updatedAt: string
+  updatedBy: string | null
+}
+
+export const DOCUMENT_CATEGORIES = [
+  'Pravila i ponašanje',
+  'Brend i komunikacija',
+  'Prodaja',
+  'Dostava i servis',
+  'Zaposlenici',
+  'Ostalo',
+] as const
+
+export const EMPLOYEE_FILE_CATEGORIES = [
+  'Ugovor o radu',
+  'Aneks ugovora',
+  'Rješenje o godišnjem odmoru',
+  'Ljekarsko uvjerenje',
+  'Potpisani kodeks ponašanja',
+  'Certifikat / obuka',
+  'Ostalo',
+] as const
+
+export interface EmployeeFile {
+  id: string
+  employeeId: string
+  category: string
+  title: string
+  validFrom: string | null
+  validUntil: string | null
+  note: string
+  file: FileMeta | null
+  createdAt: string
+}
+
+export interface Salary {
+  id: string
+  employeeId: string
+  validFrom: string
+  gross: number
+  net: number
+  meal: number
+  transport: number
+  note: string
+}
+
+export type BonusStatus = 'prijedlog' | 'odobreno'
+
+export interface Bonus {
+  id: string
+  employeeId: string
+  month: string
+  fixedGross: number
+  proposed: number
+  approved: number | null
+  status: BonusStatus
+  basis: string
+  note: string
+}
+
 export interface Snapshot {
   today: string
   employees: Employee[]
@@ -167,6 +244,7 @@ export interface Snapshot {
   orders: Order[]
   receipts: Receipt[]
   movements: StockMovement[]
+  documents: CompanyDocument[]
 }
 
 export function itemsTotal(items: OrderItem[]) {

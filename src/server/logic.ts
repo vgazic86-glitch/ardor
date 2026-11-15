@@ -3,6 +3,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
+import { ensureDocumentsSeeded, ensureHrSeeded, listDocuments } from './hr'
 import type {
   Category,
   DeliveryStatus,
@@ -48,7 +49,9 @@ async function ensureSeeded() {
 
 export async function loadSnapshot(): Promise<Snapshot> {
   await ensureSeeded()
-  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves] =
+  await ensureDocumentsSeeded()
+  await ensureHrSeeded()
+  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs] =
     await Promise.all([
       db
         .select()
@@ -77,6 +80,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
         .select()
         .from(t.stockMovements)
         .orderBy(t.stockMovements.date, t.stockMovements.id),
+      listDocuments(),
     ])
 
   const stock = new Map<number, number>()
@@ -212,6 +216,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       employeeId: str(m.employeeId),
       note: m.note,
     })),
+    documents: docs,
   }
 }
 
@@ -799,8 +804,9 @@ export async function deactivateEmployee(employeeId: string) {
 export async function clearTransactions() {
   await db.transaction(async (tx) => {
     await tx.execute(
-      sql`truncate table stock_movements, receipts, deliveries, payments, order_items, orders, customers restart identity cascade`,
+      sql`truncate table stock_movements, receipts, deliveries, payments, order_items, orders, customers, bonuses restart identity cascade`,
     )
+    await tx.execute(sql`delete from salaries where note = 'Primjerni podatak'`)
     await tx
       .insert(t.appMeta)
       .values({ key: 'cleared', value: todayIso() })

@@ -19,6 +19,7 @@ Internal sales / orders / delivery tracker for the furniture salon "Ardor". UI l
 - Tailwind theme tokens in `src/styles.css` (`walnut-*`, `copper-*`, `moss-*`, `paper`, `linen`). Use `font-display` for headings, `tabular` for numbers.
 - Order status flow: ponuda → potvrđena → u_izradi → spremna → isporučena (or otkazana). Marking a delivery `dostavljeno` sets the order to `isporučena` and vice versa.
 - Routes use ASCII slugs (`/narudzbe`, `/zaposlenici`) with Bosnian labels.
+- HR & documents: `src/server/hr.ts` (admin password scrypt + HMAC token, files stored as bytea, max 4 MB), `src/lib/bonus.ts` (bonus proposal, tested), `src/lib/hr.ts`, `src/lib/admin.tsx` (token context), `db/documents.ts` (seed text of company documents, Markdown with `[[logo]]`/`[[colors]]` blocks rendered by `components/Markdown.tsx`). Salaries/contracts must never be added to the public snapshot.
 - Number formatting is hand-rolled in `format.ts` (not Intl) so SSR and browser output match — keep it that way.
 - Tables use the `.data-table` class from `styles.css`; cards that hold a full-width table use `<Card flush>`.
 - Persistence must use Netlify platform primitives (Netlify Database via `@netlify/database` + Drizzle, schema in `db/schema.ts`).

@@ -7,6 +7,7 @@ import {
 import { AppShell } from '../components/AppShell'
 import { getSnapshot } from '../server/api'
 import { StoreProvider } from '../lib/store'
+import { AdminProvider } from '../lib/admin'
 
 import '../styles.css'
 
@@ -59,9 +60,11 @@ function RootComponent() {
   const data = Route.useLoaderData()
   return (
     <StoreProvider data={data}>
-      <AppShell>
-        <Outlet />
-      </AppShell>
+      <AdminProvider>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+      </AdminProvider>
     </StoreProvider>
   )
 }

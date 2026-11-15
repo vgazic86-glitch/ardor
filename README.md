@@ -19,6 +19,12 @@ Interna web aplikacija salona namještaja **Ardor**: narudžbe, dostave i monta�
 - **Zaposlenici** (`/zaposlenici`) — promet, ciljevi, provizije; dodavanje i uređivanje zaposlenika.
 - **Dobavljači** (`/dobavljaci`) — kontakti, rokovi isporuke, nabava i zaliha po dobavljaču.
 
+**Ljudi i dokumenti**
+- **Kadrovska** (`/kadrovska`) — zaštićeno upravljačkom lozinkom: ugovori o radu i ostali dokumenti zaposlenika (PDF/Word/slike do 4 MB, upozorenje 30 dana prije isteka), plaće s historijom (bruto, neto, topli obrok, prijevoz), mjesečni prijedlog bonusa — fiksni + varijabilni dio, odobravanje i Excel; podesiva pravila.
+- **Dokumenti** (`/dokumenti`) — Kodeks ponašanja, Knjiga grafičkih standarda, Priručnik za prodavače, Standard dostave i montaže, Procedura reklamacija i povrata, Uvod za nove zaposlenike; čitanje, ispis/PDF, uređivanje (lozinka), novi dokumenti i prilozi.
+
+**Upravljačka lozinka:** postavlja se pri prvom otvaranju Kadrovske (ili varijablom okruženja `ADMIN_LOZINKA`). Plaće i ugovori nikad nisu u javnom dijelu podataka — server ih vraća samo uz važeću prijavu (token 12 h).
+
 Ostalo: brza pretraga **Ctrl+K**, odabir „ko radi u aplikaciji” dolje lijevo (pamti se u pregledniku), obavijesti o spremanju.
 
 Podaci se čuvaju u Netlify Database (Postgres). Pri prvom pokretanju baza se puni primjernim podacima.
