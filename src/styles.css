@@ -261,3 +261,16 @@ body {
 .leaf-sm {
   border-radius: 14px 4px 14px 4px;
 }
+
+/* Sat u zaglavlju: dvotačka lagano treperi. */
+@keyframes colon-blink {
+  50% { opacity: 0.25; }
+}
+.clock-colon {
+  display: inline-block;
+  margin: 0 1px;
+  animation: colon-blink 2s steps(1, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock-colon { animation: none; }
+}

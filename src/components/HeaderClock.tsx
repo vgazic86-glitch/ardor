@@ -2,7 +2,8 @@ import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Cl
 import { useEffect, useRef, useState } from 'react'
 
 const DAYS = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub']
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+const DAYS_FULL = ['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota']
+const MONTHS_FULL = ['januar', 'februar', 'mart', 'april', 'maj', 'juni', 'juli', 'august', 'septembar', 'oktobar', 'novembar', 'decembar']
 
 interface Day {
   date: string
@@ -114,7 +115,7 @@ export function HeaderClock() {
     const id = setInterval(() => setNow(new Date()), 15_000)
     return () => clearInterval(id)
   }, [])
-  if (!now) return <div className="mr-2 hidden h-9 w-56 xl:block" />
+  if (!now) return <div className="mr-2 hidden h-14 w-[420px] xl:block" />
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Sarajevo', weekday: 'short', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
       .formatToParts(now)
@@ -122,31 +123,58 @@ export function HeaderClock() {
   )
   const wd = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day))).getUTCDay()
   const d = w ? describe(w.code) : null
+  const next = w?.days.slice(1, 4) ?? []
   return (
-    <div className="mr-1 hidden items-center gap-3 xl:flex">
-      <div className="text-right leading-tight">
-        <div className="font-display text-lg font-semibold tabular text-walnut-900">
-          {parts.hour}:{parts.minute}
+    <div className="mr-2 hidden shrink-0 items-stretch whitespace-nowrap rounded-2xl border border-walnut-200/80 bg-white/70 shadow-sm xl:flex">
+      <div className="flex items-center gap-3 px-4 py-1.5">
+        <div className="font-display text-[30px] font-bold leading-none tracking-tight tabular text-walnut-900">
+          {parts.hour}
+          <span className="clock-colon text-copper-500">:</span>
+          {parts.minute}
         </div>
-        <div className="text-[11px] font-semibold text-walnut-600">
-          {DAYS[wd]}, {parts.day}. {MONTHS[Number(parts.month) - 1]} {parts.year}.
+        <div className="leading-tight">
+          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-copper-600">{DAYS_FULL[wd]}</div>
+          <div className="text-sm font-semibold text-walnut-700">
+            {parts.day}. {MONTHS_FULL[Number(parts.month) - 1]} {parts.year}.
+          </div>
         </div>
       </div>
       {w && d && (
-        <div className="relative" ref={box}>
+        <div className="relative flex" ref={box}>
           <button
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            className="flex items-center gap-2 rounded-xl border border-walnut-200/80 bg-linen/80 py-1.5 pl-2 pr-3 hover:border-copper-300"
-            title={`${d.text} · Banja Luka — klik za prognozu za 7 dana`}
+            className="group flex items-center gap-3 border-l border-walnut-200/80 px-4 py-1.5 transition-colors hover:bg-copper-50/60"
+            title="Klik za prognozu za 7 dana"
           >
-            <d.Icon className="size-6 text-copper-500" />
-            <div className="text-left leading-tight">
-              <div className="text-sm font-semibold tabular text-walnut-900">{w.temp}°C</div>
-              <div className="text-[10.5px] text-walnut-500">
-                BL · {w.min}°/{w.max}°{w.rain >= 30 ? ` · ☂ ${w.rain}%` : ''}
-              </div>
-            </div>
+            <d.Icon className="size-9 text-copper-500 transition-transform group-hover:scale-110" />
+            <span className="font-display text-[28px] font-bold leading-none tabular text-walnut-900">{w.temp}°</span>
+            <span className="text-left leading-tight">
+              <span className="block text-sm font-semibold text-walnut-800">
+                <span className="2xl:hidden">Banja Luka</span>
+                <span className="hidden 2xl:inline">{d.text}</span>
+              </span>
+              <span className="block text-xs text-walnut-500">
+                <span className="hidden 2xl:inline">Banja Luka · </span>
+                {w.min}° / {w.max}°{w.rain >= 20 ? ` · ☂ ${w.rain}%` : ''}
+              </span>
+            </span>
+            {next.length > 0 && (
+              <span className="ml-1 hidden items-center gap-3 border-l border-walnut-200/80 pl-4 2xl:flex">
+                {next.map((x) => {
+                  const nd = describe(x.code)
+                  return (
+                    <span key={x.date} className="flex flex-col items-center leading-tight" title={`${nd.text}${x.rain ? ` · kiša ${x.rain}%` : ''}`}>
+                      <span className="text-[10.5px] font-bold uppercase text-walnut-500">{DAYS[new Date(`${x.date}T12:00:00Z`).getUTCDay()]}</span>
+                      <nd.Icon className="my-0.5 size-5 text-copper-500" />
+                      <span className="text-xs font-semibold tabular text-walnut-800">
+                        {x.max}°<span className="font-normal text-walnut-400">/{x.min}°</span>
+                      </span>
+                    </span>
+                  )
+                })}
+              </span>
+            )}
           </button>
           {open && <Week w={w} />}
         </div>

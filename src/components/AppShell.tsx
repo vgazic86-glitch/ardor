@@ -520,10 +520,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <button
             onClick={() => setPalette(true)}
-            className="group hidden w-full max-w-sm items-center gap-2.5 rounded-xl border border-walnut-200 bg-linen/80 py-2 pl-3 pr-2 text-left text-sm text-walnut-400 shadow-sm transition-colors hover:border-walnut-300 md:flex"
+            className="group hidden min-w-0 w-full max-w-sm items-center gap-2.5 rounded-xl border border-walnut-200 bg-linen/80 py-2 pl-3 pr-2 text-left text-sm text-walnut-400 shadow-sm transition-colors hover:border-walnut-300 md:flex"
           >
             <Search className="size-4 text-walnut-500" />
-            <span className="flex-1">Pretraži narudžbe, kupce, artikle…</span>
+            <span className="flex-1 truncate">Pretraži narudžbe, kupce, artikle…</span>
             <kbd className="rounded-md border border-walnut-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-walnut-500">
               Ctrl K
             </kbd>
@@ -547,7 +547,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() =>
                 navigate({ to: '/primke', search: { nova: true } })
               }
-              className="hidden items-center gap-1.5 rounded-lg border border-walnut-200 bg-linen px-3 py-2 text-sm font-semibold text-walnut-900 shadow-sm hover:bg-white sm:inline-flex"
+              className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-walnut-200 bg-linen px-3 py-2 text-sm font-semibold text-walnut-900 shadow-sm hover:bg-white sm:inline-flex"
             >
               <PackagePlus className="size-4 text-copper-600" /> Prijem robe
             </button>
@@ -556,7 +556,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() =>
                 navigate({ to: '/narudzbe', search: { nova: true } })
               }
-              className="inline-flex items-center gap-1.5 rounded-lg bg-walnut-900 px-3 py-2 text-sm font-semibold text-linen shadow-sm hover:bg-walnut-800"
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-walnut-900 px-3 py-2 text-sm font-semibold text-linen shadow-sm hover:bg-walnut-800"
             >
               <Plus className="size-4" />{' '}
               <span className="hidden sm:inline">Nova prodaja</span>
