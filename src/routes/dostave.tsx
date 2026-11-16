@@ -11,6 +11,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { useState } from 'react'
+import { DeliveryPrintCard } from '../components/DayPrints'
 import { OrderDrawer } from '../components/OrderDrawer'
 import {
   Avatar,
@@ -44,6 +45,7 @@ function DeliveriesPage() {
     today: TODAY,
     customerById,
     productById,
+    seesCosts,
   } = useStore()
   const [weekStart, setWeekStart] = useState(mondayOf(TODAY))
   const [day, setDay] = useState(TODAY)
@@ -82,8 +84,13 @@ function DeliveriesPage() {
       <PageHeader
         eyebrow="Logistika"
         title="Dostave i montaža"
-        description="Raspored dostava po danima i ekipama. Ažurirajte status s terena jednim klikom."
+        description="Raspored dostava po danima i ekipama. Ažurirajte status s terena jednim klikom. Za odabrani dan možete odštampati obrasce za skladište, dostavljače i kupce."
       />
+      {seesCosts && (
+        <div className="mb-6">
+          <DeliveryPrintCard day={day} title="Obrasci za odabrani dan" />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat

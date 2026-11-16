@@ -8,6 +8,7 @@ import * as auth from './auth'
 import * as ops from './ops'
 import * as tasks from './tasks'
 import * as sales from './sales'
+import * as daydocs from './daydocs'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 
@@ -411,3 +412,13 @@ export const customerDocPdfFn = createServerFn({ method: 'POST' })
 export const exportAllFn = createServerFn({ method: 'POST' })
   .middleware([manager])
   .handler(() => sales.exportAll())
+
+export const cashUpPdfFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ day: string }>())
+  .handler(({ data, context }) => daydocs.cashUpPdf(context.user, data.day))
+
+export const deliveryPlanPdfFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ day: string; kind: daydocs.DeliveryDoc }>())
+  .handler(({ data, context }) => daydocs.deliveryPlanPdf(context.user, data.day, data.kind))

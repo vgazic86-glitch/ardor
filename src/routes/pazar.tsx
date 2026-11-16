@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Banknote, ChevronLeft, ChevronRight, CreditCard, Landmark, Printer, Receipt, Wallet } from 'lucide-react'
+import { Banknote, ChevronLeft, ChevronRight, CreditCard, Landmark, Receipt, Wallet } from 'lucide-react'
 import { useState } from 'react'
+import { CashUpButton, DeliveryPrintCard, nextWorkday } from '../components/DayPrints'
 import { Button, Card, EmptyState, Field, inputCls, PageHeader, Stat } from '../components/ui'
 import { date, money2, weekday } from '../lib/format'
 import { isRevenue, orderTotal } from '../lib/stats'
@@ -42,9 +43,7 @@ function CashUpPage() {
         title="Dnevni pazar"
         description="Sve uplate jednog dana po načinu plaćanja — za predaju gotovine i kontrolu kartica. Fiskalni izvještaj i dalje izdaje fiskalni uređaj."
         actions={
-          <Button variant="outline" onClick={() => window.print()}>
-            <Printer className="size-4" /> Ispis zaključka
-          </Button>
+          <CashUpButton day={day} />
         }
       />
 
@@ -113,6 +112,7 @@ function CashUpPage() {
         </Card>
 
         <div className="space-y-4">
+          <DeliveryPrintCard compact day={nextWorkday(day)} title="Plan dostava za sljedeći dan" />
           <Card title="Promet dana">
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
