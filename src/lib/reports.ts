@@ -91,17 +91,30 @@ export function sum<T>(rows: T[], f: (r: T) => number) {
 export const receiptNet = (r: Receipt) =>
   r.lines.reduce((s, l) => s + l.qty * l.unitCost, 0)
 
-export function vatSummary(sales: SaleRow[], receipts: Receipt[], p: Period) {
+/** Ulazni PDV primke: s računa dobavljača ako je upisan, inače 17 % od nabavne vrijednosti. */
+export const receiptVat = (r: Receipt) =>
+  r.vat != null ? r.vat : receiptNet(r) * VAT_RATE
+
+export function vatSummary(
+  sales: SaleRow[],
+  receipts: Receipt[],
+  p: Period,
+  /** Ostali ulazni računi u periodu (troškovi, računi dobavljača): osnovica i PDV. */
+  other: { base: number; vat: number; count: number } = { base: 0, vat: 0, count: 0 },
+) {
   const outVat = sum(sales, (s) => s.vat)
   const inRecs = receipts.filter((r) => inPeriod(r.date, p))
   const inNet = sum(inRecs, receiptNet)
-  const inVat = inNet * VAT_RATE
+  const inVat = sum(inRecs, receiptVat)
   return {
     outBase: sum(sales, (s) => s.net),
     outVat,
     inBase: inNet,
     inVat,
-    due: outVat - inVat,
+    otherBase: other.base,
+    otherVat: other.vat,
+    otherCount: other.count,
+    due: outVat - inVat - other.vat,
     receipts: inRecs,
   }
 }

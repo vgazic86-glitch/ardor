@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   Banknote,
   Download,
@@ -11,7 +11,9 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { exportAllFn } from '../server/api'
+import { exportAllFn, getFinanceFn } from '../server/api'
+import { useRemote } from '../lib/remote'
+import { inputBook } from '../lib/kuf'
 import { GroupedChart } from '../components/Charts'
 import {
   Badge,
@@ -240,6 +242,7 @@ function ReportsPage() {
     employeeById,
     productById,
     supplierById,
+    suppliers,
   } = store
   const [preset, setPreset] = useState<Preset>('mjesec')
   const [from, setFrom] = useState(monthRange(currentMonth).from)
@@ -259,9 +262,15 @@ function ReportsPage() {
     () => realized(orders, movements, period),
     [orders, movements, period],
   )
+  const fin = useRemote(() => getFinanceFn({ data: { token: 'sesija' } }), [])
+  const other = useMemo(() => {
+    if (!fin.data) return { base: 0, vat: 0, count: 0 }
+    const rows = inputBook({ receipts: [], expenses: fin.data.expenses, ledger: fin.data.ledger, suppliers }, period.from, period.to)
+    return { base: rows.reduce((s, r) => s + r.base, 0), vat: rows.reduce((s, r) => s + r.vat, 0), count: rows.length }
+  }, [fin.data, suppliers, period])
   const vat = useMemo(
-    () => vatSummary(sales, receipts, period),
-    [sales, receipts, period],
+    () => vatSummary(sales, receipts, period, other),
+    [sales, receipts, period, other],
   )
   const pays = useMemo(() => paymentsIn(orders, period), [orders, period])
   const byMethod = paymentsByMethod(pays)
@@ -521,6 +530,18 @@ function ReportsPage() {
                   − {money2(vat.inVat)}
                 </td>
               </tr>
+              <tr className="border-t border-walnut-100">
+                <td className="py-2.5">
+                  Ulazni — {vat.otherCount} troškova i računa
+                  {!fin.data && <span className="text-xs text-walnut-400"> (učitavam…)</span>}
+                </td>
+                <td className="py-2.5 text-right tabular">
+                  {money2(vat.otherBase)}
+                </td>
+                <td className="py-2.5 text-right tabular">
+                  − {money2(vat.otherVat)}
+                </td>
+              </tr>
               <tr className="border-t-2 border-walnut-300 font-bold">
                 <td className="py-2.5">
                   {vat.due >= 0 ? 'Za uplatu' : 'Za povrat'}
@@ -533,9 +554,11 @@ function ReportsPage() {
             </tbody>
           </table>
           <p className="mt-3 rounded-lg bg-walnut-50 p-3 text-xs text-walnut-600">
-            Ulazni PDV računa se iz primki po nabavnoj cijeni bez PDV-a. Za
-            prijavu PDV-a provjerite s knjigovođom ostale ulazne račune (režije,
-            usluge).
+            Kontrolni izračun: ulazni PDV iz primki (PDV s računa ili 17 %), troškova i računa
+            dobavljača.{' '}
+            <Link to="/kuf" className="font-semibold text-copper-700 hover:underline">
+              Knjiga ulaznih računa →
+            </Link>
           </p>
         </Card>
       </div>

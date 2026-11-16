@@ -63,6 +63,7 @@ export function areaOf(path: string): Area | null {
     kupci: 'kupci',
     pazar: 'pazar',
     naljepnice: 'artikli',
+    kuf: 'izvjestaji',
   }
   return map[seg] ?? null
 }

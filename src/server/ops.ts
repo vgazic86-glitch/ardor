@@ -239,6 +239,7 @@ export async function listLedger(): Promise<LedgerEntry[]> {
     date: r.date,
     kind: r.kind as LedgerKind,
     amount: r.amount,
+    vat: r.vat,
     document: r.document,
     note: r.note,
     createdByName: r.createdByName,
@@ -251,6 +252,8 @@ export interface LedgerInput {
   date: string
   kind: LedgerKind
   amount: number
+  /** Od toga PDV (računi i odobrenja). */
+  vat?: number
   document: string
   note: string
 }
@@ -266,6 +269,7 @@ export async function saveLedgerEntry(user: SessionUser, input: LedgerInput) {
     date: isDate(input.date) ? input.date : todayIso(),
     kind: input.kind,
     amount,
+    vat: input.kind === 'zaduzenje' || input.kind === 'odobrenje' ? r2(Math.max(0, Math.min(Math.abs(amount), Number(input.vat) || 0))) : 0,
     document: input.document.trim(),
     note: input.note.trim(),
   }

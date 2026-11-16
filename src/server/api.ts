@@ -422,3 +422,8 @@ export const deliveryPlanPdfFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .validator(pass<{ day: string; kind: daydocs.DeliveryDoc }>())
   .handler(({ data, context }) => daydocs.deliveryPlanPdf(context.user, data.day, data.kind))
+
+export const setReceiptVatFn = createServerFn({ method: 'POST' })
+  .middleware([operations])
+  .validator(pass<{ id: string; vat: number | null }>())
+  .handler(({ data }) => sales.setReceiptVat(data.id, data.vat))

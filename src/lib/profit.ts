@@ -11,14 +11,14 @@
  *
  * Ovo je upravljački izračun za praćenje poslovanja, ne zvanični finansijski izvještaj.
  */
-import { VAT_RATE } from './format'
 import { salaryOn, monthEnd } from './hr'
-import { monthRange, realized, receiptNet, sum } from './reports'
+import { monthRange, realized, receiptVat, sum } from './reports'
 import type {
   Bonus,
   Employee,
   Expense,
   FinanceSettings,
+  LedgerEntry,
   Order,
   Receipt,
   Salary,
@@ -50,6 +50,7 @@ export interface MonthProfit {
     output: number
     inputReceipts: number
     inputExpenses: number
+    inputInvoices: number
     due: number
   }
   orders: number
@@ -64,6 +65,8 @@ export interface ProfitInput {
   bonuses: Bonus[]
   employees: Employee[]
   settings: FinanceSettings
+  /** Kartice dobavljača (ručni računi s PDV-om). */
+  ledger?: LedgerEntry[]
 }
 
 export function payrollFor(
@@ -112,9 +115,14 @@ export function monthProfit(month: string, x: ProfitInput): MonthProfit {
   const tax = Math.max(0, profitBeforeTax) * x.settings.profitTaxPct
   const inputReceipts = sum(
     x.receipts.filter((r) => r.date >= p.from && r.date <= p.to),
-    (r) => receiptNet(r) * VAT_RATE,
+    receiptVat,
   )
   const inputExpenses = sum(exp, (e) => e.vat)
+  // Ručno upisani računi dobavljača (kartica): zaduženja povećavaju, odobrenja umanjuju ulazni PDV.
+  const inputInvoices = sum(
+    (x.ledger ?? []).filter((l) => l.date >= p.from && l.date <= p.to && (l.kind === 'zaduzenje' || l.kind === 'odobrenje')),
+    (l) => (l.kind === 'odobrenje' ? -1 : 1) * (l.vat ?? 0),
+  )
   const output = revenueGross - revenueNet
   return {
     month,
@@ -134,7 +142,8 @@ export function monthProfit(month: string, x: ProfitInput): MonthProfit {
       output,
       inputReceipts,
       inputExpenses,
-      due: output - inputReceipts - inputExpenses,
+      inputInvoices,
+      due: output - inputReceipts - inputExpenses - inputInvoices,
     },
     orders: sales.length,
   }

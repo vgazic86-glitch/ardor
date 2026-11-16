@@ -167,6 +167,8 @@ export const receipts = pgTable('receipts', {
   documentNumber: text('document_number').notNull().default(''),
   note: text().notNull().default(''),
   employeeId: integer('employee_id').references(() => employees.id),
+  /** PDV s računa dobavljača; null = 17 % od nabavne vrijednosti. */
+  vat: money('vat'),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
@@ -397,6 +399,8 @@ export const supplierLedger = pgTable(
     /** uplata | zaduzenje | odobrenje | pocetno */
     kind: text().notNull(),
     amount: money('amount').notNull(),
+    /** Od toga PDV (za račune i odobrenja; ulazni PDV). */
+    vat: money('vat').notNull().default(0),
     document: text().notNull().default(''),
     note: text().notNull().default(''),
     createdByName: text('created_by_name').notNull().default(''),

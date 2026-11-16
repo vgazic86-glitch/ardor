@@ -25,6 +25,8 @@ export function ReceiptDialog({
   const [date, setDate] = useState(today)
   const [doc, setDoc] = useState('')
   const [note, setNote] = useState(initial?.note ?? '')
+  const [vatAuto, setVatAuto] = useState(true)
+  const [vat, setVat] = useState('')
   const [lines, setLines] = useState<Line[]>(
     () =>
       initial?.lines.map((l) => ({
@@ -82,6 +84,7 @@ export function ReceiptDialog({
       supplierId: supplierId || null,
       documentNumber: doc,
       note,
+      vat: vatAuto ? null : parseAmount(vat),
       lines: lines.map((l) => ({
         productId: l.productId,
         qty: Number(l.qty) || 0,
@@ -112,10 +115,30 @@ export function ReceiptDialog({
               <span className="font-display text-xl font-semibold tabular">
                 {money2(total)}
               </span>
-              <span className="ml-2 text-xs text-walnut-500">
-                + PDV {money2(total * VAT_RATE)}
-              </span>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-walnut-500">PDV s računa:</span>
+              <input
+                className={`${inputCls} w-28 py-1 text-right`}
+                inputMode="decimal"
+                value={vatAuto ? (Math.round(total * VAT_RATE * 100) / 100).toFixed(2).replace('.', ',') : vat}
+                disabled={vatAuto}
+                onChange={(e) => setVat(e.target.value)}
+                aria-label="PDV s računa dobavljača"
+              />
+              <label className="flex items-center gap-1 text-xs text-walnut-600" title="Isključite i upišite tačan PDV s računa, ili 0 ako dobavljač nije u sistemu PDV-a">
+                <input
+                  type="checkbox"
+                  className="size-3.5 accent-copper-500"
+                  checked={vatAuto}
+                  onChange={(e) => {
+                    setVatAuto(e.target.checked)
+                    if (!e.target.checked) setVat((Math.round(total * VAT_RATE * 100) / 100).toFixed(2).replace('.', ','))
+                  }}
+                />
+                17 %
+              </label>
+            </label>
             <Button variant="ghost" className="ml-auto" onClick={onClose}>
               Odustani
             </Button>

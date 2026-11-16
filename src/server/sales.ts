@@ -201,3 +201,11 @@ export async function exportAll() {
   }
   return { date: new Date().toISOString().slice(0, 10), tables: out }
 }
+
+/** Naknadni upis PDV-a s računa dobavljača na primku (null = 17 %). */
+export async function setReceiptVat(receiptId: string, vat: number | null) {
+  await db
+    .update(t.receipts)
+    .set({ vat: vat == null || Number.isNaN(vat) ? null : Math.round(Math.max(0, vat) * 100) / 100 })
+    .where(eq(t.receipts.id, Number(receiptId)))
+}

@@ -2,7 +2,7 @@
 import type { Cell, Row, Sheet } from 'write-excel-file/browser'
 import { CURRENCY, orderStatusLabel, VAT_RATE } from './format'
 import type { Debt, Group, Period, SaleRow, SupplierRow } from './reports'
-import { receiptNet } from './reports'
+import { receiptNet, receiptVat } from './reports'
 import type {
   Customer,
   Employee,
@@ -46,6 +46,8 @@ export interface ExportInput {
     outVat: number
     inBase: number
     inVat: number
+    otherBase?: number
+    otherVat?: number
     due: number
     receipts: Receipt[]
   }
@@ -220,14 +222,15 @@ export async function exportReport(x: ExportInput) {
     ]),
     ...x.vat.receipts.map((r) => {
       const n = receiptNet(r)
+      const v = receiptVat(r)
       return [
         r.number,
         day(r.date),
         x.supplierById(r.supplierId)?.name ?? '',
         r.documentNumber,
         num(n),
-        num(n * VAT_RATE),
-        num(n * (1 + VAT_RATE)),
+        num(v),
+        num(n + v),
       ]
     }),
     [
@@ -244,7 +247,8 @@ export async function exportReport(x: ExportInput) {
   const vat: Row[] = [
     head(['', 'Osnovica', 'PDV']),
     ['Izlazni (prodaja)', num(x.vat.outBase), num(x.vat.outVat)],
-    ['Ulazni (nabava)', num(x.vat.inBase), num(x.vat.inVat)],
+    ['Ulazni (primke)', num(x.vat.inBase), num(x.vat.inVat)],
+    ['Ulazni (troškovi i računi dobavljača)', num(x.vat.otherBase ?? 0), num(x.vat.otherVat ?? 0)],
     [bold('Obaveza'), null, num(x.vat.due)],
   ]
 

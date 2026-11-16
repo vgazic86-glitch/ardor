@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   CopyPlus,
   FileSpreadsheet,
@@ -224,6 +224,7 @@ function ProfitTab({ data, month }: { data: FinanceData; month: string }) {
       salaries: data.hr.salaries,
       bonuses: data.hr.bonuses,
       settings: data.settings,
+      ledger: data.ledger,
     }),
     [orders, movements, receipts, employees, data],
   )
@@ -295,6 +296,7 @@ function ProfitTab({ data, month }: { data: FinanceData; month: string }) {
       ['Izlazni PDV', n(p.vat.output)],
       ['Ulazni PDV — primke', n(-p.vat.inputReceipts)],
       ['Ulazni PDV — troškovi', n(-p.vat.inputExpenses)],
+      ['Ulazni PDV — računi dobavljača', n(-p.vat.inputInvoices)],
       [{ value: 'PDV obaveza', fontWeight: 'bold' as const }, n(p.vat.due)],
     ]
     const trend = [
@@ -553,6 +555,16 @@ function ProfitTab({ data, month }: { data: FinanceData; month: string }) {
                 value={p.vat.inputExpenses}
                 minus
               />
+              {p.vat.inputInvoices !== 0 && (
+                <Line
+                  label="Ulazni PDV — računi dobavljača"
+                  value={p.vat.inputInvoices}
+                  minus
+                />
+              )}
+              <Link to="/kuf" search={{ mjesec: month }} className="mt-2 block text-xs font-semibold text-copper-700 hover:underline">
+                Knjiga ulaznih računa za mjesec →
+              </Link>
               <Line
                 label={p.vat.due >= 0 ? 'Za uplatu' : 'Za povrat'}
                 value={Math.abs(p.vat.due)}

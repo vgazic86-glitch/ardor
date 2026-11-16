@@ -168,6 +168,8 @@ export interface Receipt {
   note: string
   employeeId: string | null
   lines: ReceiptLine[]
+  /** PDV s računa dobavljača; null/undefined = 17 % od nabavne vrijednosti. */
+  vat?: number | null
 }
 
 export interface FileMeta {
@@ -367,6 +369,8 @@ export interface LedgerEntry {
   kind: LedgerKind
   /** Uvijek pozitivan iznos s PDV-om; smjer određuje vrsta. */
   amount: number
+  /** Od toga PDV (računi i odobrenja). */
+  vat?: number
   document: string
   note: string
   createdByName: string

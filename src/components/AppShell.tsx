@@ -12,6 +12,7 @@ import {
   Boxes,
   CheckCircle2,
   ChevronsUpDown,
+  BookOpenCheck,
   Smartphone,
   Contact,
   Wallet,
@@ -78,6 +79,7 @@ const groups: { title: string; items: NavItem[] }[] = [
     items: [
       { to: '/izvjestaji', label: 'Izvještaji', icon: BarChart3, area: 'izvjestaji' },
       { to: '/troskovi', label: 'Troškovi i zarada', icon: Calculator, area: 'troskovi' },
+      { to: '/kuf', label: 'Ulazni računi (PDV)', icon: BookOpenCheck, area: 'izvjestaji' },
       { to: '/dobavljaci', label: 'Dobavljači i kartice', icon: Factory, area: 'dobavljaci' },
     ],
   },

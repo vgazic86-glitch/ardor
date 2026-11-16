@@ -209,6 +209,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       documentNumber: r.documentNumber,
       note: r.note,
       employeeId: str(r.employeeId),
+      vat: r.vat,
       lines: moves
         .filter((m) => m.receiptId === r.id)
         .map((m) => ({
@@ -557,6 +558,8 @@ export interface ReceiptInput {
   documentNumber: string
   note: string
   lines: { productId: string; qty: number; unitCost: number }[]
+  /** PDV s računa dobavljača; izostavljeno/null = 17 %. */
+  vat?: number | null
 }
 
 export async function createReceipt(input: ReceiptInput) {
@@ -578,6 +581,7 @@ export async function createReceipt(input: ReceiptInput) {
       documentNumber: input.documentNumber.trim(),
       note: input.note.trim(),
       employeeId: id(input.actorId),
+      vat: input.vat == null || Number.isNaN(input.vat) ? null : round2(Math.max(0, input.vat)),
     })
     await tx.insert(t.stockMovements).values(
       lines.map((l) => ({

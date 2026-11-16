@@ -1,6 +1,5 @@
 /** Kartica dobavljača: zaduženja (primke + računi) i razduženja (uplate, odobrenja). */
-import { VAT_RATE } from './format'
-import { receiptNet } from './reports'
+import { receiptNet, receiptVat } from './reports'
 import type { LedgerEntry, Receipt } from './types'
 
 export interface LedgerRow {
@@ -30,7 +29,7 @@ export function ledgerRows(supplierId: string, receipts: Receipt[], entries: Led
   if (receiptsAsDebt)
     for (const r of receipts) {
       if (r.supplierId !== supplierId) continue
-      const gross = r2(receiptNet(r) * (1 + VAT_RATE))
+      const gross = r2(receiptNet(r) + receiptVat(r))
       if (!gross) continue
       rows.push({
         key: `r${r.id}`,

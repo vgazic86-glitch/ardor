@@ -6,6 +6,7 @@ import { Badge, Button, Card, EmptyState, Field, inputCls, PageHeader, Stat } fr
 import { date, money2, parseAmount } from '../../lib/format'
 import { ledgerRows, ledgerTotals, type LedgerRow } from '../../lib/ledger'
 import { useRemote } from '../../lib/remote'
+import { vatFromGross } from '../../lib/kuf'
 import { useStore } from '../../lib/store'
 import { LEDGER_KIND_LABEL, type LedgerEntry, type LedgerKind } from '../../lib/types'
 import { deleteLedgerEntryFn, listLedgerFn, saveLedgerEntryFn } from '../../server/api'
@@ -229,7 +230,7 @@ function LedgerDialog({
   entry: LedgerEntry | null
   kind: LedgerKind
   onClose: () => void
-  onSave: (e: { id: string | null; supplierId: string; date: string; kind: LedgerKind; amount: number; document: string; note: string }) => void
+  onSave: (e: { id: string | null; supplierId: string; date: string; kind: LedgerKind; amount: number; vat: number; document: string; note: string }) => void
   onDelete: (id: string) => void
   busy: boolean
   error: string | null
@@ -241,6 +242,9 @@ function LedgerDialog({
   const [doc, setDoc] = useState(entry?.document ?? '')
   const [note, setNote] = useState(entry?.note ?? '')
   const [confirm, setConfirm] = useState(false)
+  const [vatAuto, setVatAuto] = useState(!entry || !entry.vat || Math.abs((entry.vat ?? 0) - vatFromGross(entry.amount)) < 0.01)
+  const [vat, setVat] = useState(entry?.vat ? String(entry.vat).replace('.', ',') : '')
+  const vatValue = vatAuto ? vatFromGross(parseAmount(amount || '0')) : parseAmount(vat || '0')
   return (
     <Modal
       title={entry ? 'Uredi stavku kartice' : `Nova stavka: ${LEDGER_KIND_LABEL[kind].toLowerCase()}`}
@@ -264,7 +268,7 @@ function LedgerDialog({
           <Button
             variant="copper"
             disabled={busy || !amount}
-            onClick={() => onSave({ id: entry?.id ?? null, supplierId, date: day, kind, amount: parseAmount(amount), document: doc, note })}
+            onClick={() => onSave({ id: entry?.id ?? null, supplierId, date: day, kind, amount: parseAmount(amount), vat: vatValue, document: doc, note })}
           >
             Spremi
           </Button>
@@ -290,6 +294,31 @@ function LedgerDialog({
         >
           <input className={`${inputCls} text-right`} inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
+        {(kind === 'zaduzenje' || kind === 'odobrenje') && (
+          <Field label="Od toga PDV (KM)" hint="Za knjigu ulaznih računa. Isključite 17 % i upišite iznos s računa (ili 0).">
+            <div className="flex items-center gap-2">
+              <input
+                className={`${inputCls} text-right`}
+                inputMode="decimal"
+                disabled={vatAuto}
+                value={vatAuto ? String(vatFromGross(parseAmount(amount || '0'))).replace('.', ',') : vat}
+                onChange={(e) => setVat(e.target.value)}
+              />
+              <label className="flex shrink-0 items-center gap-1 text-xs text-walnut-600">
+                <input
+                  type="checkbox"
+                  className="size-3.5 accent-copper-500"
+                  checked={vatAuto}
+                  onChange={(e) => {
+                    setVatAuto(e.target.checked)
+                    if (!e.target.checked) setVat(String(vatFromGross(parseAmount(amount || '0'))).replace('.', ','))
+                  }}
+                />
+                17 %
+              </label>
+            </div>
+          </Field>
+        )}
         <Field label={kind === 'uplata' ? 'Broj izvoda / naloga' : 'Broj dokumenta'}>
           <input className={inputCls} value={doc} onChange={(e) => setDoc(e.target.value)} />
         </Field>

@@ -5,6 +5,7 @@ import * as t from '../../db/schema.js'
 import {
   DEFAULT_FINANCE_SETTINGS,
   type Expense,
+  type LedgerEntry,
   type FinanceSettings,
 } from '../lib/types'
 import {
@@ -16,6 +17,7 @@ import {
   getHr,
   type HrData,
 } from './hr'
+import { listLedger } from './ops'
 
 const r2 = (v: number) => Math.round(v * 100) / 100
 const today = () =>
@@ -27,6 +29,8 @@ export interface FinanceData {
   expenses: Expense[]
   settings: FinanceSettings
   hr: HrData
+  /** Kartice dobavljača (ručni računi i odobrenja s PDV-om). */
+  ledger: LedgerEntry[]
 }
 
 async function settings(): Promise<FinanceSettings> {
@@ -75,6 +79,7 @@ export async function getFinance(token: string): Promise<FinanceData> {
     })),
     settings: await settings(),
     hr: await getHr(token),
+    ledger: await listLedger(),
   }
 }
 
