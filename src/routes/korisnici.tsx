@@ -8,7 +8,7 @@ import { useRemote } from '../lib/remote'
 import { useStore } from '../lib/store'
 import { DEFAULT_COMPANY, type CompanyInfo } from '../lib/types'
 import type { UserAdminView, UserRole } from '../server/auth'
-import { getCompanyFn, listUsersFn, resetUserFn, saveCompanyFn, saveUserFn } from '../server/api'
+import { getCompanyFn, listUsersFn, presenceFn, resetUserFn, saveCompanyFn, saveUserFn } from '../server/api'
 
 export const Route = createFileRoute('/korisnici')({
   validateSearch: (s: Record<string, unknown>): { tab?: 'firma' } => ({ tab: s.tab === 'firma' ? 'firma' : undefined }),
@@ -54,6 +54,34 @@ function UsersList() {
   const [edit, setEdit] = useState<UserAdminView | 'new' | null>(null)
   const users = remote.data ?? []
   const pending = users.filter((u) => u.active && !u.activated)
+  const [presence, setPresence] = useState<Record<string, { lastSeenAt: string; online: boolean; devices: number; mobile: boolean }>>({})
+  useEffect(() => {
+    let alive = true
+    const load = () => presenceFn().then((p) => alive && setPresence(p)).catch(() => {})
+    load()
+    const id = setInterval(load, 30_000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [])
+  const onlineCount = Object.values(presence).filter((p) => p.online).length
+  const when = (iso: string | null) => {
+    if (!iso) return '—'
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
+    if (min < 1) return 'upravo'
+    if (min < 60) return `prije ${min} min`
+    const p = Object.fromEntries(
+      new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Sarajevo' })
+        .formatToParts(new Date(iso))
+        .map((x) => [x.type, x.value]),
+    )
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo' }).format(new Date())
+    const day = `${p.year}-${p.month.padStart(2, '0')}-${p.day.padStart(2, '0')}`
+    const hm = `${p.hour}:${p.minute}`
+    if (day === today) return `danas u ${hm}`
+    return `${p.day}. ${p.month}. ${p.year}. u ${hm}`
+  }
 
   function copyText(t: string) {
     navigator.clipboard?.writeText(t).then(() => notify('Kopirano.'))
@@ -94,7 +122,7 @@ function UsersList() {
       <Card
         flush
         title="Korisnici"
-        subtitle={`${users.filter((u) => u.active).length} aktivnih`}
+        subtitle={`${users.filter((u) => u.active).length} aktivnih · ${onlineCount} trenutno online`}
         action={
           <Button variant="copper" size="sm" onClick={() => setEdit('new')}>
             <Plus className="size-3.5" /> Novi korisnik
@@ -110,6 +138,7 @@ function UsersList() {
                 <th className="px-3 py-2.5">Uloga</th>
                 <th className="px-3 py-2.5">Zarada i plaće</th>
                 <th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5">Sada</th>
                 <th className="px-3 py-2.5">Zadnja prijava</th>
                 <th className="w-12 px-3 py-2.5" />
               </tr>
@@ -118,7 +147,13 @@ function UsersList() {
               {users.map((u) => (
                 <tr key={u.id} className={u.active ? '' : 'opacity-50'}>
                   <td className="px-5 py-2.5 font-semibold">
-                    {u.name} {u.id === user.id && <span className="text-xs font-normal text-walnut-500">(vi)</span>}
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className={`size-2.5 rounded-full ${presence[u.id]?.online ? 'bg-emerald-500 ring-4 ring-emerald-100' : presence[u.id] ? 'bg-amber-400' : 'bg-walnut-200'}`}
+                        title={presence[u.id]?.online ? 'Online' : presence[u.id] ? 'Neaktivan (aplikacija otvorena, bez aktivnosti)' : 'Nije prijavljen'}
+                      />
+                      {u.name} {u.id === user.id && <span className="text-xs font-normal text-walnut-500">(vi)</span>}
+                    </span>
                   </td>
                   <td className="px-3 py-2.5 font-mono text-xs">{u.username}</td>
                   <td className="px-3 py-2.5">
@@ -128,9 +163,18 @@ function UsersList() {
                   <td className="px-3 py-2.5">
                     {!u.active ? <Badge tone="bad">Isključen</Badge> : u.activated ? <Badge tone="good">Aktivan</Badge> : <Badge tone="warn">Čeka prvu prijavu</Badge>}
                   </td>
-                  <td className="px-3 py-2.5 text-xs text-walnut-500">
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('bs-BA', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
+                  <td className="px-3 py-2.5 text-xs">
+                    {presence[u.id]?.online ? (
+                      <span className="font-semibold text-emerald-700">
+                        Online{presence[u.id].devices > 1 ? ` · ${presence[u.id].devices} uređaja` : presence[u.id].mobile ? ' · mobitel' : ''}
+                      </span>
+                    ) : presence[u.id] ? (
+                      <span className="text-amber-700">aktivan {when(presence[u.id].lastSeenAt)}</span>
+                    ) : (
+                      <span className="text-walnut-400">odjavljen</span>
+                    )}
                   </td>
+                  <td suppressHydrationWarning className="px-3 py-2.5 text-xs text-walnut-500">{when(u.lastLoginAt)}</td>
                   <td className="px-3 py-2.5 text-right">
                     <button className="rounded p-1 text-walnut-400 hover:bg-walnut-100 hover:text-walnut-800" aria-label={`Uredi ${u.name}`} onClick={() => setEdit(u)}>
                       <Pencil className="size-3.5" />

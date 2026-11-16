@@ -427,3 +427,20 @@ export const setReceiptVatFn = createServerFn({ method: 'POST' })
   .middleware([operations])
   .validator(pass<{ id: string; vat: number | null }>())
   .handler(({ data }) => sales.setReceiptVat(data.id, data.vat))
+
+/** Otkucaj dok je aplikacija otvorena: produžava prijavu i vraća broj otvorenih zadataka. */
+export const pingFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(async ({ context }) => ({ openTasks: await tasks.openTaskCount(context.user) }))
+
+export const presenceFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(() => auth.presence())
+
+export const askAssistantFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ messages: import('./assistant').ChatMessage[]; page: string }>())
+  .handler(async ({ data, context }) => {
+    const a = await import('./assistant')
+    return a.ask(context.user, data.messages, String(data.page ?? '').slice(0, 100))
+  })

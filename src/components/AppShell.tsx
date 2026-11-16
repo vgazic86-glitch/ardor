@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/react-ro
 import { canSee, ROLE_LABEL, type Area } from '../lib/access'
 import { computeAlerts } from '../lib/alerts'
 import { useInstall } from '../lib/pwa'
-import { logoutFn } from '../server/api'
+import { logoutFn, pingFn } from '../server/api'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import {
   BarChart3,
@@ -36,11 +36,15 @@ import {
   Users,
   X,
   XCircle,
+  LifeBuoy,
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../lib/store'
-import { date, weekday } from '../lib/format'
 import { CommandPalette } from './CommandPalette'
+import { HeaderClock } from './HeaderClock'
+import { HelpButton } from './Help'
+import { Assistant } from './Assistant'
+import { helpForPath } from '../lib/help'
 import { Avatar } from './ui'
 import { Logo } from './Logo'
 
@@ -91,6 +95,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/kadrovska', label: 'Kadrovska', icon: LockKeyhole, area: 'kadrovska' },
       { to: '/dokumenti', label: 'Dokumenti', icon: BookOpen, area: 'dokumenti' },
       { to: '/korisnici', label: 'Korisnici i pristup', icon: ShieldCheck, area: 'korisnici' },
+      { to: '/pomoc', label: 'Pomoć i upute', icon: LifeBuoy, area: 'pregled' },
     ],
   },
 ]
@@ -264,6 +269,13 @@ function UserSwitcher() {
 }
 
 /** Zvonce: šta danas traži pažnju (zadaci, dostave, kašnjenja, zalihe, ponude, dugovanja). */
+/** Pomoć za trenutnu stranicu. */
+function PageHelp() {
+  const path = useRouterState({ select: (s) => s.location.pathname })
+  const topic = helpForPath(path)
+  return topic ? <HelpButton key={topic.id} topic={topic} /> : null
+}
+
 function NotificationBell() {
   const { orders, products, today, openTasks, restricted, me } = useStore()
   const [open, setOpen] = useState(false)
@@ -323,7 +335,7 @@ function Toaster() {
   }, [toast, dismissToast])
   return (
     <div
-      className="pointer-events-none fixed bottom-5 right-5 z-[60] flex w-[min(380px,calc(100%-2.5rem))] flex-col gap-2"
+      className="pointer-events-none fixed bottom-20 right-5 z-[60] flex w-[min(380px,calc(100%-2.5rem))] flex-col gap-2"
       aria-live="polite"
     >
       {error && (
@@ -355,10 +367,39 @@ function Toaster() {
   )
 }
 
+/** Otkucaj svake minute: drži prijavu živom dok je aplikacija otvorena; zatvaranjem prestaje. */
+function useHeartbeat() {
+  const router = useRouter()
+  const { openTasks } = useStore()
+  const known = useRef(openTasks)
+  known.current = openTasks
+  useEffect(() => {
+    let alive = true
+    const beat = async () => {
+      try {
+        const r = await pingFn()
+        if (alive && r.openTasks !== known.current) router.invalidate()
+      } catch {
+        // prijava je istekla (npr. aplikacija dugo zatvorena) — prikaži ekran za prijavu
+        if (alive) router.invalidate()
+      }
+    }
+    const id = setInterval(beat, 60_000)
+    const onVisible = () => document.visibilityState === 'visible' && beat()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      alive = false
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [router])
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
+  useHeartbeat()
   const [open, setOpen] = useState(false)
   const [palette, setPalette] = useState(false)
-  const { today: TODAY, busy, user } = useStore()
+  const { busy, user } = useStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -460,11 +501,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Search className="size-5" />
           </button>
           <div className="flex items-center gap-2 md:ml-auto">
-            <div className="mr-2 hidden text-right text-xs xl:block">
-              <div className="font-semibold capitalize text-walnut-800">
-                {weekday(TODAY)}, {date(TODAY)}
-              </div>
-            </div>
+            <HeaderClock />
+            <PageHelp />
             <NotificationBell />
             {canSee(user, 'primke') && (
             <button
@@ -493,6 +531,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {palette && <CommandPalette onClose={() => setPalette(false)} />}
+      <Assistant />
       <Toaster />
     </div>
   )

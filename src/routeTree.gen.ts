@@ -23,6 +23,7 @@ import { Route as NabavaRouteImport } from './routes/nabava'
 import { Route as NaljepniceRouteImport } from './routes/naljepnice'
 import { Route as NarudzbeRouteImport } from './routes/narudzbe'
 import { Route as PazarRouteImport } from './routes/pazar'
+import { Route as PomocRouteImport } from './routes/pomoc'
 import { Route as PrimkeRouteImport } from './routes/primke'
 import { Route as RadnoVrijemeRouteImport } from './routes/radno-vrijeme'
 import { Route as TroskoviRouteImport } from './routes/troskovi'
@@ -105,6 +106,11 @@ const PazarRoute = PazarRouteImport.update({
   path: '/pazar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PomocRoute = PomocRouteImport.update({
+  id: '/pomoc',
+  path: '/pomoc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrimkeRoute = PrimkeRouteImport.update({
   id: '/primke',
   path: '/primke',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
   '/pazar': typeof PazarRoute
+  '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
   '/pazar': typeof PazarRoute
+  '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
   '/pazar': typeof PazarRoute
+  '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/naljepnice'
     | '/narudzbe'
     | '/pazar'
+    | '/pomoc'
     | '/primke'
     | '/radno-vrijeme'
     | '/troskovi'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/naljepnice'
     | '/narudzbe'
     | '/pazar'
+    | '/pomoc'
     | '/primke'
     | '/radno-vrijeme'
     | '/troskovi'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/naljepnice'
     | '/narudzbe'
     | '/pazar'
+    | '/pomoc'
     | '/primke'
     | '/radno-vrijeme'
     | '/troskovi'
@@ -340,6 +352,7 @@ export interface RootRouteChildren {
   NaljepniceRoute: typeof NaljepniceRoute
   NarudzbeRoute: typeof NarudzbeRoute
   PazarRoute: typeof PazarRoute
+  PomocRoute: typeof PomocRoute
   PrimkeRoute: typeof PrimkeRoute
   RadnoVrijemeRoute: typeof RadnoVrijemeRoute
   TroskoviRoute: typeof TroskoviRoute
@@ -451,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PazarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pomoc': {
+      id: '/pomoc'
+      path: '/pomoc'
+      fullPath: '/pomoc'
+      preLoaderRoute: typeof PomocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/primke': {
       id: '/primke'
       path: '/primke'
@@ -560,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   NaljepniceRoute: NaljepniceRoute,
   NarudzbeRoute: NarudzbeRoute,
   PazarRoute: PazarRoute,
+  PomocRoute: PomocRoute,
   PrimkeRoute: PrimkeRoute,
   RadnoVrijemeRoute: RadnoVrijemeRoute,
   TroskoviRoute: TroskoviRoute,

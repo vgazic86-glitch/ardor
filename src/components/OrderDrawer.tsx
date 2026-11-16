@@ -81,6 +81,7 @@ export function OrderDrawer({
   return (
     <Modal
       side
+      help="narudzba"
       title={order.number}
       subtitle={
         <span className="flex items-center gap-2">

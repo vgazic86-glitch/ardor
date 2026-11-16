@@ -468,3 +468,18 @@ export const tasks = pgTable(
   },
   (t) => [index('tasks_assignee_idx').on(t.assigneeId, t.status)],
 )
+
+/** Prijave (sesije) po uređaju: za „online” prikaz i automatsku odjavu kad se aplikacija zatvori. */
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: text().primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+    userAgent: text('user_agent').notNull().default(''),
+  },
+  (t) => [index('sessions_user_idx').on(t.userId)],
+)

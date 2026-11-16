@@ -154,6 +154,7 @@ function CustomerCard({ row, onClose, onOrder }: { row: Row; onClose: () => void
   return (
     <Modal
       side
+      help="kupci"
       title={c.name}
       subtitle={`${row.orders.filter(isRevenue).length} narudžbi · kupio ukupno ${money(row.revenue)}`}
       onClose={onClose}

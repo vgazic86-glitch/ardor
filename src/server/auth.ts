@@ -3,8 +3,8 @@
  * Prva prijava: korisnik unosi jednokratni aktivacijski kod i sam postavlja lozinku.
  */
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
-import { and, asc, eq } from 'drizzle-orm'
-import { deleteCookie, getCookie, getRequestProtocol, setCookie } from '@tanstack/react-start/server'
+import { and, asc, eq, lt } from 'drizzle-orm'
+import { deleteCookie, getCookie, getRequestHeader, getRequestProtocol, setCookie } from '@tanstack/react-start/server'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { hashPassword, meta, setMeta, verifyPassword } from './hr'
@@ -128,9 +128,22 @@ const toSession = (u: typeof t.users.$inferSelect): SessionUser => ({
   employeeId: u.employeeId ? String(u.employeeId) : null,
 })
 
+/**
+ * Aplikacija javlja „živ sam” svake minute dok je otvorena. Ako se ne javi duže od ovoga
+ * (zatvoren preglednik, aplikacija, ugašen mobitel), prijava prestaje važiti.
+ */
+const IDLE_MINUTES = 10
+/** Korisnik se smatra „online” ako se javio u zadnje 2 minute. */
+export const ONLINE_MINUTES = 2
+
 async function startSession(userId: number) {
   const exp = Date.now() + SESSION_HOURS * 3_600_000
-  const payload = `${userId}.${exp}`
+  const sid = randomBytes(18).toString('base64url')
+  const ua = (getRequestHeader('user-agent') ?? '').slice(0, 300)
+  await db.insert(t.sessions).values({ id: sid, userId, userAgent: ua, createdAt: new Date(), lastSeenAt: new Date() })
+  // stare sesije (starije od dana) čistimo usput
+  await db.delete(t.sessions).where(lt(t.sessions.lastSeenAt, new Date(Date.now() - 86_400_000)))
+  const payload = `${userId}.${exp}.${sid}`
   setCookie(COOKIE, `${payload}.${sign(await secret(), payload)}`, {
     httpOnly: true,
     sameSite: 'lax',
@@ -145,12 +158,21 @@ async function startSession(userId: number) {
 export async function currentUser(): Promise<SessionUser | null> {
   const raw = getCookie(COOKIE)
   if (!raw) return null
-  const [id, exp, mac] = raw.split('.')
-  if (!id || !exp || !mac || Number(exp) < Date.now()) return null
-  const good = sign(await secret(), `${id}.${exp}`)
+  const [id, exp, sid, mac] = raw.split('.')
+  if (!id || !exp || !sid || !mac || Number(exp) < Date.now()) return null
+  const good = sign(await secret(), `${id}.${exp}.${sid}`)
   if (good.length !== mac.length || !timingSafeEqual(Buffer.from(good), Buffer.from(mac))) return null
+  const [sess] = await db.select().from(t.sessions).where(eq(t.sessions.id, sid))
+  if (!sess || sess.userId !== Number(id)) return null
+  const idle = Date.now() - sess.lastSeenAt.getTime()
+  if (idle > IDLE_MINUTES * 60_000) {
+    await db.delete(t.sessions).where(eq(t.sessions.id, sid))
+    return null
+  }
   const [u] = await db.select().from(t.users).where(eq(t.users.id, Number(id)))
   if (!u || !u.active || !u.passwordHash) return null
+  // Svaka radnja (i otkucaj) produžava sesiju; u bazu pišemo najviše jednom u 30 s.
+  if (idle > 30_000) await db.update(t.sessions).set({ lastSeenAt: new Date() }).where(eq(t.sessions.id, sid))
   return toSession(u)
 }
 
@@ -216,7 +238,30 @@ export async function activate(username: string, code: string, password: string)
 }
 
 export async function logout() {
+  const sid = getCookie(COOKIE)?.split('.')[2]
+  if (sid) await db.delete(t.sessions).where(eq(t.sessions.id, sid))
   deleteCookie(COOKIE, { path: '/' })
+}
+
+/** Ko je trenutno u aplikaciji i kad je zadnji put bio aktivan (za administratora). */
+export async function presence() {
+  await requireAdminUser()
+  const rows = await db.select({ userId: t.sessions.userId, lastSeenAt: t.sessions.lastSeenAt, userAgent: t.sessions.userAgent }).from(t.sessions)
+  const by = new Map<string, { lastSeenAt: string; online: boolean; devices: number; mobile: boolean }>()
+  for (const r of rows) {
+    if (Date.now() - r.lastSeenAt.getTime() > IDLE_MINUTES * 60_000) continue
+    const k = String(r.userId)
+    const prev = by.get(k)
+    const seen = r.lastSeenAt.toISOString()
+    const online = Date.now() - r.lastSeenAt.getTime() <= ONLINE_MINUTES * 60_000
+    by.set(k, {
+      lastSeenAt: !prev || seen > prev.lastSeenAt ? seen : prev.lastSeenAt,
+      online: online || !!prev?.online,
+      devices: (prev?.devices ?? 0) + 1,
+      mobile: !!prev?.mobile || /mobi|android|iphone/i.test(r.userAgent),
+    })
+  }
+  return Object.fromEntries(by)
 }
 
 export async function changePassword(oldPassword: string, newPassword: string) {
@@ -275,8 +320,11 @@ export async function saveUser(input: UserInput) {
     phone: (input.phone ?? '').trim(),
     email: (input.email ?? '').trim(),
   }
-  if (input.id) await db.update(t.users).set(values).where(eq(t.users.id, Number(input.id)))
-  else await db.insert(t.users).values({ ...values, activationCode: newActivationCode() })
+  if (input.id) {
+    await db.update(t.users).set(values).where(eq(t.users.id, Number(input.id)))
+    // Isključen korisnik odmah gubi pristup na svim uređajima.
+    if (!values.active) await db.delete(t.sessions).where(eq(t.sessions.userId, Number(input.id)))
+  } else await db.insert(t.users).values({ ...values, activationCode: newActivationCode() })
 }
 
 /** Poništava lozinku korisnika i daje novi aktivacijski kod (npr. zaboravljena lozinka). */
@@ -284,6 +332,7 @@ export async function resetUser(id: string) {
   const me = await requireAdminUser()
   if (id === me.id) throw new Error('Vlastitu lozinku promijenite u „Moj račun”.')
   await db.update(t.users).set({ passwordHash: null, activationCode: newActivationCode() }).where(eq(t.users.id, Number(id)))
+  await db.delete(t.sessions).where(eq(t.sessions.userId, Number(id)))
 }
 
 /** Kontakt podaci korisnika (za ispis na narudžbama). */

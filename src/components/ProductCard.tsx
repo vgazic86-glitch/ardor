@@ -48,6 +48,7 @@ export function ProductCard({
     <>
       <Modal
         side
+        help="artikal"
         title={p.name}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
