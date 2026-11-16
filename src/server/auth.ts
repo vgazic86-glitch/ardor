@@ -42,7 +42,8 @@ export interface UserAdminView extends SessionUser {
 }
 
 const COOKIE = 'ardor_sesija'
-const SESSION_DAYS = 30
+/** Prijava traje dok je preglednik otvoren, a najduže jedan radni dan. */
+const SESSION_HOURS = 14
 
 /** Početni korisnici: Vladimir je glavni administrator. */
 const INITIAL_USERS: { username: string; name: string; role: UserRole; hrAccess: boolean }[] = [
@@ -127,14 +128,14 @@ const toSession = (u: typeof t.users.$inferSelect): SessionUser => ({
 })
 
 async function startSession(userId: number) {
-  const exp = Date.now() + SESSION_DAYS * 86_400_000
+  const exp = Date.now() + SESSION_HOURS * 3_600_000
   const payload = `${userId}.${exp}`
   setCookie(COOKIE, `${payload}.${sign(await secret(), payload)}`, {
     httpOnly: true,
     sameSite: 'lax',
     secure: getRequestProtocol({ xForwardedProto: true }) === 'https',
     path: '/',
-    maxAge: SESSION_DAYS * 86_400,
+    // Bez maxAge: kolačić sesije nestaje kad se zatvori preglednik (automatska odjava).
   })
   await db.update(t.users).set({ lastLoginAt: new Date() }).where(eq(t.users.id, userId))
 }

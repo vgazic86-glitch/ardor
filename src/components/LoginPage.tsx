@@ -1,5 +1,6 @@
 import { useRouter } from '@tanstack/react-router'
-import { KeyRound, LogIn, ShieldCheck } from 'lucide-react'
+import { KeyRound, LogIn, Quote, ShieldCheck } from 'lucide-react'
+import { messageFor, todayBL } from '../lib/motivation'
 import { useState } from 'react'
 import { activateFn, loginFn } from '../server/api'
 import { BrandMark, Logo } from './Logo'
@@ -16,6 +17,12 @@ export function LoginPage() {
   const [pw2, setPw2] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const today = todayBL()
+  const message = messageFor(today)
+  const rawLabel = new Intl.DateTimeFormat('bs-BA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Sarajevo' })
+    .format(new Date(`${today}T12:00:00Z`))
+    .toLowerCase()
+  const dayLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,8 +59,18 @@ export function LoginPage() {
           <Logo light className="h-12 w-auto self-start" />
           <div>
             <BrandMark className="size-24" />
-            <h1 className="mt-6 max-w-md font-display text-4xl font-bold leading-tight text-linen">Prodaja, zalihe i poslovanje na jednom mjestu.</h1>
-            <p className="mt-3 text-sm uppercase tracking-[0.25em] text-copper-400">Namještaj za svačiji džep</p>
+            <div className="mt-8 max-w-lg">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-copper-400">
+                <Quote className="size-4" /> Poruka dana
+              </div>
+              <p suppressHydrationWarning className="mt-3 font-display text-3xl font-bold leading-snug text-linen">
+                {message}
+              </p>
+              <p suppressHydrationWarning className="mt-4 text-sm text-walnut-300">
+                {dayLabel}
+              </p>
+            </div>
+            <p className="mt-8 text-sm uppercase tracking-[0.25em] text-copper-400">Namještaj za svačiji džep</p>
           </div>
           <p className="text-xs text-walnut-400">Vojvode Pere Krece 21, Banja Luka</p>
         </div>
@@ -61,7 +78,15 @@ export function LoginPage() {
 
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm">
-          <Logo className="mb-10 h-10 lg:hidden" />
+          <Logo className="mb-6 h-10 lg:hidden" />
+          <div className="mb-8 rounded-2xl border border-copper-200 bg-copper-50 p-4 lg:hidden">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-copper-700">
+              <Quote className="size-3.5" /> Poruka dana
+            </div>
+            <p suppressHydrationWarning className="mt-1.5 text-sm font-medium text-walnut-900">
+              {message}
+            </p>
+          </div>
           <h2 className="font-display text-3xl font-bold">{step === 'login' ? 'Prijava' : 'Prva prijava'}</h2>
           <p className="mt-1.5 text-sm text-walnut-600">
             {step === 'login'

@@ -308,9 +308,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             backgroundSize: '34px 34px',
           }}
         />
-        <div className="leaf relative bg-white px-4 py-3 shadow-card">
+        <Link to="/" aria-label="Pregled" className="leaf relative block bg-white px-4 py-3 shadow-card transition-transform hover:scale-[1.02]">
           <Logo className="h-9 w-full" />
-        </div>
+        </Link>
         <div className="relative -mx-1 flex-1 overflow-y-auto px-1">
           <NavLinks />
         </div>
@@ -330,7 +330,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
           <div className="sidebar-bg absolute left-0 top-0 flex h-full w-72 flex-col gap-7 p-5">
             <div className="flex items-center justify-between">
-              <Logo light className="h-9" />
+              <Link to="/" aria-label="Pregled" onClick={() => setOpen(false)}>
+                <Logo light className="h-9" />
+              </Link>
               <button
                 onClick={() => setOpen(false)}
                 className="text-walnut-300"
@@ -356,9 +358,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <Menu className="size-6" />
           </button>
-          <div className="lg:hidden">
+          <Link to="/" aria-label="Pregled" className="lg:hidden">
             <Logo className="h-8" />
-          </div>
+          </Link>
           <button
             onClick={() => setPalette(true)}
             className="group hidden w-full max-w-sm items-center gap-2.5 rounded-xl border border-walnut-200 bg-linen/80 py-2 pl-3 pr-2 text-left text-sm text-walnut-400 shadow-sm transition-colors hover:border-walnut-300 md:flex"
