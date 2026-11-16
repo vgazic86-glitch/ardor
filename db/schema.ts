@@ -71,6 +71,8 @@ export const customers = pgTable('customers', {
   email: text().notNull().default(''),
   city: text().notNull().default(''),
   address: text().notNull().default(''),
+  /** Interna napomena o kupcu (želje, dogovori). */
+  note: text().notNull().default(''),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
@@ -437,4 +439,28 @@ export const employeeTargets = pgTable(
     target: money('target').notNull(),
   },
   (t) => [uniqueIndex('employee_targets_employee_month_idx').on(t.employeeId, t.month)],
+)
+
+/** Radni zadaci: uprava zadaje svima, voditelj salona trgovcima. */
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: serial().primaryKey(),
+    title: text().notNull(),
+    description: text().notNull().default(''),
+    assigneeId: integer('assignee_id')
+      .notNull()
+      .references(() => users.id),
+    createdById: integer('created_by_id').references(() => users.id),
+    createdByName: text('created_by_name').notNull().default(''),
+    dueDate: date('due_date', { mode: 'string' }),
+    /** normalno | hitno */
+    priority: text().notNull().default('normalno'),
+    /** otvoren | u_toku | zavrsen */
+    status: text().notNull().default('otvoren'),
+    doneNote: text('done_note').notNull().default(''),
+    doneAt: timestamp('done_at'),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => [index('tasks_assignee_idx').on(t.assigneeId, t.status)],
 )

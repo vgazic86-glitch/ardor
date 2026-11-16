@@ -1,5 +1,7 @@
 import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { canSee, ROLE_LABEL, type Area } from '../lib/access'
+import { computeAlerts } from '../lib/alerts'
+import { useInstall } from '../lib/pwa'
 import { logoutFn } from '../server/api'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import {
@@ -10,6 +12,11 @@ import {
   Boxes,
   CheckCircle2,
   ChevronsUpDown,
+  Smartphone,
+  Contact,
+  Wallet,
+  Bell,
+  ListChecks,
   Clock,
   KeyRound,
   LogOut,
@@ -40,7 +47,7 @@ type NavItem = {
   to: string
   label: string
   icon: typeof LayoutDashboard
-  badge?: 'orders' | 'deliveries' | 'low'
+  badge?: 'orders' | 'deliveries' | 'low' | 'tasks'
   area: Area
 }
 
@@ -49,8 +56,11 @@ const groups: { title: string; items: NavItem[] }[] = [
     title: 'Prodaja',
     items: [
       { to: '/', label: 'Pregled', icon: LayoutDashboard, area: 'pregled' },
+      { to: '/zadaci', label: 'Zadaci', icon: ListChecks, badge: 'tasks', area: 'zadaci' },
       { to: '/narudzbe', label: 'Narudžbe kupaca', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
+      { to: '/kupci', label: 'Kupci', icon: Contact, area: 'kupci' },
       { to: '/dostave', label: 'Dostave', icon: Truck, badge: 'deliveries', area: 'dostave' },
+      { to: '/pazar', label: 'Dnevni pazar', icon: Wallet, area: 'pazar' },
     ],
   },
   {
@@ -86,8 +96,9 @@ const groups: { title: string; items: NavItem[] }[] = [
 export { Logo }
 
 function useBadges() {
-  const { orders, products, today } = useStore()
+  const { orders, products, today, openTasks } = useStore()
   return {
+    tasks: openTasks,
     orders: orders.filter((o) =>
       ['potvrđena', 'u_izradi', 'spremna'].includes(o.status),
     ).length,
@@ -140,7 +151,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                   {n > 0 && (
                     <span
                       className={`min-w-5 rounded-full px-1.5 py-px text-center text-[10.5px] font-bold tabular ${
-                        badge === 'low'
+                        badge === 'low' || badge === 'tasks'
                           ? 'bg-copper-500/25 text-copper-400'
                           : 'bg-white/10 text-walnut-200'
                       }`}
@@ -163,6 +174,7 @@ function UserSwitcher() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [pw, setPw] = useState(false)
+  const pwa = useInstall()
   async function logout() {
     await logoutFn()
     await router.invalidate()
@@ -204,6 +216,22 @@ function UserSwitcher() {
             >
               <KeyRound className="size-4 text-walnut-400" /> Promijeni lozinku
             </button>
+            {pwa.canInstall && (
+              <button
+                onClick={() => {
+                  pwa.install()
+                  setOpen(false)
+                }}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-copper-300 hover:bg-white/5"
+              >
+                <Smartphone className="size-4" /> Instaliraj aplikaciju
+              </button>
+            )}
+            {pwa.iosHint && (
+              <div className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-xs text-walnut-300">
+                <Smartphone className="mt-0.5 size-4 shrink-0" /> Na iPhoneu: Dijeli → „Dodaj na početni zaslon”
+              </div>
+            )}
             <button onClick={logout} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-walnut-200 hover:bg-white/5">
               <LogOut className="size-4 text-walnut-400" /> Odjava
             </button>
@@ -229,6 +257,57 @@ function UserSwitcher() {
         <ChevronsUpDown className="size-4 text-walnut-400" />
       </button>
       {pw && <ChangePasswordDialog onClose={() => setPw(false)} />}
+    </div>
+  )
+}
+
+/** Zvonce: šta danas traži pažnju (zadaci, dostave, kašnjenja, zalihe, ponude, dugovanja). */
+function NotificationBell() {
+  const { orders, products, today, openTasks, restricted, me } = useStore()
+  const [open, setOpen] = useState(false)
+  const alerts = computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null })
+  const urgent = alerts.filter((a) => a.tone === 'bad' || a.key === 'zadaci').reduce((s, a) => s + a.count, 0)
+  const total = alerts.reduce((s, a) => s + a.count, 0)
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="relative rounded-lg p-2 text-walnut-700 hover:bg-walnut-100"
+        aria-label={`Obavijesti (${total})`}
+        aria-expanded={open}
+      >
+        <Bell className={`size-5 ${urgent ? 'bell-ring' : ''}`} />
+        {total > 0 && (
+          <span className={`absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full px-1 text-center text-[10px] font-bold leading-[18px] text-white ${urgent ? 'bg-rose-600' : 'bg-copper-500'}`}>
+            {total > 99 ? '99+' : total}
+          </span>
+        )}
+      </button>
+      {open && (
+        <>
+          <button className="fixed inset-0 z-40 cursor-default" aria-label="Zatvori" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-walnut-200 bg-white shadow-lift">
+            <div className="border-b border-walnut-100 px-4 py-3 font-display font-semibold">Obavijesti</div>
+            {alerts.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-walnut-500">Nema ništa hitno. Sve je pod kontrolom.</p>
+            ) : (
+              <ul className="max-h-[60vh] divide-y divide-walnut-100 overflow-y-auto">
+                {alerts.map((a) => (
+                  <li key={a.key}>
+                    <Link to={a.to} search={a.search as never} onClick={() => setOpen(false)} className="flex items-start gap-3 px-4 py-3 hover:bg-walnut-50">
+                      <span className={`mt-1 size-2.5 shrink-0 rounded-full ${a.tone === 'bad' ? 'bg-rose-500' : a.tone === 'warn' ? 'bg-amber-500' : a.tone === 'info' ? 'bg-sky-500' : 'bg-copper-500'}`} />
+                      <span>
+                        <span className="block text-sm font-semibold text-walnut-900">{a.title}</span>
+                        <span className="block text-xs text-walnut-500">{a.detail}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -384,6 +463,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {weekday(TODAY)}, {date(TODAY)}
               </div>
             </div>
+            <NotificationBell />
             {canSee(user, 'primke') && (
             <button
               onClick={() =>

@@ -40,7 +40,7 @@ export const Route = createFileRoute('/zaposlenici')({
 })
 
 function EmployeesPage() {
-  const { orders, drivers, salesPeople, employees, currentMonth } = useStore()
+  const { orders, drivers, salesPeople, employees, currentMonth, full } = useStore()
   const [edit, setEdit] = useState<Employee | 'new' | null>(null)
   const months = lastMonths(currentMonth, 12)
   const [month, setMonth] = useState(currentMonth)
@@ -83,12 +83,16 @@ function EmployeesPage() {
                 .reverse()
                 .map((k) => ({ value: k, label: label(k) }))}
             />
-            <Button variant="outline" onClick={() => setPlan(true)}>
-              <Target className="size-4" /> Plan prometa
-            </Button>
-            <Button onClick={() => setEdit('new')}>
-              <Plus className="size-4" /> Novi zaposlenik
-            </Button>
+            {full && (
+              <>
+                <Button variant="outline" onClick={() => setPlan(true)}>
+                  <Target className="size-4" /> Plan prometa
+                </Button>
+                <Button onClick={() => setEdit('new')}>
+                  <Plus className="size-4" /> Novi zaposlenik
+                </Button>
+              </>
+            )}
           </>
         }
       />
@@ -350,13 +354,14 @@ function EmployeesPage() {
                       : `${Math.round(e.commissionRate * 1000) / 10}%`}
                   </td>
                   <td className="text-right">
-                    <Button
+                    {full && <Button
                       size="sm"
                       variant="ghost"
+                      aria-label={`Uredi ${e.name}`}
                       onClick={() => setEdit(e)}
                     >
                       <Pencil className="size-3.5" /> Uredi
-                    </Button>
+                    </Button>}
                   </td>
                 </tr>
               ))}

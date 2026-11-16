@@ -46,6 +46,8 @@ import {
   previousMonthKey,
   revenueIn,
 } from '../lib/stats'
+import { Briefing, greeting } from '../components/Briefing'
+import { MyTasksCard } from '../components/Tasks'
 import { useStore } from '../lib/store'
 import { targetFor } from '../lib/types'
 
@@ -64,6 +66,7 @@ function Overview() {
     me,
     restricted,
     user,
+    full,
   } = useStore()
   /** Trgovac vidi samo svoje brojke. */
   const mine = restricted ? orders.filter((o) => o.employeeId === me?.id) : orders
@@ -108,7 +111,7 @@ function Overview() {
     <div className="rise">
       <PageHeader
         eyebrow={`${monthLong(curM)} ${currentMonth.slice(0, 4)}.`}
-        title={`Dobar dan, ${user.name.split(' ')[0]}`}
+        title={`${greeting()}, ${user.name.split(' ')[0]}`}
         description={restricted ? 'Vaše prodaje, cilj, dostave i roba koju treba pratiti.' : 'Pregled prometa, narudžbi i dostava salona na jednom mjestu.'}
         actions={
           restricted ? (
@@ -118,6 +121,13 @@ function Overview() {
             >
               <Clock className="size-4 text-copper-600" /> Dolazak / odlazak
             </Link>
+          ) : !full ? (
+            <Link
+              to="/pazar"
+              className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
+            >
+              <HandCoins className="size-4 text-copper-600" /> Dnevni pazar
+            </Link>
           ) : <Link
             to="/izvjestaji"
             className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
@@ -126,6 +136,9 @@ function Overview() {
           </Link>
         }
       />
+
+      <Briefing />
+      <MyTasksCard />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Stat

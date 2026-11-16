@@ -1,5 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
+  QrCode,
   Archive,
   Boxes,
   Pencil,
@@ -62,9 +63,17 @@ function ProductsPage() {
         title="Artikli"
         description="Svi artikli salona s cijenama, maržom, minimalnom zalihom i dobavljačem. Maloprodajne cijene su s PDV-om, nabavne bez PDV-a."
         actions={
+          <>
+          <Link
+            to="/naljepnice"
+            className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
+          >
+            <QrCode className="size-4 text-copper-600" /> QR naljepnice
+          </Link>
           <Button onClick={() => setEdit('new')}>
             <Plus className="size-4" /> Novi artikal
           </Button>
+          </>
         }
       />
 

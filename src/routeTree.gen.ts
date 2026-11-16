@@ -17,11 +17,15 @@ import { Route as InventuraRouteImport } from './routes/inventura'
 import { Route as IzvjestajiRouteImport } from './routes/izvjestaji'
 import { Route as KadrovskaRouteImport } from './routes/kadrovska'
 import { Route as KorisniciRouteImport } from './routes/korisnici'
+import { Route as KupciRouteImport } from './routes/kupci'
 import { Route as NabavaRouteImport } from './routes/nabava'
+import { Route as NaljepniceRouteImport } from './routes/naljepnice'
 import { Route as NarudzbeRouteImport } from './routes/narudzbe'
+import { Route as PazarRouteImport } from './routes/pazar'
 import { Route as PrimkeRouteImport } from './routes/primke'
 import { Route as RadnoVrijemeRouteImport } from './routes/radno-vrijeme'
 import { Route as TroskoviRouteImport } from './routes/troskovi'
+import { Route as ZadaciRouteImport } from './routes/zadaci'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
 import { Route as DobavljaciIndexRouteImport } from './routes/dobavljaci/index'
@@ -70,14 +74,29 @@ const KorisniciRoute = KorisniciRouteImport.update({
   path: '/korisnici',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KupciRoute = KupciRouteImport.update({
+  id: '/kupci',
+  path: '/kupci',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NabavaRoute = NabavaRouteImport.update({
   id: '/nabava',
   path: '/nabava',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NaljepniceRoute = NaljepniceRouteImport.update({
+  id: '/naljepnice',
+  path: '/naljepnice',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NarudzbeRoute = NarudzbeRouteImport.update({
   id: '/narudzbe',
   path: '/narudzbe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PazarRoute = PazarRouteImport.update({
+  id: '/pazar',
+  path: '/pazar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrimkeRoute = PrimkeRouteImport.update({
@@ -93,6 +112,11 @@ const RadnoVrijemeRoute = RadnoVrijemeRouteImport.update({
 const TroskoviRoute = TroskoviRouteImport.update({
   id: '/troskovi',
   path: '/troskovi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZadaciRoute = ZadaciRouteImport.update({
+  id: '/zadaci',
+  path: '/zadaci',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ZaliheRoute = ZaliheRouteImport.update({
@@ -140,11 +164,15 @@ export interface FileRoutesByFullPath {
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
   '/korisnici': typeof KorisniciRoute
+  '/kupci': typeof KupciRoute
   '/nabava': typeof NabavaRoute
+  '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
+  '/pazar': typeof PazarRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
+  '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
@@ -161,11 +189,15 @@ export interface FileRoutesByTo {
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
   '/korisnici': typeof KorisniciRoute
+  '/kupci': typeof KupciRoute
   '/nabava': typeof NabavaRoute
+  '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
+  '/pazar': typeof PazarRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
+  '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
@@ -184,11 +216,15 @@ export interface FileRoutesById {
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
   '/korisnici': typeof KorisniciRoute
+  '/kupci': typeof KupciRoute
   '/nabava': typeof NabavaRoute
+  '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
+  '/pazar': typeof PazarRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/troskovi': typeof TroskoviRoute
+  '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
@@ -208,11 +244,15 @@ export interface FileRouteTypes {
     | '/izvjestaji'
     | '/kadrovska'
     | '/korisnici'
+    | '/kupci'
     | '/nabava'
+    | '/naljepnice'
     | '/narudzbe'
+    | '/pazar'
     | '/primke'
     | '/radno-vrijeme'
     | '/troskovi'
+    | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
     | '/dobavljaci/$id'
@@ -229,11 +269,15 @@ export interface FileRouteTypes {
     | '/izvjestaji'
     | '/kadrovska'
     | '/korisnici'
+    | '/kupci'
     | '/nabava'
+    | '/naljepnice'
     | '/narudzbe'
+    | '/pazar'
     | '/primke'
     | '/radno-vrijeme'
     | '/troskovi'
+    | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
     | '/dobavljaci/$id'
@@ -251,11 +295,15 @@ export interface FileRouteTypes {
     | '/izvjestaji'
     | '/kadrovska'
     | '/korisnici'
+    | '/kupci'
     | '/nabava'
+    | '/naljepnice'
     | '/narudzbe'
+    | '/pazar'
     | '/primke'
     | '/radno-vrijeme'
     | '/troskovi'
+    | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
     | '/dobavljaci/$id'
@@ -274,11 +322,15 @@ export interface RootRouteChildren {
   IzvjestajiRoute: typeof IzvjestajiRoute
   KadrovskaRoute: typeof KadrovskaRoute
   KorisniciRoute: typeof KorisniciRoute
+  KupciRoute: typeof KupciRoute
   NabavaRoute: typeof NabavaRoute
+  NaljepniceRoute: typeof NaljepniceRoute
   NarudzbeRoute: typeof NarudzbeRoute
+  PazarRoute: typeof PazarRoute
   PrimkeRoute: typeof PrimkeRoute
   RadnoVrijemeRoute: typeof RadnoVrijemeRoute
   TroskoviRoute: typeof TroskoviRoute
+  ZadaciRoute: typeof ZadaciRoute
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
   DokumentiSlugRoute: typeof DokumentiSlugRoute
@@ -344,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KorisniciRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kupci': {
+      id: '/kupci'
+      path: '/kupci'
+      fullPath: '/kupci'
+      preLoaderRoute: typeof KupciRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nabava': {
       id: '/nabava'
       path: '/nabava'
@@ -351,11 +410,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NabavaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/naljepnice': {
+      id: '/naljepnice'
+      path: '/naljepnice'
+      fullPath: '/naljepnice'
+      preLoaderRoute: typeof NaljepniceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/narudzbe': {
       id: '/narudzbe'
       path: '/narudzbe'
       fullPath: '/narudzbe'
       preLoaderRoute: typeof NarudzbeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pazar': {
+      id: '/pazar'
+      path: '/pazar'
+      fullPath: '/pazar'
+      preLoaderRoute: typeof PazarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/primke': {
@@ -377,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/troskovi'
       fullPath: '/troskovi'
       preLoaderRoute: typeof TroskoviRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zadaci': {
+      id: '/zadaci'
+      path: '/zadaci'
+      fullPath: '/zadaci'
+      preLoaderRoute: typeof ZadaciRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/zalihe': {
@@ -454,11 +534,15 @@ const rootRouteChildren: RootRouteChildren = {
   IzvjestajiRoute: IzvjestajiRoute,
   KadrovskaRoute: KadrovskaRoute,
   KorisniciRoute: KorisniciRoute,
+  KupciRoute: KupciRoute,
   NabavaRoute: NabavaRoute,
+  NaljepniceRoute: NaljepniceRoute,
   NarudzbeRoute: NarudzbeRoute,
+  PazarRoute: PazarRoute,
   PrimkeRoute: PrimkeRoute,
   RadnoVrijemeRoute: RadnoVrijemeRoute,
   TroskoviRoute: TroskoviRoute,
+  ZadaciRoute: ZadaciRoute,
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,
   DokumentiSlugRoute: DokumentiSlugRoute,

@@ -1,4 +1,4 @@
-/** PDF narudžbenice na službenom memorandumu ARDOR namještaja. */
+/** PDF dokumenti na službenom memorandumu ARDOR namještaja (narudžbe dobavljačima, ponude, predračuni, otpremnice). */
 import fontkit from '@pdf-lib/fontkit'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -23,11 +23,11 @@ function fontBytes(name: string) {
   return readFileSync(path)
 }
 
-const num = (v: number, dec = 2) => {
+export const num = (v: number, dec = 2) => {
   const [i, d] = Math.abs(v).toFixed(dec).split('.')
   return `${v < 0 ? '-' : ''}${i.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}${dec ? `,${d}` : ''}`
 }
-const dateBa = (iso: string) => {
+export const dateBa = (iso: string) => {
   const [y, m, d] = iso.slice(0, 10).split('-')
   return `${d}.${m}.${y}.`
 }
@@ -42,7 +42,6 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
       if (font.widthOfTextAtSize(next, size) <= width) line = next
       else {
         if (line) out.push(line)
-        // predugačka riječ: lomi po znakovima
         let w = word
         while (font.widthOfTextAtSize(w, size) > width && w.length > 1) {
           let k = w.length
@@ -61,20 +60,48 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
 /** Zamijeni znakove kojih nema u fontu (sigurnosno). */
 const safe = (s: string) => s.replace(/[^ -ſ–—‘’“”„•…€\n]/g, '')
 
-export interface PurchasePdfInput {
-  order: PurchaseOrder
-  company: CompanyInfo
-  supplier: { name: string; phone: string; email: string }
-  creator: { name: string; role: string; phone: string; email: string }
+export interface DocColumn {
+  key: string
+  label: string
+  /** 0 = ostatak širine (naziv). */
+  w: number
+  align: 'l' | 'r'
 }
 
-export async function renderPurchaseOrderPdf({ order, company, supplier, creator }: PurchasePdfInput) {
+export interface DocRow {
+  cells: Record<string, string>
+  /** Crvena napomena ispod naziva. */
+  note?: string
+}
+
+export interface LetterDoc {
+  company: CompanyInfo
+  title: string
+  number: string
+  meta: string[]
+  boxes: { title: string; lines: string[] }[]
+  intro: string
+  columns: DocColumn[]
+  rows: DocRow[]
+  summary?: string
+  totals?: [string, number, boolean][]
+  totalsNote?: string
+  note?: string
+  closing?: string
+  signer: { label: string; name: string; contact: string; extra?: string }
+  /** Potpisna polja desno (npr. „Za ARDOR namještaj”, „Robu preuzeo”). */
+  signatures: string[]
+}
+
+/** Opći dokument na memorandumu: zaglavlje s logom, dva okvira, tablica stavki, zbir, napomena, potpisi, podnožje. */
+export async function renderLetterDoc(doc: LetterDoc) {
+  const { company } = doc
   const pdf = await PDFDocument.create()
   pdf.registerFontkit(fontkit)
   const R = await pdf.embedFont(fontBytes('Ubuntu-R.ttf'), { subset: true })
   const M = await pdf.embedFont(fontBytes('Ubuntu-M.ttf'), { subset: true })
   const B = await pdf.embedFont(fontBytes('Ubuntu-B.ttf'), { subset: true })
-  pdf.setTitle(`Narudžba ${order.number}`)
+  pdf.setTitle(`${doc.title} ${doc.number}`)
   pdf.setAuthor(company.name)
   pdf.setCreator('ARDOR aplikacija')
   pdf.setLanguage('bs')
@@ -85,13 +112,11 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
   const MR = 48
   const CW = W - ML - MR
   const FOOT = 70
-
   const pages: PDFPage[] = []
   let page!: PDFPage
   let y = 0
 
-  const text = (s: string, x: number, yy: number, size: number, font = R, color = INK) =>
-    page.drawText(safe(s), { x, y: yy, size, font, color })
+  const text = (s: string, x: number, yy: number, size: number, font = R, color = INK) => page.drawText(safe(s), { x, y: yy, size, font, color })
   const right = (s: string, xr: number, yy: number, size: number, font = R, color = INK) =>
     text(s, xr - font.widthOfTextAtSize(safe(s), size), yy, size, font, color)
 
@@ -108,7 +133,6 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
   function header(first: boolean) {
     page = pdf.addPage([W, H])
     pages.push(page)
-    // memorandum
     drawLogo(ML, H - 40, first ? 46 : 36)
     const info = [
       company.legalName || company.name,
@@ -128,7 +152,7 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
     page.drawRectangle({ x: ML + CW * 0.86, y: lineY, width: CW * 0.14, height: 2, color: GRAY })
     y = lineY - 24
     if (!first) {
-      text(`Narudžba ${order.number} (nastavak)`, ML, y, 10, M, MUTED)
+      text(`${doc.title.charAt(0)}${doc.title.slice(1).toLowerCase()} ${doc.number} (nastavak)`, ML, y, 10, M, MUTED)
       y -= 22
     }
   }
@@ -154,44 +178,31 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
     p.drawText(pg, { x: W - MR - R.widthOfTextAtSize(pg, 7.5), y: fy + 8, size: 7.5, font: R, color: MUTED })
   }
 
-  function ensure(space: number) {
+  const ensure = (space: number) => {
     if (y - space < FOOT + 10) header(false)
   }
 
   header(true)
 
   // naslov
-  text('NARUDŽBA', ML, y - 4, 22, B, INK)
-  right(order.number, W - MR, y - 4, 16, B, RED)
+  text(doc.title, ML, y - 4, 22, B, INK)
+  right(doc.number, W - MR, y - 4, 16, B, RED)
   y -= 22
-  const meta = [`Datum: ${dateBa(order.date)}`, order.deliveryBy ? `Željeni rok isporuke: ${dateBa(order.deliveryBy)}` : '']
-    .filter(Boolean)
-    .join('     ')
-  text(meta, ML, y, 9.5, R, MUTED)
+  text(doc.meta.filter(Boolean).join('     '), ML, y, 9.5, R, MUTED)
   y -= 22
 
-  // dobavljač / naručitelj
+  // okviri (npr. dobavljač / naručitelj, kupac / prodavač)
   const boxW = (CW - 14) / 2
   const boxH = 74
-  const boxes: [string, string[]][] = [
-    ['DOBAVLJAČ', [supplier.name, supplier.phone && `Tel: ${supplier.phone}`, supplier.email].filter(Boolean) as string[]],
-    [
-      'NARUČITELJ',
-      [
-        company.legalName || company.name,
-        `${company.address}, ${company.city}`,
-        [company.jib && `JIB: ${company.jib}`, company.vatNumber && `PDV: ${company.vatNumber}`].filter(Boolean).join('  ·  '),
-      ].filter(Boolean) as string[],
-    ],
-  ]
-  boxes.forEach(([title, lines], i) => {
+  doc.boxes.slice(0, 2).forEach((box, i) => {
     const bx = ML + i * (boxW + 14)
     page.drawRectangle({ x: bx, y: y - boxH, width: boxW, height: boxH, color: TINT, borderColor: LINE, borderWidth: 0.6 })
     page.drawRectangle({ x: bx, y: y - boxH, width: 3, height: boxH, color: i === 0 ? RED : ORANGE })
-    text(title, bx + 14, y - 16, 7.5, B, MUTED)
+    text(box.title, bx + 14, y - 16, 7.5, B, MUTED)
     let ly = y - 32
-    lines.forEach((l, j) => {
+    box.lines.filter(Boolean).forEach((l, j) => {
       for (const part of wrap(l, j === 0 ? B : R, j === 0 ? 11 : 9, boxW - 26).slice(0, 2)) {
+        if (ly < y - boxH + 6) return
         text(part, bx + 14, ly, j === 0 ? 11 : 9, j === 0 ? B : R, INK)
         ly -= j === 0 ? 14 : 12
       }
@@ -199,50 +210,36 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
   })
   y -= boxH + 22
 
-  text('Molimo da nam isporučite sljedeću robu:', ML, y, 9.5, R, INK)
-  y -= 14
+  if (doc.intro) {
+    text(doc.intro, ML, y, 9.5, R, INK)
+    y -= 14
+  }
 
   // tablica
-  const hasPrice = order.lines.some((l) => l.price != null && l.price > 0)
-  const cols = hasPrice
-    ? [
-        { k: 'rb', w: 24, label: 'R.br.', align: 'l' },
-        { k: 'code', w: 62, label: 'Šifra', align: 'l' },
-        { k: 'name', w: 0, label: 'Naziv artikla / napomena', align: 'l' },
-        { k: 'qty', w: 40, label: 'Kol.', align: 'r' },
-        { k: 'unit', w: 34, label: 'J.mj.', align: 'l' },
-        { k: 'price', w: 62, label: 'Cijena', align: 'r' },
-        { k: 'sum', w: 70, label: 'Iznos', align: 'r' },
-      ]
-    : [
-        { k: 'rb', w: 28, label: 'R.br.', align: 'l' },
-        { k: 'code', w: 80, label: 'Šifra', align: 'l' },
-        { k: 'name', w: 0, label: 'Naziv artikla / napomena', align: 'l' },
-        { k: 'qty', w: 52, label: 'Količina', align: 'r' },
-        { k: 'unit', w: 40, label: 'J.mj.', align: 'l' },
-      ]
+  const cols = doc.columns.map((c) => ({ ...c }))
   const fixed = cols.reduce((s, c) => s + c.w, 0)
-  cols.find((c) => c.k === 'name')!.w = CW - fixed
+  const flex = cols.find((c) => c.w === 0)
+  if (flex) flex.w = CW - fixed
   const xs: number[] = []
   cols.reduce((x, c) => (xs.push(x), x + c.w), ML)
 
   function tableHead() {
     page.drawRectangle({ x: ML, y: y - 20, width: CW, height: 20, color: GRAY })
     cols.forEach((c, i) => {
-      const tx = c.align === 'r' ? xs[i] + c.w - 6 : xs[i] + 6
-      if (c.align === 'r') right(c.label, tx, y - 13.5, 8, B, rgb(1, 1, 1))
-      else text(c.label, tx, y - 13.5, 8, B, rgb(1, 1, 1))
+      if (c.align === 'r') right(c.label, xs[i] + c.w - 6, y - 13.5, 8, B, rgb(1, 1, 1))
+      else text(c.label, xs[i] + 6, y - 13.5, 8, B, rgb(1, 1, 1))
     })
     y -= 20
   }
   tableHead()
 
-  let total = 0
-  order.lines.forEach((l, idx) => {
-    const nameW = cols.find((c) => c.k === 'name')!.w - 12
-    const nameLines = wrap(l.name, M, 9.5, nameW)
-    const noteLines = l.note ? wrap(l.note, R, 8, nameW) : []
-    const codeLines = wrap(l.code || '—', R, 8.5, cols[1].w - 10)
+  doc.rows.forEach((row, idx) => {
+    const nameCol = cols.find((c) => c.key === 'name')!
+    const nameW = nameCol.w - 12
+    const nameLines = wrap(row.cells.name ?? '', M, 9.5, nameW)
+    const noteLines = row.note ? wrap(row.note, R, 8, nameW) : []
+    const codeCol = cols.find((c) => c.key === 'code')
+    const codeLines = codeCol ? wrap(row.cells.code || '—', R, 8.5, codeCol.w - 10) : []
     const rowH = Math.max(nameLines.length * 12 + noteLines.length * 10.5, codeLines.length * 11) + 12
     if (y - rowH < FOOT + 10) {
       header(false)
@@ -250,13 +247,9 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
     }
     if (idx % 2 === 1) page.drawRectangle({ x: ML, y: y - rowH, width: CW, height: rowH, color: TINT })
     const top = y - 15
-    const amount = l.price != null && l.price > 0 ? l.price * l.qty : 0
-    total += amount
     cols.forEach((c, i) => {
       const x = xs[i]
-      if (c.k === 'rb') text(`${idx + 1}.`, x + 6, top, 9, R, MUTED)
-      if (c.k === 'code') codeLines.forEach((s, j) => text(s, x + 6, top - j * 11, 8.5, R, MUTED))
-      if (c.k === 'name') {
+      if (c.key === 'name') {
         let ly = top
         nameLines.forEach((s) => {
           text(s, x + 6, ly, 9.5, M, INK)
@@ -266,11 +259,16 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
           text(s, x + 6, ly + 1, 8, R, RED)
           ly -= 10.5
         })
+      } else if (c.key === 'code') codeLines.forEach((s, j) => text(s, x + 6, top - j * 11, 8.5, R, MUTED))
+      else {
+        const v = row.cells[c.key] ?? ''
+        const strong = c.key === 'qty' || c.key === 'sum'
+        const font = c.key === 'qty' ? B : c.key === 'sum' ? M : R
+        const size = c.key === 'qty' ? 10 : 9
+        const color = c.key === 'rb' ? MUTED : INK
+        if (c.align === 'r') right(v, x + c.w - 6, top, size, font, color)
+        else text(v, x + 6, top, size, strong ? font : R, color)
       }
-      if (c.k === 'qty') right(num(l.qty, 0), x + c.w - 6, top, 10, B, INK)
-      if (c.k === 'unit') text(l.unit, x + 6, top, 9, R, INK)
-      if (c.k === 'price') right(l.price ? num(l.price) : '—', x + c.w - 6, top, 9, R, INK)
-      if (c.k === 'sum') right(amount ? num(amount) : '—', x + c.w - 6, top, 9, M, INK)
     })
     y -= rowH
     page.drawLine({ start: { x: ML, y }, end: { x: ML + CW, y }, thickness: 0.5, color: LINE })
@@ -278,28 +276,24 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
 
   // zbir
   y -= 6
-  const qtySum = order.lines.reduce((s, l) => s + l.qty, 0)
-  ensure(hasPrice ? 64 : 24)
-  text(`Ukupno stavki: ${order.lines.length}   ·   ukupna količina: ${num(qtySum, 0)}`, ML, y - 12, 8.5, R, MUTED)
-  if (hasPrice) {
-    const rows: [string, number, boolean][] = [
-      ['Ukupno bez PDV-a', total, false],
-      ['PDV 17 %', total * 0.17, false],
-      ['Ukupno s PDV-om (KM)', total * 1.17, true],
-    ]
-    rows.forEach(([label, v, strong], i) => {
+  const totals = doc.totals ?? []
+  ensure(totals.length ? 24 + totals.length * 15 : 24)
+  if (doc.summary) text(doc.summary, ML, y - 12, 8.5, R, MUTED)
+  if (totals.length) {
+    totals.forEach(([label, v, strong], i) => {
       const ry = y - 12 - i * 15
-      right(label, W - MR - 84, ry, strong ? 9.5 : 8.5, strong ? B : R, strong ? INK : MUTED)
+      right(label, W - MR - 92, ry, strong ? 9.5 : 8.5, strong ? B : R, strong ? INK : MUTED)
       right(num(v), W - MR - 6, ry, strong ? 10.5 : 9, strong ? B : R, INK)
     })
-    y -= 12 + rows.length * 15
-    text('Cijene su orijentacione (zadnja nabavna, bez PDV-a) i podložne potvrdi dobavljača.', ML, y + 3 - 15, 7.5, R, MUTED)
-    y -= 18
+    y -= 12 + totals.length * 15
+    if (doc.totalsNote) {
+      text(doc.totalsNote, ML, y - 12, 7.5, R, MUTED)
+      y -= 18
+    }
   } else y -= 22
 
-  // napomena
-  if (order.note) {
-    const noteLines = wrap(order.note, R, 9.5, CW - 28)
+  if (doc.note) {
+    const noteLines = wrap(doc.note, R, 9.5, CW - 28)
     const h = noteLines.length * 13 + 30
     ensure(h + 10)
     y -= 8
@@ -309,28 +303,117 @@ export async function renderPurchaseOrderPdf({ order, company, supplier, creator
     y -= h + 8
   }
 
-  // izradio
-  ensure(118)
+  // potpisnik i potpisi
+  ensure(130)
   y -= 18
-  text('Molimo potvrdu narudžbe i rok isporuke na kontakt ispod.', ML, y, 9, R, INK)
-  y -= 26
-  text('NARUDŽBU IZRADIO/LA', ML, y, 7.5, B, MUTED)
+  if (doc.closing) {
+    for (const l of wrap(doc.closing, R, 9, CW)) {
+      text(l, ML, y, 9, R, INK)
+      y -= 12
+    }
+    y -= 14
+  }
+  text(doc.signer.label, ML, y, 7.5, B, MUTED)
   y -= 15
-  text(creator.name, ML, y, 11, B, INK)
+  text(doc.signer.name, ML, y, 11, B, INK)
   y -= 13
-  const contact = [creator.role, creator.phone && `Tel: ${creator.phone}`, creator.email || company.email]
-    .filter(Boolean)
-    .join('  ·  ')
-  if (contact) {
-    text(contact, ML, y, 9, R, MUTED)
+  if (doc.signer.contact) {
+    text(doc.signer.contact, ML, y, 9, R, MUTED)
     y -= 12
   }
-  if (order.closedAt) text(`Zaključeno: ${dateBa(order.closedAt)}`, ML, y, 8.5, R, MUTED)
-  const sx = W - MR - 190
-  page.drawLine({ start: { x: sx, y: y + 6 }, end: { x: W - MR, y: y + 6 }, thickness: 0.7, color: GRAY })
-  text(`Za ${company.name}`, sx, y - 6, 8, R, MUTED)
-  text('(potpis i pečat)', sx, y - 17, 7.5, R, MUTED)
+  if (doc.signer.extra) text(doc.signer.extra, ML, y, 8.5, R, MUTED)
+  const sigs = doc.signatures.slice(0, 2)
+  const sw = 160
+  sigs.forEach((label, i) => {
+    const sx = W - MR - sw - (sigs.length - 1 - i) * (sw + 20)
+    const sy = y - 4 - (sigs.length > 1 ? 0 : 0)
+    page.drawLine({ start: { x: sx, y: sy + 10 }, end: { x: sx + sw, y: sy + 10 }, thickness: 0.7, color: GRAY })
+    text(label, sx, sy - 2, 8, R, MUTED)
+  })
 
   pages.forEach((p, i) => footer(p, i, pages.length))
   return pdf.save()
+}
+
+/* ───────────────────────── narudžba dobavljaču ───────────────────────── */
+
+export interface PurchasePdfInput {
+  order: PurchaseOrder
+  company: CompanyInfo
+  supplier: { name: string; phone: string; email: string }
+  creator: { name: string; role: string; phone: string; email: string }
+}
+
+export function renderPurchaseOrderPdf({ order, company, supplier, creator }: PurchasePdfInput) {
+  const hasPrice = order.lines.some((l) => l.price != null && l.price > 0)
+  const total = order.lines.reduce((s, l) => s + (l.price ?? 0) * l.qty, 0)
+  const columns: DocColumn[] = hasPrice
+    ? [
+        { key: 'rb', w: 24, label: 'R.br.', align: 'l' },
+        { key: 'code', w: 62, label: 'Šifra', align: 'l' },
+        { key: 'name', w: 0, label: 'Naziv artikla / napomena', align: 'l' },
+        { key: 'qty', w: 40, label: 'Kol.', align: 'r' },
+        { key: 'unit', w: 34, label: 'J.mj.', align: 'l' },
+        { key: 'price', w: 62, label: 'Cijena', align: 'r' },
+        { key: 'sum', w: 70, label: 'Iznos', align: 'r' },
+      ]
+    : [
+        { key: 'rb', w: 28, label: 'R.br.', align: 'l' },
+        { key: 'code', w: 80, label: 'Šifra', align: 'l' },
+        { key: 'name', w: 0, label: 'Naziv artikla / napomena', align: 'l' },
+        { key: 'qty', w: 52, label: 'Količina', align: 'r' },
+        { key: 'unit', w: 40, label: 'J.mj.', align: 'l' },
+      ]
+  return renderLetterDoc({
+    company,
+    title: 'NARUDŽBA',
+    number: order.number,
+    meta: [`Datum: ${dateBa(order.date)}`, order.deliveryBy ? `Željeni rok isporuke: ${dateBa(order.deliveryBy)}` : ''],
+    boxes: [
+      { title: 'DOBAVLJAČ', lines: [supplier.name, supplier.phone && `Tel: ${supplier.phone}`, supplier.email] },
+      {
+        title: 'NARUČITELJ',
+        lines: [
+          company.legalName || company.name,
+          `${company.address}, ${company.city}`,
+          [company.jib && `JIB: ${company.jib}`, company.vatNumber && `PDV: ${company.vatNumber}`].filter(Boolean).join('  ·  '),
+        ],
+      },
+    ],
+    intro: 'Molimo da nam isporučite sljedeću robu:',
+    columns,
+    rows: order.lines.map((l, i) => {
+      const amount = l.price != null && l.price > 0 ? l.price * l.qty : 0
+      return {
+        cells: {
+          rb: `${i + 1}.`,
+          code: l.code || '—',
+          name: l.name,
+          qty: num(l.qty, 0),
+          unit: l.unit,
+          price: l.price ? num(l.price) : '—',
+          sum: amount ? num(amount) : '—',
+        },
+        note: l.note,
+      }
+    }),
+    summary: `Ukupno stavki: ${order.lines.length}   ·   ukupna količina: ${num(order.lines.reduce((s, l) => s + l.qty, 0), 0)}`,
+    totals: hasPrice
+      ? [
+          ['Ukupno bez PDV-a', total, false],
+          ['PDV 17 %', total * 0.17, false],
+          ['Ukupno s PDV-om (KM)', total * 1.17, true],
+        ]
+      : undefined,
+    totalsNote: hasPrice ? 'Cijene su orijentacione (zadnja nabavna, bez PDV-a) i podložne potvrdi dobavljača.' : undefined,
+    note: order.note,
+    closing: 'Molimo potvrdu narudžbe i rok isporuke na kontakt ispod.',
+    signer: {
+      label: 'NARUDŽBU IZRADIO/LA',
+      name: creator.name,
+      contact: [creator.role, creator.phone && `Tel: ${creator.phone}`, creator.email || company.email].filter(Boolean).join('  ·  '),
+      extra: order.closedAt ? `Zaključeno: ${dateBa(order.closedAt)}` : undefined,
+    },
+    signatures: [`Za ${company.name} (potpis i pečat)`],
+  })
 }

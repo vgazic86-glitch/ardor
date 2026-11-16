@@ -159,6 +159,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       email: c.email,
       city: c.city,
       address: c.address,
+      note: c.note,
     })),
     orders: ords.map((o) => {
       const ps = paysBy.get(o.id) ?? []
@@ -792,10 +793,17 @@ export async function saveEmployee(input: EmployeeInput) {
     commissionRate: Math.max(0, Math.min(1, input.commissionRate)),
   }
   if (input.id) {
+    const [old] = await db.select({ name: t.employees.name }).from(t.employees).where(eq(t.employees.id, Number(input.id)))
     await db
       .update(t.employees)
       .set(values)
       .where(eq(t.employees.id, Number(input.id)))
+    // Korisnički račun koji nosi isto ime (npr. „Trgovac 1”) dobija novo ime zaposlenika.
+    if (old && old.name !== name)
+      await db
+        .update(t.users)
+        .set({ name })
+        .where(and(eq(t.users.employeeId, Number(input.id)), eq(t.users.name, old.name)))
     return { id: input.id }
   }
   const [e] = await db.insert(t.employees).values(values).returning()
@@ -807,6 +815,8 @@ export async function deactivateEmployee(employeeId: string) {
     .update(t.employees)
     .set({ active: false })
     .where(eq(t.employees.id, Number(employeeId)))
+  // Ko više ne radi, ne može se ni prijaviti.
+  await db.update(t.users).set({ active: false }).where(eq(t.users.employeeId, Number(employeeId)))
 }
 
 /**

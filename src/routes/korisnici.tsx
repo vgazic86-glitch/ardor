@@ -43,6 +43,7 @@ function UsersPage() {
 const ROLE_HELP: Record<UserRole, string> = {
   admin: 'Sve, uključujući korisnike, plaće i troškove.',
   uprava: 'Sve osim upravljanja korisnicima, uključujući zaradu, plaće i troškove (bez dodatne lozinke).',
+  voditelj: 'Voditelj salona: promet i plan cijelog tima, dnevni pazar, zadaci trgovcima, nabava, primke, kartice dobavljača i inventura. Ne vidi zaradu, marže, troškove, plaće ni izvještaje.',
   operativa: 'Srednji pristup: primke, narudžbe dobavljačima, kartice i izvodi dobavljača, artikli, inventura i prodaja. Ne vidi tuđe prodaje, zaradu, izvještaje, troškove ni plaće.',
   trgovac: 'Prodaja, dostave, zalihe (bez nabavnih cijena), radno vrijeme i dokumenti. Ne vidi tuđe prodaje.',
 }
@@ -121,7 +122,7 @@ function UsersList() {
                   </td>
                   <td className="px-3 py-2.5 font-mono text-xs">{u.username}</td>
                   <td className="px-3 py-2.5">
-                    <Badge tone={u.role === 'admin' ? 'copper' : u.role === 'trgovac' ? 'info' : u.role === 'operativa' ? 'violet' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
+                    <Badge tone={u.role === 'admin' ? 'copper' : u.role === 'trgovac' ? 'info' : u.role === 'operativa' ? 'violet' : u.role === 'voditelj' ? 'warn' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
                   </td>
                   <td className="px-3 py-2.5">{u.hrAccess ? <ShieldCheck className="size-4 text-emerald-600" /> : <span className="text-walnut-300">—</span>}</td>
                   <td className="px-3 py-2.5">

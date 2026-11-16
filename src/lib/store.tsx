@@ -60,6 +60,8 @@ interface Store extends Snapshot {
   seesCosts: boolean
   /** Puni uvid: administrator i uprava. */
   full: boolean
+  /** Otvoreni zadaci dodijeljeni prijavljenom korisniku. */
+  openTasks: number
   currentMonth: string
   salesPeople: Employee[]
   drivers: Employee[]
@@ -151,10 +153,12 @@ const unknownProduct: Product = {
 export function StoreProvider({
   data,
   user,
+  openTasks = 0,
   children,
 }: {
   data: Snapshot
   user: SessionUser
+  openTasks?: number
   children: ReactNode
 }) {
   const router = useRouter()
@@ -213,6 +217,7 @@ export function StoreProvider({
       restricted,
       seesCosts,
       full,
+      openTasks,
       currentMonth: data.today.slice(0, 7),
       salesPeople,
       drivers: data.employees.filter((e) => e.role === 'Dostava i montaža'),
@@ -299,7 +304,7 @@ export function StoreProvider({
           'Primjerni promet je obrisan.',
         )),
     }
-  }, [data, user, meId, busy, error, toast, notify, run])
+  }, [data, user, openTasks, meId, busy, error, toast, notify, run])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

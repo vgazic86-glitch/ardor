@@ -1,4 +1,5 @@
 import {
+  FileText,
   CalendarDays,
   MapPin,
   Phone,
@@ -17,6 +18,8 @@ import {
 } from '../lib/format'
 import { orderTotal } from '../lib/stats'
 import { useStore } from '../lib/store'
+import { openDownload } from '../lib/files'
+import { customerDocPdfFn } from '../server/api'
 import { Modal } from './Modal'
 import {
   Avatar,
@@ -50,8 +53,21 @@ export function OrderDrawer({
     employeeById,
     productById,
     restricted,
+    notify,
   } = useStore()
   const [amount, setAmount] = useState('')
+  const [docBusy, setDocBusy] = useState<string | null>(null)
+  async function doc(kind: 'ponuda' | 'predracun' | 'otpremnica') {
+    setDocBusy(kind)
+    try {
+      const f = await customerDocPdfFn({ data: { orderId: orderId!, kind } })
+      openDownload({ name: f.name, mime: 'application/pdf', dataB64: f.data })
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'PDF nije izrađen.')
+    } finally {
+      setDocBusy(null)
+    }
+  }
   const order = orders.find((o) => o.id === orderId)
   if (!order) return null
 
@@ -92,13 +108,20 @@ export function OrderDrawer({
               Otkaži
             </Button>
           )}
-          <Button
-            variant="outline"
-            className="ml-auto"
-            onClick={() => window.print()}
-          >
-            <Printer className="size-4" /> Ispis
-          </Button>
+          <div className="ml-auto flex flex-wrap gap-1.5">
+            {(order.status === 'ponuda'
+              ? (['ponuda'] as const)
+              : (['predracun', 'otpremnica'] as const)
+            ).map((k) => (
+              <Button key={k} variant="outline" size="sm" disabled={!!docBusy} onClick={() => doc(k)}>
+                <FileText className="size-3.5" />
+                {docBusy === k ? 'Izrađujem…' : k === 'ponuda' ? 'Ponuda PDF' : k === 'predracun' ? 'Predračun PDF' : 'Otpremnica PDF'}
+              </Button>
+            ))}
+            <Button variant="ghost" size="sm" onClick={() => window.print()}>
+              <Printer className="size-3.5" /> Ispis
+            </Button>
+          </div>
         </div>
       }
     >

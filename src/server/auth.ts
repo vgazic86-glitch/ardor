@@ -12,12 +12,13 @@ import { hashPassword, meta, setMeta, verifyPassword } from './hr'
 /**
  * admin — sve, uključujući korisnike
  * uprava — sve osim korisnika (zarada, plaće, troškovi bez dodatne lozinke)
+ * voditelj — voditelj salona: promet tima, plan, zadaci trgovcima, nabava i roba; bez zarade, plaća i troškova
  * operativa — srednji pristup: primke, narudžbe dobavljačima, izvodi/kartice, artikli, inventura;
  *             bez tuđeg prometa, zarade, izvještaja, troškova i kadrovske
  * trgovac — prodaja, dostave, zalihe bez nabavnih cijena, radno vrijeme
  */
-export type UserRole = 'admin' | 'uprava' | 'operativa' | 'trgovac'
-const ROLES: UserRole[] = ['admin', 'uprava', 'operativa', 'trgovac']
+export type UserRole = 'admin' | 'uprava' | 'voditelj' | 'operativa' | 'trgovac'
+const ROLES: UserRole[] = ['admin', 'uprava', 'voditelj', 'operativa', 'trgovac']
 /** Puni uvid u poslovanje (zarada, plaće, tuđi promet). */
 export const isFull = (role: UserRole) => role === 'admin' || role === 'uprava'
 

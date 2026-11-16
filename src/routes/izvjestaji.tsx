@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import {
   Banknote,
   Download,
+  DatabaseBackup,
   FileSpreadsheet,
   Landmark,
   Percent,
@@ -10,6 +11,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { exportAllFn } from '../server/api'
 import { GroupedChart } from '../components/Charts'
 import {
   Badge,
@@ -316,6 +318,20 @@ function ReportsPage() {
           ? `${today.slice(0, 4)}. godina`
           : `${date(period.from)} – ${date(period.to)}`
 
+  const [backingUp, setBackingUp] = useState(false)
+  async function backup() {
+    setBackingUp(true)
+    try {
+      const data = await exportAllFn()
+      const { exportTables } = await import('../lib/excel')
+      await exportTables(
+        `ardor-kopija-podataka-${data.date}.xlsx`,
+        data.tables.map((t) => ({ sheet: t.sheet, header: t.header, rows: t.rows, widths: t.header.map(() => 18) })),
+      )
+    } finally {
+      setBackingUp(false)
+    }
+  }
   async function doExport() {
     setExporting(true)
     try {
@@ -352,10 +368,15 @@ function ReportsPage() {
         title="Izvještaji"
         description="Prihod se priznaje kada roba izađe iz salona (realizacija). Marža je razlika između prihoda bez PDV-a i nabavne vrijednosti prodane robe iz zaliha."
         actions={
-          <Button variant="copper" onClick={doExport} disabled={exporting}>
-            <FileSpreadsheet className="size-4" />{' '}
-            {exporting ? 'Pripremam…' : 'Izvoz u Excel'}
-          </Button>
+          <>
+            <Button variant="outline" onClick={backup} disabled={!!backingUp} title="Sve tablice u jednoj Excel datoteci — vaša rezervna kopija">
+              <DatabaseBackup className="size-4" /> {backingUp ? 'Pripremam kopiju…' : 'Kopija svih podataka'}
+            </Button>
+            <Button variant="copper" onClick={doExport} disabled={exporting}>
+              <FileSpreadsheet className="size-4" />{' '}
+              {exporting ? 'Pripremam…' : 'Izvoz u Excel'}
+            </Button>
+          </>
         }
       />
 

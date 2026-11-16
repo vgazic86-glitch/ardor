@@ -6,7 +6,9 @@ import * as images from './images'
 import * as finance from './finance'
 import * as auth from './auth'
 import * as ops from './ops'
-import type { CompanyInfo, FinanceSettings, PurchaseStatus } from '../lib/types'
+import * as tasks from './tasks'
+import * as sales from './sales'
+import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 
 /** Svi pozivi osim prijave zahtijevaju prijavljenog korisnika. */
@@ -36,12 +38,13 @@ const pass =
 export const getSnapshot = createServerFn({ method: 'GET' }).handler(async () => {
   await auth.ensureUsers()
   const user = await auth.currentUser()
-  if (!user) return { user: null, data: null }
+  if (!user) return { user: null, data: null, openTasks: 0 }
   const data = await logic.loadSnapshot()
-  if (user.role === 'trgovac') return { user, data: logic.forTrader(data, user.employeeId) }
+  const openTasks = await tasks.openTaskCount(user)
+  if (user.role === 'trgovac') return { user, openTasks, data: logic.forTrader(data, user.employeeId) }
   // Operativa: nabavne cijene i primke vidi, tuđi promet ne.
-  if (user.role === 'operativa') return { user, data: logic.forTrader(data, user.employeeId, true) }
-  return { user, data }
+  if (user.role === 'operativa') return { user, openTasks, data: logic.forTrader(data, user.employeeId, true) }
+  return { user, openTasks, data }
 })
 
 export const createOrderFn = createServerFn({ method: 'POST' })
@@ -375,3 +378,36 @@ export const saveWorkRangeFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .validator(pass<ops.WorkRangeInput>())
   .handler(({ data, context }) => ops.saveWorkRange(context.user, data))
+
+export const listTasksFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(({ context }) => tasks.listTasks(context.user))
+
+export const saveTaskFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<tasks.TaskInput>())
+  .handler(({ data, context }) => tasks.saveTask(context.user, data))
+
+export const setTaskStatusFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string; status: TaskStatus; note: string }>())
+  .handler(({ data, context }) => tasks.setTaskStatus(context.user, data.id, data.status, data.note))
+
+export const deleteTaskFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string }>())
+  .handler(({ data, context }) => tasks.deleteTask(context.user, data.id))
+
+export const saveCustomerFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<sales.CustomerInput>())
+  .handler(({ data }) => sales.saveCustomer(data))
+
+export const customerDocPdfFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ orderId: string; kind: sales.CustomerDocKind }>())
+  .handler(({ data, context }) => sales.customerDocPdf(context.user, data.orderId, data.kind))
+
+export const exportAllFn = createServerFn({ method: 'POST' })
+  .middleware([manager])
+  .handler(() => sales.exportAll())

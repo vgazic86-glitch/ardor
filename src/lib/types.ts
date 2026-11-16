@@ -75,6 +75,7 @@ export interface Customer {
   email: string
   city: string
   address: string
+  note?: string
 }
 
 export type OrderStatus =
@@ -419,4 +420,44 @@ export const DEFAULT_COMPANY: CompanyInfo = {
   vatNumber: '',
   bankAccount: '',
   bank: '',
+}
+
+/* ───────────── radni zadaci ───────────── */
+
+export type TaskStatus = 'otvoren' | 'u_toku' | 'zavrsen'
+export type TaskPriority = 'normalno' | 'hitno'
+
+export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
+  otvoren: 'Otvoren',
+  u_toku: 'U toku',
+  zavrsen: 'Završen',
+}
+
+export interface Task {
+  id: string
+  title: string
+  description: string
+  assigneeId: string
+  assigneeName: string
+  createdById: string | null
+  createdByName: string
+  dueDate: string | null
+  priority: TaskPriority
+  status: TaskStatus
+  doneNote: string
+  doneAt: string | null
+  createdAt: string
+}
+
+export interface TaskAssignee {
+  id: string
+  name: string
+  role: string
+}
+
+export interface TaskData {
+  tasks: Task[]
+  /** Kome korisnik smije zadati zadatak (prazno = ne zadaje). */
+  assignees: TaskAssignee[]
+  me: string
 }

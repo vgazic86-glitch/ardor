@@ -18,18 +18,25 @@ export type Area =
   | 'korisnici'
   | 'nabava'
   | 'radno'
+  | 'zadaci'
+  | 'kupci'
+  | 'pazar'
 
 /** Trgovac: samo ono što treba za prodaju i rad s kupcima. */
-const TRADER: Area[] = ['pregled', 'narudzbe', 'dostave', 'zalihe', 'radno', 'dokumenti']
+const TRADER: Area[] = ['pregled', 'zadaci', 'narudzbe', 'kupci', 'dostave', 'zalihe', 'radno', 'dokumenti']
 
 /** Operativa (srednji pristup): roba, nabava, primke, kartice dobavljača — bez tuđeg prometa i zarade. */
 const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura', 'dobavljaci']
+
+/** Voditelj salona: kao operativa + promet tima i dnevni pazar; bez zarade, troškova, plaća i izvještaja. */
+const MANAGER: Area[] = [...OPERATIONS, 'zaposlenici', 'pazar']
 
 export function canSee(user: SessionUser | null, area: Area) {
   if (!user) return false
   if (area === 'korisnici') return user.role === 'admin'
   if (user.role === 'trgovac') return TRADER.includes(area)
   if (user.role === 'operativa') return OPERATIONS.includes(area)
+  if (user.role === 'voditelj') return MANAGER.includes(area)
   return true
 }
 
@@ -52,6 +59,10 @@ export function areaOf(path: string): Area | null {
     korisnici: 'korisnici',
     nabava: 'nabava',
     'radno-vrijeme': 'radno',
+    zadaci: 'zadaci',
+    kupci: 'kupci',
+    pazar: 'pazar',
+    naljepnice: 'artikli',
   }
   return map[seg] ?? null
 }
@@ -59,6 +70,7 @@ export function areaOf(path: string): Area | null {
 export const ROLE_LABEL: Record<SessionUser['role'], string> = {
   admin: 'Administrator',
   uprava: 'Uprava',
+  voditelj: 'Voditelj salona',
   operativa: 'Operativa',
   trgovac: 'Trgovac',
 }

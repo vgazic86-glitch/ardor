@@ -7,6 +7,8 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { LoginPage } from '../components/LoginPage'
+import { registerServiceWorker } from '../lib/pwa'
+import { useEffect } from 'react'
 import { areaOf, canSee } from '../lib/access'
 import { AppShell } from '../components/AppShell'
 import { getSnapshot } from '../server/api'
@@ -26,6 +28,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'theme-color', content: '#2B211B' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-title', content: 'ARDOR' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
       { title: siteName },
       { name: 'description', content: siteDescription },
       { property: 'og:title', content: siteName },
@@ -34,6 +41,8 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+      { rel: 'manifest', href: '/manifest.json' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
       {
         rel: 'preconnect',
@@ -61,12 +70,13 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  const { user, data } = Route.useLoaderData()
+  const { user, data, openTasks } = Route.useLoaderData()
   const path = useRouterState({ select: (s) => s.location.pathname })
+  useEffect(() => registerServiceWorker(), [])
   if (!user || !data) return <LoginPage />
   const area = areaOf(path)
   return (
-    <StoreProvider data={data} user={user}>
+    <StoreProvider data={data} user={user} openTasks={openTasks}>
       <AdminProvider sessionHr={user.hrAccess}>
         <AppShell>{area && !canSee(user, area) ? <NoAccess /> : <Outlet />}</AppShell>
       </AdminProvider>
