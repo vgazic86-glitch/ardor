@@ -502,3 +502,45 @@ export const auditLog = pgTable(
   },
   (t) => [index('audit_at_idx').on(t.at), index('audit_subject_idx').on(t.subject, t.at)],
 )
+
+/** Reklamacije kupaca: oštećenja, greške, servis. Status: prijavljena → u_obradi → kod_dobavljaca → rijesena | odbijena. */
+export const complaints = pgTable(
+  'complaints',
+  {
+    id: serial().primaryKey(),
+    number: text().notNull().unique(),
+    date: date({ mode: 'string' }).notNull(),
+    customerId: integer('customer_id').references(() => customers.id),
+    orderId: integer('order_id').references(() => orders.id, { onDelete: 'set null' }),
+    productId: integer('product_id').references(() => products.id),
+    supplierId: integer('supplier_id').references(() => suppliers.id),
+    /** ostecenje | greska | nedostaje | montaza | ostalo */
+    kind: text().notNull().default('ostecenje'),
+    description: text().notNull(),
+    status: text().notNull().default('prijavljena'),
+    /** popravak | zamjena | povrat_novca | odbijena | drugo */
+    resolution: text().notNull().default(''),
+    resolutionNote: text('resolution_note').notNull().default(''),
+    dueDate: date('due_date', { mode: 'string' }),
+    assigneeId: integer('assignee_id').references(() => users.id),
+    createdById: integer('created_by_id').references(() => users.id),
+    createdByName: text('created_by_name').notNull().default(''),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+    closedAt: timestamp('closed_at'),
+  },
+  (t) => [index('complaints_status_idx').on(t.status)],
+)
+
+export const complaintPhotos = pgTable(
+  'complaint_photos',
+  {
+    id: serial().primaryKey(),
+    complaintId: integer('complaint_id')
+      .notNull()
+      .references(() => complaints.id, { onDelete: 'cascade' }),
+    imageId: integer('image_id').notNull().references(() => files.id),
+    thumbId: integer('thumb_id').notNull().references(() => files.id),
+  },
+  (t) => [index('complaint_photos_idx').on(t.complaintId)],
+)

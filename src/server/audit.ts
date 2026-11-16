@@ -247,6 +247,11 @@ const MAP: Record<string, [string, string, Detail?]> = {
   saveCustomerFn: ['Kupac', 'spremljen'],
   exportAllFn: ['Podaci', 'izvoz svih podataka'],
   unlockUserFn: ['Korisnik', 'otključan'],
+  saveComplaintFn: ['Reklamacija', 'spremljena', async (d) => [d.id ? await resolveComplaint(d.id) : 'nova', String(d.description ?? '').slice(0, 80)].join(' · ')],
+  setComplaintStatusFn: ['Reklamacija', 'promjena statusa', async (d) => [await resolveComplaint(d.id), `status ${d.status}`, d.status === 'rijesena' || d.status === 'odbijena' ? (d.resolution ?? '') : ''].filter(Boolean).join(' · ')],
+  addComplaintPhotoFn: ['Reklamacija', 'dodana fotografija', async (d) => resolveComplaint(d.id)],
+  deleteComplaintPhotoFn: ['Reklamacija', 'obrisana fotografija'],
+  deleteComplaintFn: ['Reklamacija', 'obrisana', async (d) => `#${d.id}`],
 }
 
 /** Poziva se iz middlewarea nakon uspješne serverske radnje. */
@@ -260,4 +265,11 @@ export async function afterCall(fn: string | undefined, user: SessionUser, data:
     detail = describe(data)
   }
   await record({ user, entity: m[0], action: m[1], detail })
+}
+
+async function resolveComplaint(id: unknown) {
+  const n = Number(id)
+  if (!n) return ''
+  const [r] = await db.select({ v: t.complaints.number }).from(t.complaints).where(eq(t.complaints.id, n))
+  return r?.v ?? `#${n}`
 }

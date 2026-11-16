@@ -1,5 +1,5 @@
 /** Radni zadaci. Administrator i uprava zadaju svima; voditelj salona zadaje trgovcima. */
-import { and, desc, eq, ne, or } from 'drizzle-orm'
+import { and, desc, eq, gte, like, lte, ne, or } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import type { Task, TaskAssignee, TaskData, TaskPriority, TaskStatus } from '../lib/types'
@@ -133,4 +133,45 @@ export async function deleteTask(user: SessionUser, id: string) {
   const task = await loadTask(id)
   if (!canManage(user, task)) throw new Error('Zadatak može obrisati samo onaj ko ga je zadao.')
   await db.delete(t.tasks).where(eq(t.tasks.id, task.id))
+}
+
+/**
+ * Ponude starije od 7 dana (do 30 dana) koje nisu prešle u narudžbu: trgovac koji je dao ponudu
+ * automatski dobija zadatak da nazove kupca. Pokreće se najviše jednom na sat.
+ */
+export async function ensureOfferFollowups(today: string) {
+  const { meta, setMeta } = await import('./hr')
+  const last = Number((await meta('ponude_followup')) || 0)
+  if (Date.now() - last < 3_600_000) return 0
+  await setMeta('ponude_followup', String(Date.now()))
+  const day = (n: number) => {
+    const d = new Date(`${today}T12:00:00Z`)
+    d.setUTCDate(d.getUTCDate() - n)
+    return d.toISOString().slice(0, 10)
+  }
+  const offers = await db
+    .select({ number: t.orders.number, date: t.orders.date, employeeId: t.orders.employeeId, customer: t.customers.name, phone: t.customers.phone })
+    .from(t.orders)
+    .innerJoin(t.customers, eq(t.customers.id, t.orders.customerId))
+    .where(and(eq(t.orders.status, 'ponuda'), lte(t.orders.date, day(7)), gte(t.orders.date, day(30))))
+  if (!offers.length) return 0
+  const users = await db.select({ id: t.users.id, employeeId: t.users.employeeId }).from(t.users).where(eq(t.users.active, true))
+  const userOf = new Map(users.filter((u) => u.employeeId).map((u) => [u.employeeId, u.id]))
+  let made = 0
+  for (const o of offers) {
+    const assigneeId = userOf.get(o.employeeId)
+    if (!assigneeId) continue
+    const [exists] = await db.select({ id: t.tasks.id }).from(t.tasks).where(like(t.tasks.title, `%${o.number}%`)).limit(1)
+    if (exists) continue
+    await db.insert(t.tasks).values({
+      title: `Nazvati kupca: ponuda ${o.number} (${o.customer})`,
+      description: `Ponuda od ${o.date.split('-').reverse().join('.')}. još nije prešla u narudžbu. Nazovite kupca${o.phone ? ` (${o.phone})` : ''}, pitajte ima li pitanja i ponudite pomoć ili alternativu. Ako kupac odustaje, otkažite ponudu.`,
+      assigneeId,
+      createdByName: 'ARDOR (automatski)',
+      dueDate: today,
+      priority: 'normalno',
+    })
+    made++
+  }
+  return made
 }

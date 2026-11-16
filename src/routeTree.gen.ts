@@ -26,6 +26,7 @@ import { Route as PazarRouteImport } from './routes/pazar'
 import { Route as PomocRouteImport } from './routes/pomoc'
 import { Route as PrimkeRouteImport } from './routes/primke'
 import { Route as RadnoVrijemeRouteImport } from './routes/radno-vrijeme'
+import { Route as ReklamacijeRouteImport } from './routes/reklamacije'
 import { Route as TroskoviRouteImport } from './routes/troskovi'
 import { Route as ZadaciRouteImport } from './routes/zadaci'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
@@ -121,6 +122,11 @@ const RadnoVrijemeRoute = RadnoVrijemeRouteImport.update({
   path: '/radno-vrijeme',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReklamacijeRoute = ReklamacijeRouteImport.update({
+  id: '/reklamacije',
+  path: '/reklamacije',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TroskoviRoute = TroskoviRouteImport.update({
   id: '/troskovi',
   path: '/troskovi',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
+  '/reklamacije': typeof ReklamacijeRoute
   '/troskovi': typeof TroskoviRoute
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
+  '/reklamacije': typeof ReklamacijeRoute
   '/troskovi': typeof TroskoviRoute
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
   '/radno-vrijeme': typeof RadnoVrijemeRoute
+  '/reklamacije': typeof ReklamacijeRoute
   '/troskovi': typeof TroskoviRoute
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/pomoc'
     | '/primke'
     | '/radno-vrijeme'
+    | '/reklamacije'
     | '/troskovi'
     | '/zadaci'
     | '/zalihe'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/pomoc'
     | '/primke'
     | '/radno-vrijeme'
+    | '/reklamacije'
     | '/troskovi'
     | '/zadaci'
     | '/zalihe'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/pomoc'
     | '/primke'
     | '/radno-vrijeme'
+    | '/reklamacije'
     | '/troskovi'
     | '/zadaci'
     | '/zalihe'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   PomocRoute: typeof PomocRoute
   PrimkeRoute: typeof PrimkeRoute
   RadnoVrijemeRoute: typeof RadnoVrijemeRoute
+  ReklamacijeRoute: typeof ReklamacijeRoute
   TroskoviRoute: typeof TroskoviRoute
   ZadaciRoute: typeof ZadaciRoute
   ZaliheRoute: typeof ZaliheRoute
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RadnoVrijemeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reklamacije': {
+      id: '/reklamacije'
+      path: '/reklamacije'
+      fullPath: '/reklamacije'
+      preLoaderRoute: typeof ReklamacijeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/troskovi': {
       id: '/troskovi'
       path: '/troskovi'
@@ -583,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   PomocRoute: PomocRoute,
   PrimkeRoute: PrimkeRoute,
   RadnoVrijemeRoute: RadnoVrijemeRoute,
+  ReklamacijeRoute: ReklamacijeRoute,
   TroskoviRoute: TroskoviRoute,
   ZadaciRoute: ZadaciRoute,
   ZaliheRoute: ZaliheRoute,

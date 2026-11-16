@@ -95,6 +95,29 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'reklamacija',
+    route: '/reklamacije',
+    title: 'Reklamacije',
+    purpose: 'Prijava i praćenje reklamacija kupaca do rješenja.',
+    fields: ['Kupac i narudžba (artikal se bira iz narudžbe).', 'Vrsta problema i opis kako ga kupac opisuje.', 'Rok za rješenje i ko je zadužen.', 'Fotografije oštećenja (mobitelom).'],
+    details: [
+      {
+        h: 'Tok',
+        items: [
+          'Prijavljena → U obradi → Kod dobavljača → Riješena ili Odbijena.',
+          'Reklamaciju iz narudžbe otvarate gumbom „Reklamacija” u detaljima narudžbe.',
+          'Dobavljač se popuni sam prema artiklu.',
+          'Zapisnik (PDF) odštampajte i dajte kupcu da potpiše pri prijavi.',
+          'Zatvara je voditelj salona ili uprava, uz odabrano rješenje (popravak, zamjena, povrat novca, popust).',
+        ],
+      },
+      {
+        h: 'Rok',
+        items: ['Predloženi rok je 15 dana od prijave.', 'Reklamacije kojima je prošao rok su crvene i na vrhu liste.'],
+      },
+    ],
+  },
+  {
     id: 'dostave',
     route: '/dostave',
     title: 'Dostave',

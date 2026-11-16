@@ -37,6 +37,7 @@ import {
   X,
   XCircle,
   LifeBuoy,
+  Wrench,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../lib/store'
@@ -64,6 +65,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/zadaci', label: 'Zadaci', icon: ListChecks, badge: 'tasks', area: 'zadaci' },
       { to: '/narudzbe', label: 'Narudžbe kupaca', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
       { to: '/kupci', label: 'Kupci', icon: Contact, area: 'kupci' },
+      { to: '/reklamacije', label: 'Reklamacije', icon: Wrench, area: 'reklamacije' },
       { to: '/dostave', label: 'Dostave', icon: Truck, badge: 'deliveries', area: 'dostave' },
       { to: '/pazar', label: 'Dnevni pazar', icon: Wallet, area: 'pazar' },
     ],

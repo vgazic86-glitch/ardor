@@ -48,6 +48,11 @@ export const getSnapshot = createServerFn({ method: 'GET' }).handler(async () =>
   const user = await auth.currentUser()
   if (!user) return { user: null, data: null, openTasks: 0 }
   const data = await logic.loadSnapshot()
+  try {
+    await tasks.ensureOfferFollowups(data.today)
+  } catch (e) {
+    console.error('Praćenje ponuda nije uspjelo', e)
+  }
   const openTasks = await tasks.openTaskCount(user)
   if (user.role === 'trgovac') return { user, openTasks, data: logic.forTrader(data, user.employeeId) }
   // Operativa: nabavne cijene i primke vidi, tuđi promet ne.
@@ -468,3 +473,39 @@ export const unlockUserFn = createServerFn({ method: 'POST' })
 export const securityFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .handler(async ({ context }) => (context.user.role === 'admin' ? audit.securitySummary() : { failed24h: 0, locked: [] as string[] }))
+
+/* ───────── reklamacije ───────── */
+
+export const listComplaintsFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(async () => (await import('./complaints')).listComplaints())
+
+export const saveComplaintFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<import('./complaints').ComplaintInput>())
+  .handler(async ({ data, context }) => (await import('./complaints')).saveComplaint(context.user, data))
+
+export const setComplaintStatusFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string; status: import('./complaints').ComplaintStatus; resolution?: string; resolutionNote?: string }>())
+  .handler(async ({ data, context }) => (await import('./complaints')).setComplaintStatus(context.user, data))
+
+export const addComplaintPhotoFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string; image: images.ProductImageUpload }>())
+  .handler(async ({ data }) => (await import('./complaints')).addComplaintPhoto(data.id, data.image))
+
+export const deleteComplaintPhotoFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ imageId: string }>())
+  .handler(async ({ data }) => (await import('./complaints')).deleteComplaintPhoto(data.imageId))
+
+export const deleteComplaintFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string }>())
+  .handler(async ({ data, context }) => (await import('./complaints')).deleteComplaint(context.user, data.id))
+
+export const complaintPdfFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string }>())
+  .handler(async ({ data }) => (await import('./complaints')).complaintPdf(data.id))

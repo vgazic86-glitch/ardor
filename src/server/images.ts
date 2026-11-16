@@ -16,6 +16,10 @@ export interface ProductImageUpload {
   thumb: ImagePart
 }
 
+export function decodeImage(p: ImagePart) {
+  return decode(p)
+}
+
 function decode(p: ImagePart) {
   if (!ALLOWED.includes(p.mime))
     throw new Error('Dozvoljene su slike JPG, PNG ili WebP.')
@@ -87,7 +91,10 @@ export async function readProductImage(id: number) {
     .where(
       and(
         eq(t.files.id, id),
-        sql`exists (select 1 from ${t.products} where ${or(eq(t.products.imageId, id), eq(t.products.thumbId, id))})`,
+        or(
+          sql`exists (select 1 from ${t.products} where ${or(eq(t.products.imageId, id), eq(t.products.thumbId, id))})`,
+          sql`exists (select 1 from ${t.complaintPhotos} where ${or(eq(t.complaintPhotos.imageId, id), eq(t.complaintPhotos.thumbId, id))})`,
+        ),
       ),
     )
   return f ?? null

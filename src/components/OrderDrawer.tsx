@@ -21,6 +21,7 @@ import { useStore } from '../lib/store'
 import { openDownload } from '../lib/files'
 import { customerDocPdfFn } from '../server/api'
 import { Modal } from './Modal'
+import { CustomerMessage } from './CustomerMessage'
 import {
   Avatar,
   Button,
@@ -298,6 +299,7 @@ export function OrderDrawer({
           </p>
         </>
       )}
+      <CustomerMessage key={order.id + order.status} order={order} customer={c} left={left} />
     </Modal>
   )
 }
