@@ -103,10 +103,10 @@ export async function adminLogin(password: string) {
 }
 
 export async function requireAdmin(token: string | null | undefined) {
-  // Prijavljeni korisnik s pravom pristupa plaćama i troškovima ne treba posebnu lozinku.
+  // Administrator i uprava ulaze bez posebne lozinke; ostali nemaju pristup.
   const user = await currentUser()
   if (user?.hrAccess) return
-  if (!user || user.role === 'trgovac') throw new Error('Nemate pristup ovom dijelu.')
+  if (user) throw new Error('Nemate pristup ovom dijelu.')
   const s = await secret()
   const [exp, mac] = String(token ?? '').split('.')
   const n = Number(exp)

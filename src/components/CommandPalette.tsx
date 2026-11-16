@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { money, orderStatusLabel } from '../lib/format'
 import { orderTotal } from '../lib/stats'
+import { canSee } from '../lib/access'
 import { useStore } from '../lib/store'
 import type { Product } from '../lib/types'
 import { ProductImage } from './ProductImage'
@@ -30,7 +31,7 @@ const fold = (s: string) =>
 
 /** Brza pretraga (Ctrl+K) po narudžbama, kupcima i artiklima. */
 export function CommandPalette({ onClose }: { onClose: () => void }) {
-  const { orders, customers, products, customerById, restricted } = useStore()
+  const { orders, customers, products, customerById, user } = useStore()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [sel, setSel] = useState(0)
@@ -90,7 +91,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           meta: 'Marže, PDV, dugovanja, izvoz u Excel',
           go: close(() => navigate({ to: '/izvjestaji' })),
         },
-      ].filter((h) => !restricted || h.key === 'p1' || h.key === 'p5')
+      ].filter((h) => canSee(user, ({ p1: 'narudzbe', p5: 'radno', p6: 'nabava', p2: 'primke', p3: 'inventura', p4: 'izvjestaji' } as const)[h.key as 'p1'] ?? 'pregled'))
     }
     const out: Hit[] = []
     for (const o of orders) {
@@ -129,7 +130,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           ),
         })
     return out.slice(0, 14)
-  }, [q, orders, customers, products, customerById, navigate, onClose, restricted])
+  }, [q, orders, customers, products, customerById, navigate, onClose, user])
 
   useEffect(() => setSel(0), [q])
 

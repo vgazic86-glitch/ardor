@@ -10,7 +10,7 @@
  * Sve je ograničeno gornjom granicom (postotak fiksne plaće).
  */
 import { employeeStats, isRevenue, monthKey, orderTotal } from './stats'
-import type { Employee, Order } from './types'
+import { targetFor, type Employee, type Order } from './types'
 
 export interface BonusPolicy {
   /** Prag ostvarenja cilja od kojeg počinje varijabilni dio (0,8 = 80 %). */
@@ -103,7 +103,7 @@ export function proposeBonus(
     const revenue = orders
       .filter((o) => isRevenue(o) && monthKey(o.date) === month)
       .reduce((s, o) => s + orderTotal(o), 0)
-    const target = salesPeople.reduce((s, e) => s + e.monthlyTarget, 0)
+    const target = salesPeople.reduce((s, e) => s + targetFor(e, month), 0)
     achievement = target ? revenue / target : 0
     variable = targetVariable(revenue, target, fixedGross, p.managerMaxPct, p)
     basis = `salon ${pctTxt(achievement)} cilja (${Math.round(revenue)} / ${Math.round(target)})`
@@ -112,14 +112,14 @@ export function proposeBonus(
     achievement = st.targetPct
     variable = targetVariable(
       st.revenue,
-      employee.monthlyTarget,
+      targetFor(employee, month),
       fixedGross,
       p.salesMaxPct,
       p,
     )
     const discountShare =
       st.revenue + st.discounts ? st.discounts / (st.revenue + st.discounts) : 0
-    basis = `${pctTxt(achievement)} cilja (${Math.round(st.revenue)} / ${Math.round(employee.monthlyTarget)}), popusti ${pctTxt(discountShare)}`
+    basis = `${pctTxt(achievement)} cilja (${Math.round(st.revenue)} / ${Math.round(targetFor(employee, month))}), popusti ${pctTxt(discountShare)}`
     if (variable > 0 && discountShare > p.discountLimit) {
       variable *= 1 - p.discountPenalty
       penalized = true

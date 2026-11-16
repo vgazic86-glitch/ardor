@@ -15,7 +15,13 @@ const authed = createMiddleware({ type: 'function' }).server(async ({ next }) =>
   return next({ context: { user } })
 })
 
-/** Radnje samo za upravu i administratora (ne za trgovce). */
+/** Operativni poslovi (primke, nabava, kartice, artikli, inventura): sve osim trgovaca. */
+const operations = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+  const user = await auth.requireOperations()
+  return next({ context: { user } })
+})
+
+/** Radnje samo za upravu i administratora (puni uvid u poslovanje). */
 const manager = createMiddleware({ type: 'function' }).server(async ({ next }) => {
   const user = await auth.requireManager()
   return next({ context: { user } })
@@ -32,7 +38,10 @@ export const getSnapshot = createServerFn({ method: 'GET' }).handler(async () =>
   const user = await auth.currentUser()
   if (!user) return { user: null, data: null }
   const data = await logic.loadSnapshot()
-  return { user, data: user.role === 'trgovac' ? logic.forTrader(data, user.employeeId) : data }
+  if (user.role === 'trgovac') return { user, data: logic.forTrader(data, user.employeeId) }
+  // Operativa: nabavne cijene i primke vidi, tuđi promet ne.
+  if (user.role === 'operativa') return { user, data: logic.forTrader(data, user.employeeId, true) }
+  return { user, data }
 })
 
 export const createOrderFn = createServerFn({ method: 'POST' })
@@ -40,7 +49,7 @@ export const createOrderFn = createServerFn({ method: 'POST' })
   .validator(pass<logic.CreateOrderInput>())
   .handler(({ data, context }) => {
     const u = context.user
-    if (u.role !== 'trgovac') return logic.createOrder(data)
+    if (u.role !== 'trgovac' && u.role !== 'operativa') return logic.createOrder(data)
     if (!u.employeeId) throw new Error('Vaš račun nije povezan sa zaposlenikom.')
     // Trgovac prodaje u svoje ime i daje najviše 10 % popusta (Priručnik za prodavače).
     return logic.createOrder({
@@ -80,19 +89,19 @@ export const addPaymentFn = createServerFn({ method: 'POST' }).middleware([authe
     logic.addPayment(data.id, data.amount, data.method, data.actorId),
   )
 
-export const createReceiptFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const createReceiptFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.ReceiptInput>())
   .handler(({ data }) => logic.createReceipt(data))
 
-export const saveProductFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const saveProductFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.ProductInput>())
   .handler(({ data }) => logic.saveProduct(data))
 
-export const archiveProductFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const archiveProductFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<{ id: string }>())
   .handler(({ data }) => logic.archiveProduct(data.id))
 
-export const adjustStockFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const adjustStockFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(
     pass<{
       productId: string
@@ -105,7 +114,7 @@ export const adjustStockFn = createServerFn({ method: 'POST' }).middleware([mana
     logic.adjustStock(data.productId, data.counted, data.note, data.actorId),
   )
 
-export const adjustStockManyFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const adjustStockManyFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(
     pass<{
       lines: { productId: string; counted: number }[]
@@ -117,7 +126,7 @@ export const adjustStockManyFn = createServerFn({ method: 'POST' }).middleware([
     logic.adjustStockMany(data.lines, data.note, data.actorId),
   )
 
-export const saveSupplierFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const saveSupplierFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.SupplierInput>())
   .handler(({ data }) => logic.saveSupplier(data))
 
@@ -211,7 +220,7 @@ export const savePolicyFn = createServerFn({ method: 'POST' }).middleware([authe
   .validator(pass<{ token: string; policy: BonusPolicy }>())
   .handler(({ data }) => hr.savePolicy(data.token, data.policy))
 
-export const setProductImageFn = createServerFn({ method: 'POST' }).middleware([manager])
+export const setProductImageFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(
     pass<{ productId: string; image: images.ProductImageUpload | null }>(),
   )
@@ -291,7 +300,7 @@ export const resetUserFn = createServerFn({ method: 'POST' })
 /* ───────────── podaci o firmi, narudžbe dobavljačima, kartice, radno vrijeme ───────────── */
 
 export const getCompanyFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .handler(() => ops.getCompany())
 
 export const saveCompanyFn = createServerFn({ method: 'POST' })
@@ -300,45 +309,45 @@ export const saveCompanyFn = createServerFn({ method: 'POST' })
   .handler(({ data }) => ops.saveCompany(data))
 
 export const listPurchaseOrdersFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .handler(() => ops.listPurchaseOrders())
 
 export const savePurchaseOrderFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<ops.PurchaseInput>())
   .handler(({ data, context }) => ops.savePurchaseOrder(context.user, data))
 
 export const setPurchaseStatusFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<{ id: string; status: PurchaseStatus }>())
   .handler(({ data }) => ops.setPurchaseStatus(data.id, data.status))
 
 export const deletePurchaseOrderFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<{ id: string }>())
   .handler(({ data }) => ops.deletePurchaseOrder(data.id))
 
 export const linkPurchaseReceiptFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<{ id: string; receiptId: string }>())
   .handler(({ data }) => ops.linkPurchaseReceipt(data.id, data.receiptId))
 
 export const purchaseOrderPdfFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<{ id: string }>())
   .handler(({ data }) => ops.purchaseOrderPdf(data.id))
 
 export const listLedgerFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .handler(() => ops.listLedger())
 
 export const saveLedgerEntryFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<ops.LedgerInput>())
   .handler(({ data, context }) => ops.saveLedgerEntry(context.user, data))
 
 export const deleteLedgerEntryFn = createServerFn({ method: 'POST' })
-  .middleware([manager])
+  .middleware([operations])
   .validator(pass<{ id: string }>())
   .handler(({ data }) => ops.deleteLedgerEntry(data.id))
 
@@ -356,3 +365,13 @@ export const clockFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .validator(pass<{ action: 'dolazak' | 'odlazak'; employeeId?: string | null }>())
   .handler(({ data, context }) => ops.clock(context.user, data.action, data.employeeId))
+
+export const saveTargetsFn = createServerFn({ method: 'POST' })
+  .middleware([manager])
+  .validator(pass<{ month: string; rows: { employeeId: string; target: number | null }[] }>())
+  .handler(({ data }) => logic.saveTargets(data.month, data.rows))
+
+export const saveWorkRangeFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<ops.WorkRangeInput>())
+  .handler(({ data, context }) => ops.saveWorkRange(context.user, data))

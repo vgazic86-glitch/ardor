@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, Clock, FileSpreadsheet, LogIn, LogOut, Pencil } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, Clock, FileSpreadsheet, LogIn, LogOut, Pencil } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Modal } from '../components/Modal'
 import { Avatar, Badge, Button, Card, Field, inputCls, PageHeader, Stat } from '../components/ui'
@@ -8,7 +8,7 @@ import { useRemote } from '../lib/remote'
 import { useStore } from '../lib/store'
 import { WORK_KIND_LABEL, type Employee, type WorkDay, type WorkKind } from '../lib/types'
 import { hours, monthDates, STANDARD_DAY_MIN, summarize, workedMin, workingDaysInMonth } from '../lib/worktime'
-import { clockFn, listWorkTimeFn, saveWorkDayFn } from '../server/api'
+import { clockFn, listWorkTimeFn, saveWorkDayFn, saveWorkRangeFn } from '../server/api'
 
 export const Route = createFileRoute('/radno-vrijeme')({ component: WorkTimePage })
 
@@ -27,14 +27,17 @@ const shiftMonth = (m: string, d: number) => {
 }
 const monthTitle = (m: string) => `${monthLong(Number(m.slice(5, 7)) - 1)} ${m.slice(0, 4)}.`
 
-function yesterdayOf(today: string) {
-  const d = new Date(`${today}T00:00:00Z`)
-  d.setUTCDate(d.getUTCDate() - 1)
+function shiftDay(iso: string, n: number) {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
+const yesterdayOf = (today: string) => shiftDay(today, -1)
 
 function WorkTimePage() {
-  const { employees, today, user, restricted } = useStore()
+  const { employees, today, user, full, notify } = useStore()
+  const notifyDays = (n: number) => notify(`Odsustvo je upisano (${n} ${n === 1 ? 'dan' : 'dana'}).`)
+  const restricted = !full
   const [month, setMonth] = useState(today.slice(0, 7))
   const remote = useRemote(() => listWorkTimeFn({ data: { month } }), [month])
   const staff = useMemo(() => employees.filter((e) => e.id !== '0'), [employees])
@@ -48,7 +51,10 @@ function WorkTimePage() {
   const fundDays = workingDaysInMonth(month)
   const myToday = user.employeeId ? days.find((d) => d.employeeId === user.employeeId && d.date === today) : undefined
 
-  const canEdit = (date: string) => !restricted || date === today || date === yesterdayOf(today)
+  /** Zaposlenik sam: dolazak/odlazak danas i jučer, odsustva 30 dana unazad do 6 mjeseci unaprijed. */
+  const canWork = (date: string) => !restricted || date === today || date === yesterdayOf(today)
+  const canEdit = (date: string) => !restricted || (date >= shiftDay(today, -30) && date <= shiftDay(today, 183))
+  const [range, setRange] = useState(false)
 
   async function exportXlsx() {
     const { exportTables } = await import('../lib/excel')
@@ -106,13 +112,18 @@ function WorkTimePage() {
         title="Radno vrijeme"
         description={
           restricted
-            ? 'Upišite dolazak i odlazak. Godišnji, bolovanje i ispravke starijih dana upisuje voditelj.'
+            ? 'Upišite dolazak i odlazak, a godišnji, bolovanje, praznik ili slobodan dan preko „Upiši odsustvo” ili klikom na dan.'
             : 'Dolasci, odlasci, pauze, godišnji i bolovanja. Mjesečni pregled sati i prekovremenih, s izvozom u Excel.'
         }
         actions={
-          <Button variant="outline" onClick={exportXlsx} disabled={!remote.data}>
-            <FileSpreadsheet className="size-4" /> Excel
-          </Button>
+          <>
+            <Button variant="outline" onClick={exportXlsx} disabled={!remote.data}>
+              <FileSpreadsheet className="size-4" /> Excel
+            </Button>
+            <Button variant="copper" onClick={() => setRange(true)} disabled={!emp}>
+              <CalendarPlus className="size-4" /> Upiši odsustvo
+            </Button>
+          </>
         }
       />
 
@@ -211,7 +222,6 @@ function WorkTimePage() {
                     const wd = new Date(dt + 'T12:00:00Z').getUTCDay()
                     const weekend = wd === 0 || wd === 6
                     const w = d ? workedMin(d) : 0
-                    const future = dt > today
                     return (
                       <tr key={dt} className={`${weekend ? 'bg-walnut-50/60' : ''} ${dt === today ? 'outline outline-2 -outline-offset-2 outline-copper-300' : ''}`}>
                         <td className="px-5 py-2 tabular">
@@ -226,7 +236,7 @@ function WorkTimePage() {
                           {d?.note}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          {canEdit(dt) && !(restricted && future) && (
+                          {canEdit(dt) && (
                             <button className="rounded p-1 text-walnut-400 hover:bg-walnut-100 hover:text-walnut-800" aria-label={`Uredi ${dt}`} onClick={() => setEdit({ date: dt, day: d ?? null })}>
                               <Pencil className="size-3.5" />
                             </button>
@@ -244,12 +254,31 @@ function WorkTimePage() {
         </>
       )}
 
+      {range && emp && (
+        <AbsenceDialog
+          employee={emp}
+          busy={remote.busy}
+          error={remote.error}
+          onClose={() => {
+            setRange(false)
+            remote.clearError()
+          }}
+          onSave={async (input) => {
+            const r = await remote.run(() => saveWorkRangeFn({ data: input }))
+            if (r) {
+              notifyDays(r.days)
+              setRange(false)
+            }
+          }}
+        />
+      )}
+
       {edit && emp && (
         <WorkDayDialog
           employee={emp}
           date={edit.date}
           day={edit.day}
-          restricted={restricted}
+          allowWork={canWork(edit.date)}
           busy={remote.busy}
           error={remote.error}
           onClose={() => {
@@ -310,7 +339,7 @@ function WorkDayDialog({
   employee,
   date,
   day,
-  restricted,
+  allowWork,
   onClose,
   onSave,
   busy,
@@ -319,13 +348,13 @@ function WorkDayDialog({
   employee: Employee
   date: string
   day: WorkDay | null
-  restricted: boolean
+  allowWork: boolean
   onClose: () => void
   onSave: (d: { employeeId: string; date: string; kind: WorkKind; start: string; end: string; breakMin: number; note: string }) => void
   busy: boolean
   error: string | null
 }) {
-  const [kind, setKind] = useState<WorkKind>(day?.kind ?? 'rad')
+  const [kind, setKind] = useState<WorkKind>(day?.kind ?? (allowWork ? 'rad' : 'godisnji'))
   const [start, setStart] = useState(day?.start ?? '')
   const [end, setEnd] = useState(day?.end ?? '')
   const [brk, setBrk] = useState(String(day?.breakMin ?? 30))
@@ -350,8 +379,8 @@ function WorkDayDialog({
     >
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Vrsta dana" className="sm:col-span-3">
-          <select className={inputCls} value={kind} onChange={(e) => setKind(e.target.value as WorkKind)} disabled={restricted}>
-            {(Object.keys(WORK_KIND_LABEL) as WorkKind[]).map((k) => (
+          <select className={inputCls} value={kind} onChange={(e) => setKind(e.target.value as WorkKind)}>
+            {(Object.keys(WORK_KIND_LABEL) as WorkKind[]).filter((k) => allowWork || k !== 'rad').map((k) => (
               <option key={k} value={k}>
                 {WORK_KIND_LABEL[k]}
               </option>
@@ -382,6 +411,68 @@ function WorkDayDialog({
         </p>
       )}
       {kind === 'rad' && !start && !end && !note && day && <p className="mt-3 text-xs text-walnut-500">Prazan unos briše zapis za taj dan.</p>}
+    </Modal>
+  )
+}
+
+function AbsenceDialog({
+  employee,
+  onClose,
+  onSave,
+  busy,
+  error,
+}: {
+  employee: Employee
+  onClose: () => void
+  onSave: (d: { employeeId: string; from: string; to: string; kind: WorkKind; note: string }) => void
+  busy: boolean
+  error: string | null
+}) {
+  const { today } = useStore()
+  const [kind, setKind] = useState<WorkKind>('godisnji')
+  const [from, setFrom] = useState(today)
+  const [to, setTo] = useState(today)
+  const [note, setNote] = useState('')
+  return (
+    <Modal
+      title={`Odsustvo: ${employee.name}`}
+      subtitle="Upisuje se za svaki dan u periodu, osim nedjelja."
+      onClose={onClose}
+      footer={
+        <>
+          {error && <span className="mr-auto text-sm text-rose-700">{error}</span>}
+          <Button variant="ghost" onClick={onClose}>
+            Odustani
+          </Button>
+          <Button variant="copper" disabled={busy || !from || !to} onClick={() => onSave({ employeeId: employee.id, from, to, kind, note })}>
+            Upiši
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Vrsta" className="sm:col-span-2">
+          <select className={inputCls} value={kind} onChange={(e) => setKind(e.target.value as WorkKind)}>
+            {(['godisnji', 'bolovanje', 'praznik', 'slobodan'] as WorkKind[]).map((k) => (
+              <option key={k} value={k}>
+                {WORK_KIND_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Od">
+          <input type="date" className={inputCls} value={from} onChange={(e) => {
+            setFrom(e.target.value)
+            if (to < e.target.value) setTo(e.target.value)
+          }} />
+        </Field>
+        <Field label="Do (uključivo)">
+          <input type="date" className={inputCls} value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+        </Field>
+        <Field label="Napomena" className="sm:col-span-2">
+          <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="npr. doznaka predana, odobrio voditelj" />
+        </Field>
+      </div>
     </Modal>
   )
 }

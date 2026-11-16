@@ -277,7 +277,7 @@ function Toaster() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [palette, setPalette] = useState(false)
-  const { today: TODAY, busy, restricted } = useStore()
+  const { today: TODAY, busy, user } = useStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -382,7 +382,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {weekday(TODAY)}, {date(TODAY)}
               </div>
             </div>
-            {!restricted && (
+            {canSee(user, 'primke') && (
             <button
               onClick={() =>
                 navigate({ to: '/primke', search: { nova: true } })

@@ -29,7 +29,8 @@ export const Route = createFileRoute('/dokumenti/$slug')({
 
 function DocumentPage() {
   const { slug } = Route.useParams()
-  const { documents, employeeById, notify, restricted } = useStore()
+  const { documents, employeeById, notify, full } = useStore()
+  const restricted = !full
   const { token, expire } = useAdmin()
   const router = useRouter()
   const navigate = useNavigate()

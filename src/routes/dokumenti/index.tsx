@@ -21,7 +21,8 @@ const readMinutes = (md: string) =>
   Math.max(1, Math.round(md.split(/\s+/).length / 200))
 
 function DocumentsPage() {
-  const { documents, restricted } = useStore()
+  const { documents, full } = useStore()
+  const restricted = !full
   const navigate = useNavigate()
   const [cat, setCat] = useState('sve')
   const [q, setQ] = useState('')

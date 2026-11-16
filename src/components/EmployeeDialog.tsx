@@ -124,7 +124,7 @@ export function EmployeeDialog({
         </div>
         {role !== 'Dostava i montaža' && (
           <>
-            <Field label="Mjesečni cilj prometa">
+            <Field label="Osnovni mjesečni cilj" hint="Vrijedi za mjesece bez posebnog plana (Zaposlenici → Plan prometa).">
               <input
                 className={inputCls}
                 inputMode="decimal"

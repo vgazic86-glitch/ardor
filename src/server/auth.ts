@@ -9,7 +9,17 @@ import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { hashPassword, meta, setMeta, verifyPassword } from './hr'
 
-export type UserRole = 'admin' | 'uprava' | 'trgovac'
+/**
+ * admin — sve, uključujući korisnike
+ * uprava — sve osim korisnika (zarada, plaće, troškovi bez dodatne lozinke)
+ * operativa — srednji pristup: primke, narudžbe dobavljačima, izvodi/kartice, artikli, inventura;
+ *             bez tuđeg prometa, zarade, izvještaja, troškova i kadrovske
+ * trgovac — prodaja, dostave, zalihe bez nabavnih cijena, radno vrijeme
+ */
+export type UserRole = 'admin' | 'uprava' | 'operativa' | 'trgovac'
+const ROLES: UserRole[] = ['admin', 'uprava', 'operativa', 'trgovac']
+/** Puni uvid u poslovanje (zarada, plaće, tuđi promet). */
+export const isFull = (role: UserRole) => role === 'admin' || role === 'uprava'
 
 export interface SessionUser {
   id: string
@@ -111,8 +121,8 @@ const toSession = (u: typeof t.users.$inferSelect): SessionUser => ({
   id: String(u.id),
   username: u.username,
   name: u.name,
-  role: (['admin', 'uprava', 'trgovac'].includes(u.role) ? u.role : 'uprava') as UserRole,
-  hrAccess: u.role === 'trgovac' ? false : u.hrAccess,
+  role: (ROLES.includes(u.role as UserRole) ? u.role : 'uprava') as UserRole,
+  hrAccess: u.role === 'admin' || u.role === 'uprava',
   employeeId: u.employeeId ? String(u.employeeId) : null,
 })
 
@@ -148,10 +158,17 @@ export async function requireUser() {
   return u
 }
 
-/** Uprava i administrator (sve osim trgovaca). */
-export async function requireManager() {
+/** Operativni poslovi: uprava, administrator i operativa (ne trgovci). */
+export async function requireOperations() {
   const u = await requireUser()
   if (u.role === 'trgovac') throw new Error('Za ovu radnju nemate ovlaštenje.')
+  return u
+}
+
+/** Uprava i administrator (puni uvid u poslovanje). */
+export async function requireManager() {
+  const u = await requireUser()
+  if (!isFull(u.role)) throw new Error('Za ovu radnju nemate ovlaštenje.')
   return u
 }
 
@@ -241,7 +258,7 @@ export async function saveUser(input: UserInput) {
   const username = normalizeUsername(input.username)
   if (username.length < 3) throw new Error('Korisničko ime mora imati najmanje 3 znaka (slova bez kvačica, brojevi).')
   if (!input.name.trim()) throw new Error('Unesite ime.')
-  const role: UserRole = input.role === 'admin' || input.role === 'trgovac' ? input.role : 'uprava'
+  const role: UserRole = ROLES.includes(input.role) ? input.role : 'uprava'
   if (role === 'trgovac' && !input.employeeId) throw new Error('Trgovcu odaberite zaposlenika na kojeg se upisuju prodaje.')
   if (input.id === me.id && (role !== 'admin' || !input.active)) throw new Error('Ne možete sebi oduzeti administratorska prava niti se deaktivirati.')
   const [dup] = await db.select({ id: t.users.id }).from(t.users).where(eq(t.users.username, username))
@@ -250,7 +267,7 @@ export async function saveUser(input: UserInput) {
     username,
     name: input.name.trim(),
     role,
-    hrAccess: role === 'admin' ? true : role === 'trgovac' ? false : input.hrAccess,
+    hrAccess: isFull(role),
     employeeId: input.employeeId ? Number(input.employeeId) : null,
     active: input.active,
     phone: (input.phone ?? '').trim(),

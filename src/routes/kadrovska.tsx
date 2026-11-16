@@ -7,7 +7,6 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
-  LogOut,
   Paperclip,
   Plus,
   Save,
@@ -125,7 +124,7 @@ function HrPage() {
       <PageHeader
         eyebrow="Ljudi i dokumenti"
         title="Kadrovska evidencija"
-        description="Ugovori o radu i ostali dokumenti zaposlenika, plaće i mjesečni prijedlog bonusa (fiksni + varijabilni dio). Povjerljivo — dostupno samo uz upravljačku lozinku."
+        description="Ugovori o radu i ostali dokumenti zaposlenika, plaće i mjesečni prijedlog bonusa (fiksni + varijabilni dio). Povjerljivo — vide samo administrator i uprava."
       />
       <AdminGate title="Kadrovska evidencija">
         <HrContent />
@@ -137,7 +136,6 @@ function HrPage() {
 function HrContent() {
   const hr = useHr()
   const { employees, today } = useStore()
-  const { logout } = useAdmin()
   const [tab, setTab] = useState<Tab>('dokumenti')
 
   if (!hr.data) {
@@ -206,12 +204,9 @@ function HrContent() {
             { value: 'dokumenti', label: 'Dokumenti zaposlenika' },
             { value: 'place', label: 'Plaće' },
             { value: 'bonusi', label: 'Bonusi' },
-            { value: 'postavke', label: 'Pravila i lozinka' },
+            { value: 'postavke', label: 'Pravila bonusa' },
           ]}
         />
-        <Button variant="ghost" size="sm" className="ml-auto" onClick={logout}>
-          <LogOut className="size-3.5" /> Zaključaj
-        </Button>
       </div>
 
       {tab === 'dokumenti' && <FilesTab hr={hr} data={d} />}
@@ -412,7 +407,7 @@ function FilesTab({ hr, data }: { hr: Hr; data: HrData }) {
 
           <Card
             title="Učitaj dokument"
-            subtitle="PDF, Word, Excel ili slika do 4 MB. Datoteka se čuva u bazi i vidljiva je samo uz lozinku."
+            subtitle="PDF, Word, Excel ili slika do 4 MB. Datoteka se čuva u bazi i vide je samo administrator i uprava."
           >
             <form onSubmit={upload} className="grid gap-4 sm:grid-cols-2">
               <Field label="Vrsta dokumenta">
@@ -1260,9 +1255,10 @@ function SettingsTab({ hr, data }: { hr: Hr; data: HrData }) {
         </div>
       </Card>
 
-      <Card
+      {/* Upravljačka lozinka više nije potrebna (pristup ide preko prijave); ostavljena za rezervni pristup. */}
+      {false && <Card
         title="Upravljačka lozinka"
-        subtitle="Štiti kadrovski dio i uređivanje dokumenata"
+        subtitle="Rezervni pristup"
       >
         {status?.fromEnv ? (
           <p className="text-sm text-walnut-600">
@@ -1309,7 +1305,7 @@ function SettingsTab({ hr, data }: { hr: Hr; data: HrData }) {
             </Button>
           </form>
         )}
-      </Card>
+      </Card>}
     </div>
   )
 }

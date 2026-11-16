@@ -47,6 +47,7 @@ import {
   revenueIn,
 } from '../lib/stats'
 import { useStore } from '../lib/store'
+import { targetFor } from '../lib/types'
 
 export const Route = createFileRoute('/')({ component: Overview })
 
@@ -62,6 +63,7 @@ function Overview() {
     productById,
     me,
     restricted,
+    user,
   } = useStore()
   /** Trgovac vidi samo svoje brojke. */
   const mine = restricted ? orders.filter((o) => o.employeeId === me?.id) : orders
@@ -78,7 +80,8 @@ function Overview() {
   const team = employeeStats(orders, currentMonth, salesPeople).sort(
     (a, b) => b.revenue - a.revenue,
   )
-  const teamTarget = salesPeople.reduce((s, e) => s + e.monthlyTarget, 0)
+  const teamTarget = salesPeople.reduce((s, e) => s + targetFor(e, currentMonth), 0)
+  const myTarget = me ? targetFor(me, currentMonth) : 0
   const cats = categoryRevenue(mine, months.slice(-3), productById)
   const catTotal = cats.reduce((s, [, v]) => s + v, 0)
 
@@ -105,7 +108,7 @@ function Overview() {
     <div className="rise">
       <PageHeader
         eyebrow={`${monthLong(curM)} ${currentMonth.slice(0, 4)}.`}
-        title={me ? `Dobar dan, ${me.name.split(' ')[0]}` : 'Dobar dan'}
+        title={`Dobar dan, ${user.name.split(' ')[0]}`}
         description={restricted ? 'Vaše prodaje, cilj, dostave i roba koju treba pratiti.' : 'Pregled prometa, narudžbi i dostava salona na jednom mjestu.'}
         actions={
           restricted ? (
@@ -174,18 +177,18 @@ function Overview() {
         </Card>
 
         {restricted ? (
-          <Card title="Moj cilj ovaj mjesec">
+          <Card title="Moj plan ovaj mjesec">
             <div className="font-display text-3xl font-semibold tabular">{money(thisMonth)}</div>
-            <div className="mt-1 text-sm text-walnut-600">od cilja {money(me?.monthlyTarget ?? 0)}</div>
+            <div className="mt-1 text-sm text-walnut-600">od plana {money(myTarget)}</div>
             <div className="mt-4">
-              <Progress value={me?.monthlyTarget ? thisMonth / me.monthlyTarget : 0} />
+              <Progress value={myTarget ? thisMonth / myTarget : 0} />
             </div>
             <p className="mt-3 text-xs text-walnut-500">
-              {me?.monthlyTarget
-                ? thisMonth >= me.monthlyTarget
-                  ? 'Cilj je ostvaren. Odlično!'
-                  : `Do cilja nedostaje ${money(me.monthlyTarget - thisMonth)}.`
-                : 'Cilj još nije postavljen.'}
+              {myTarget
+                ? thisMonth >= myTarget
+                  ? 'Plan je ostvaren. Odlično!'
+                  : `Do plana nedostaje ${money(myTarget - thisMonth)}.`
+                : 'Plan još nije postavljen.'}
             </p>
           </Card>
         ) : <Card

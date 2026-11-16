@@ -423,3 +423,18 @@ export const workTime = pgTable(
   },
   (t) => [uniqueIndex('work_time_employee_date_idx').on(t.employeeId, t.date)],
 )
+
+/** Plan prometa (cilj) po zaposleniku za pojedini mjesec. Bez zapisa vrijedi osnovni cilj zaposlenika. */
+export const employeeTargets = pgTable(
+  'employee_targets',
+  {
+    id: serial().primaryKey(),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    /** YYYY-MM */
+    month: text().notNull(),
+    target: money('target').notNull(),
+  },
+  (t) => [uniqueIndex('employee_targets_employee_month_idx').on(t.employeeId, t.month)],
+)

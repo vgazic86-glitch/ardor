@@ -14,7 +14,7 @@ import {
   type WorkKind,
 } from '../lib/types'
 import type { SessionUser } from './auth'
-import { requireAdminUser, userContact } from './auth'
+import { isFull, requireAdminUser, userContact } from './auth'
 import { meta, setMeta } from './hr'
 import { todayIso } from './logic'
 
@@ -309,7 +309,7 @@ export async function listWorkTime(user: SessionUser, month: string): Promise<{ 
   const [y, m] = month.split('-').map(Number)
   const to = `${month}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')}`
   const conds = [gte(t.workTime.date, from), lte(t.workTime.date, to)]
-  if (user.role === 'trgovac') {
+  if (!isFull(user.role)) {
     if (!user.employeeId) return { days: [], now: nowHHMM() }
     conds.push(eq(t.workTime.employeeId, Number(user.employeeId)))
   }
@@ -339,23 +339,36 @@ const normTime = (s: string) => {
   return `${h.padStart(2, '0')}:${m}`
 }
 
-/** Dani unazad koje trgovac smije sam ispraviti (danas i jučer). */
-function traderMayEdit(date: string) {
+const shiftDays = (iso: string, n: number) => {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Šta zaposlenik (bez punog pristupa) smije sam upisati:
+ * dolazak/odlazak za danas i jučer; godišnji, bolovanje, praznik i slobodan dan
+ * do 30 dana unazad i do 6 mjeseci unaprijed (npr. planirani godišnji).
+ */
+function selfEditError(kind: WorkKind, date: string) {
   const today = todayIso()
-  const d = new Date(`${today}T00:00:00Z`)
-  d.setUTCDate(d.getUTCDate() - 1)
-  const yesterday = d.toISOString().slice(0, 10)
-  return date === today || date === yesterday
+  if (kind === 'rad') {
+    if (date !== today && date !== shiftDays(today, -1)) return 'Dolazak i odlazak sami upisujete za danas i jučer. Starije dane ispravlja voditelj.'
+    return null
+  }
+  if (date < shiftDays(today, -30)) return 'Odsustvo starije od 30 dana upisuje voditelj.'
+  if (date > shiftDays(today, 183)) return 'Odsustvo možete upisati najviše 6 mjeseci unaprijed.'
+  return null
 }
 
 export async function saveWorkDay(user: SessionUser, input: WorkDayInput) {
   if (!isDate(input.date)) throw new Error('Neispravan datum.')
   if (!WORK_KINDS.includes(input.kind)) throw new Error('Nepoznata vrsta dana.')
-  if (user.role === 'trgovac') {
+  if (!isFull(user.role)) {
     if (!user.employeeId || input.employeeId !== user.employeeId)
       throw new Error('Možete upisivati samo svoje radno vrijeme.')
-    if (!traderMayEdit(input.date)) throw new Error('Starije dane ispravlja voditelj. Javite mu se.')
-    if (input.kind !== 'rad') throw new Error('Godišnji, bolovanje i slobodne dane upisuje voditelj.')
+    const err = selfEditError(input.kind, input.date)
+    if (err) throw new Error(err)
   }
   if (!timeOk(input.start) || !timeOk(input.end)) throw new Error('Vrijeme upišite kao SS:MM, npr. 08:30.')
   const values = {
@@ -381,7 +394,7 @@ export async function saveWorkDay(user: SessionUser, input: WorkDayInput) {
 
 /** Brzi upis dolaska/odlaska za prijavljenog zaposlenika (trenutno vrijeme). */
 export async function clock(user: SessionUser, action: 'dolazak' | 'odlazak', employeeId?: string | null) {
-  const emp = user.role === 'trgovac' ? user.employeeId : employeeId || user.employeeId
+  const emp = !isFull(user.role) ? user.employeeId : employeeId || user.employeeId
   if (!emp) throw new Error('Vaš korisnički račun nije povezan sa zaposlenikom.')
   const date = todayIso()
   const now = nowHHMM()
@@ -392,7 +405,7 @@ export async function clock(user: SessionUser, action: 'dolazak' | 'odlazak', em
   if (action === 'dolazak') {
     if (row?.start) throw new Error(`Dolazak je već upisan (${row.start}).`)
   } else if (!row?.start) throw new Error('Prvo upišite dolazak.')
-  await saveWorkDay(user.role === 'trgovac' ? user : { ...user, role: 'uprava' }, {
+  await saveWorkDay(!isFull(user.role) ? user : { ...user, role: 'uprava' }, {
     employeeId: emp,
     date,
     kind: 'rad',
@@ -402,4 +415,28 @@ export async function clock(user: SessionUser, action: 'dolazak' | 'odlazak', em
     note: row?.note ?? '',
   })
   return { time: now }
+}
+
+export interface WorkRangeInput {
+  employeeId: string
+  from: string
+  to: string
+  kind: WorkKind
+  note: string
+}
+
+/** Odsustvo za više dana odjednom (godišnji, bolovanje…). Nedjelje se preskaču. */
+export async function saveWorkRange(user: SessionUser, input: WorkRangeInput) {
+  if (!isDate(input.from) || !isDate(input.to)) throw new Error('Unesite datum od i do.')
+  if (input.to < input.from) throw new Error('Datum „do” je prije datuma „od”.')
+  if (input.kind === 'rad') throw new Error('Za radne dane upišite dolazak i odlazak po danu.')
+  const days: string[] = []
+  for (let d = input.from; d <= input.to; d = shiftDays(d, 1)) {
+    if (new Date(`${d}T12:00:00Z`).getUTCDay() !== 0) days.push(d)
+    if (days.length > 62) throw new Error('Najviše dva mjeseca odjednom.')
+  }
+  if (!days.length) throw new Error('U odabranom periodu nema radnih dana.')
+  for (const d of days)
+    await saveWorkDay(user, { employeeId: input.employeeId, date: d, kind: input.kind, start: '', end: '', breakMin: 0, note: input.note })
+  return { days: days.length }
 }

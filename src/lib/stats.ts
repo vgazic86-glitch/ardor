@@ -1,4 +1,4 @@
-import { itemsTotal, type Employee, type Order, type Product } from './types'
+import { itemsTotal, targetFor, type Employee, type Order, type Product } from './types'
 
 export const orderTotal = (o: Order) => itemsTotal(o.items)
 export const isRevenue = (o: Order) =>
@@ -55,7 +55,7 @@ export function employeeStats(
       offers,
       avgOrder: sold.length ? revenue / sold.length : 0,
       commission: revenue * e.commissionRate,
-      targetPct: e.monthlyTarget ? revenue / e.monthlyTarget : 0,
+      targetPct: targetFor(e, key) ? revenue / targetFor(e, key) : 0,
       discounts,
     }
   })

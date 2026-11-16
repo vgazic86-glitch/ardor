@@ -52,7 +52,8 @@ function stateOf(p: Product, free: number) {
 }
 
 function StockPage() {
-  const { orders, products, suppliers, movements, productById, restricted } = useStore()
+  const { orders, products, suppliers, movements, productById, seesCosts } = useStore()
+  const restricted = !seesCosts
   const { artikal } = Route.useSearch()
   const navigate = useNavigate({ from: '/zalihe' })
   const [cat, setCat] = useState<'sve' | Category>('sve')

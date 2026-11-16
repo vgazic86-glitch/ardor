@@ -54,7 +54,12 @@ interface Store extends Snapshot {
   /** Prijavljeni korisnik. */
   user: SessionUser
   /** Trgovac: ograničen prikaz. */
+  /** Ograničen prodajni uvid (trgovac, operativa): samo svoj promet. */
   restricted: boolean
+  /** Vidi nabavne cijene, primke i nabavu (svi osim trgovca). */
+  seesCosts: boolean
+  /** Puni uvid: administrator i uprava. */
+  full: boolean
   currentMonth: string
   salesPeople: Employee[]
   drivers: Employee[]
@@ -193,7 +198,9 @@ export function StoreProvider({
     const salesPeople = data.employees.filter(
       (e) => e.role !== 'Dostava i montaža' && e.id !== '0',
     )
-    const restricted = user.role === 'trgovac'
+    const restricted = user.role === 'trgovac' || user.role === 'operativa'
+    const seesCosts = user.role !== 'trgovac'
+    const full = user.role === 'admin' || user.role === 'uprava'
     const me =
       (restricted && user.employeeId ? emp.get(user.employeeId) : null) ||
       (meId && emp.get(meId)) ||
@@ -204,6 +211,8 @@ export function StoreProvider({
       ...data,
       user,
       restricted,
+      seesCosts,
+      full,
       currentMonth: data.today.slice(0, 7),
       salesPeople,
       drivers: data.employees.filter((e) => e.role === 'Dostava i montaža'),

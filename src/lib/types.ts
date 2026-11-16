@@ -14,9 +14,17 @@ export interface Employee {
   role: Role
   initials: string
   color: string
+  /** Osnovni mjesečni cilj; vrijedi kad za mjesec nema posebnog plana. */
   monthlyTarget: number
+  /** Plan prometa po mjesecima (YYYY-MM → iznos). */
+  targets?: Record<string, number>
   commissionRate: number
   phone: string
+}
+
+/** Cilj zaposlenika za mjesec: poseban plan za taj mjesec ili osnovni cilj. */
+export function targetFor(e: Pick<Employee, 'monthlyTarget' | 'targets'>, month: string) {
+  return e.targets?.[month] ?? e.monthlyTarget
 }
 
 export const CATEGORIES = [

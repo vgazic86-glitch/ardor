@@ -34,7 +34,7 @@ const marginOf = (p: Product) => {
 }
 
 function ProductsPage() {
-  const { products, archiveProduct } = useStore()
+  const { products, archiveProduct, full } = useStore()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<'sve' | Category>('sve')
   const [edit, setEdit] = useState<Product | 'new' | null>(null)
@@ -76,12 +76,14 @@ function ProductsPage() {
           value={count(products.length)}
           hint={`${categories.length} kategorija`}
         />
-        <Stat
-          icon={Percent}
-          label="Prosječna marža"
-          value={pct(avgMargin)}
-          hint="na cijenu bez PDV-a"
-        />
+        {full && (
+          <Stat
+            icon={Percent}
+            label="Prosječna marža"
+            value={pct(avgMargin)}
+            hint="na cijenu bez PDV-a"
+          />
+        )}
         <Stat
           icon={Tag}
           label="Prosječna MPC"
@@ -89,13 +91,15 @@ function ProductsPage() {
             products.reduce((s, p) => s + p.price, 0) / (products.length || 1),
           )}
         />
-        <Stat
-          tone={lowMargin.length ? 'warn' : 'good'}
-          icon={TrendingUp}
-          label="Marža ispod 25%"
-          value={count(lowMargin.length)}
-          hint="provjerite cijene"
-        />
+        {full && (
+          <Stat
+            tone={lowMargin.length ? 'warn' : 'good'}
+            icon={TrendingUp}
+            label="Marža ispod 25%"
+            value={count(lowMargin.length)}
+            hint="provjerite cijene"
+          />
+        )}
       </div>
 
       <Card flush className="mt-6">
@@ -125,7 +129,7 @@ function ProductsPage() {
                 <th>Kategorija</th>
                 <th className="text-right">MPC</th>
                 <th className="text-right">Nabavna</th>
-                <th className="text-right">Marža</th>
+                {full && <th className="text-right">Marža</th>}
                 <th className="text-right">Min.</th>
                 <th className="text-right">Stanje</th>
                 <th>Dobavljač</th>
@@ -160,13 +164,15 @@ function ProductsPage() {
                     <td className="text-right tabular text-walnut-700">
                       {money(p.avgCost)}
                     </td>
-                    <td className="text-right">
-                      <Badge
-                        tone={m < 0.15 ? 'bad' : m < 0.25 ? 'warn' : 'good'}
-                      >
-                        {pct(m)}
-                      </Badge>
-                    </td>
+                    {full && (
+                      <td className="text-right">
+                        <Badge
+                          tone={m < 0.15 ? 'bad' : m < 0.25 ? 'warn' : 'good'}
+                        >
+                          {pct(m)}
+                        </Badge>
+                      </td>
+                    )}
                     <td className="text-right tabular text-walnut-700">
                       {p.minStock}
                     </td>

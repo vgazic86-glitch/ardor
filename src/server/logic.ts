@@ -57,7 +57,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
   await ensureDocumentsSeeded()
   await ensureBrandBook()
   await ensureHrSeeded()
-  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs] =
+  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets] =
     await Promise.all([
       db
         .select()
@@ -87,7 +87,10 @@ export async function loadSnapshot(): Promise<Snapshot> {
         .from(t.stockMovements)
         .orderBy(t.stockMovements.date, t.stockMovements.id),
       listDocuments(),
+      db.select().from(t.employeeTargets),
     ])
+  const targetsBy = new Map<number, Record<string, number>>()
+  for (const r of targets) targetsBy.set(r.employeeId, { ...(targetsBy.get(r.employeeId) ?? {}), [r.month]: r.target })
 
   const stock = new Map<number, number>()
   const inQty = new Map<number, number>()
@@ -118,6 +121,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       initials: e.initials,
       color: e.color,
       monthlyTarget: e.monthlyTarget,
+      targets: targetsBy.get(e.id) ?? {},
       commissionRate: e.commissionRate,
       phone: e.phone,
     })),
@@ -829,7 +833,7 @@ export async function clearTransactions() {
  * Pogled za trgovca: bez prometa po drugim zaposlenicima, bez nabavnih cijena i marži,
  * bez primki. Tuđe narudžbe ostaju vidljive (zbog usluge kupcima), ali bez imena prodavača.
  */
-export function forTrader(s: Snapshot, employeeId: string | null): Snapshot {
+export function forTrader(s: Snapshot, employeeId: string | null, keepCosts = false): Snapshot {
   const OTHER = '0'
   const own = (id: string | null) => (id && id === employeeId ? id : null)
   const keepEmployee = (id: string | null) => {
@@ -842,16 +846,35 @@ export function forTrader(s: Snapshot, employeeId: string | null): Snapshot {
     employees: [
       ...s.employees
         .filter((e) => e.id === employeeId || e.role === 'Dostava i montaža')
-        .map((e) => (e.id === employeeId ? e : { ...e, monthlyTarget: 0, commissionRate: 0 })),
+        .map((e) => (e.id === employeeId ? e : { ...e, monthlyTarget: 0, targets: {}, commissionRate: 0 })),
       { id: OTHER, name: 'Drugi trgovac', role: 'Prodavač', initials: '·', color: '#a8927f', monthlyTarget: 0, commissionRate: 0, phone: '' },
     ],
-    products: s.products.map((p) => ({ ...p, purchasePrice: 0, avgCost: 0 })),
+    products: keepCosts ? s.products : s.products.map((p) => ({ ...p, purchasePrice: 0, avgCost: 0 })),
     orders: s.orders.map((o) => ({
       ...o,
       employeeId: o.employeeId === employeeId ? o.employeeId : OTHER,
       payments: o.payments.map((p) => ({ ...p, employeeId: keepEmployee(p.employeeId) })),
     })),
-    movements: s.movements.map((m) => ({ ...m, unitCost: 0, employeeId: own(m.employeeId) })),
-    receipts: [],
+    movements: s.movements.map((m) => ({ ...m, unitCost: keepCosts ? m.unitCost : 0, employeeId: keepCosts ? m.employeeId : own(m.employeeId) })),
+    receipts: keepCosts ? s.receipts : [],
   }
+}
+
+/** Plan prometa za mjesec (uprava). Prazno ili null briše poseban plan, pa vrijedi osnovni cilj. */
+export async function saveTargets(month: string, rows: { employeeId: string; target: number | null }[]) {
+  if (!/^\d{4}-\d{2}$/.test(month)) throw new Error('Neispravan mjesec.')
+  await db.transaction(async (tx) => {
+    for (const r of rows) {
+      const employeeId = Number(r.employeeId)
+      if (r.target == null || !(r.target >= 0)) {
+        await tx.delete(t.employeeTargets).where(and(eq(t.employeeTargets.employeeId, employeeId), eq(t.employeeTargets.month, month)))
+        continue
+      }
+      const target = round2(r.target)
+      await tx
+        .insert(t.employeeTargets)
+        .values({ employeeId, month, target })
+        .onConflictDoUpdate({ target: [t.employeeTargets.employeeId, t.employeeTargets.month], set: { target } })
+    }
+  })
 }

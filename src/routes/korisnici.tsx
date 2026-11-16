@@ -42,7 +42,8 @@ function UsersPage() {
 
 const ROLE_HELP: Record<UserRole, string> = {
   admin: 'Sve, uključujući korisnike, plaće i troškove.',
-  uprava: 'Sve osim upravljanja korisnicima. Plaće i troškovi samo uz posebno pravo.',
+  uprava: 'Sve osim upravljanja korisnicima, uključujući zaradu, plaće i troškove (bez dodatne lozinke).',
+  operativa: 'Srednji pristup: primke, narudžbe dobavljačima, kartice i izvodi dobavljača, artikli, inventura i prodaja. Ne vidi tuđe prodaje, zaradu, izvještaje, troškove ni plaće.',
   trgovac: 'Prodaja, dostave, zalihe (bez nabavnih cijena), radno vrijeme i dokumenti. Ne vidi tuđe prodaje.',
 }
 
@@ -106,7 +107,7 @@ function UsersList() {
                 <th className="px-5 py-2.5">Ime</th>
                 <th className="px-3 py-2.5">Korisničko ime</th>
                 <th className="px-3 py-2.5">Uloga</th>
-                <th className="px-3 py-2.5">Plaće i troškovi</th>
+                <th className="px-3 py-2.5">Zarada i plaće</th>
                 <th className="px-3 py-2.5">Status</th>
                 <th className="px-3 py-2.5">Zadnja prijava</th>
                 <th className="w-12 px-3 py-2.5" />
@@ -120,7 +121,7 @@ function UsersList() {
                   </td>
                   <td className="px-3 py-2.5 font-mono text-xs">{u.username}</td>
                   <td className="px-3 py-2.5">
-                    <Badge tone={u.role === 'admin' ? 'copper' : u.role === 'trgovac' ? 'info' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
+                    <Badge tone={u.role === 'admin' ? 'copper' : u.role === 'trgovac' ? 'info' : u.role === 'operativa' ? 'violet' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
                   </td>
                   <td className="px-3 py-2.5">{u.hrAccess ? <ShieldCheck className="size-4 text-emerald-600" /> : <span className="text-walnut-300">—</span>}</td>
                   <td className="px-3 py-2.5">
@@ -141,7 +142,7 @@ function UsersList() {
         </div>
       </Card>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {(Object.keys(ROLE_HELP) as UserRole[]).map((r) => (
           <div key={r} className="rounded-2xl border border-walnut-200/70 bg-linen p-4 text-sm">
             <div className="font-semibold">{ROLE_LABEL[r]}</div>
@@ -193,7 +194,6 @@ function UserDialog({
   const [name, setName] = useState(u?.name ?? '')
   const [username, setUsername] = useState(u?.username ?? '')
   const [role, setRole] = useState<UserRole>(u?.role ?? 'trgovac')
-  const [hrAccess, setHr] = useState(u?.hrAccess ?? false)
   const [employeeId, setEmp] = useState(u?.employeeId ?? '')
   const [active, setActive] = useState(u?.active ?? true)
   const [phone, setPhone] = useState(u?.phone ?? '')
@@ -212,7 +212,7 @@ function UserDialog({
           <Button
             variant="copper"
             disabled={busy || !name.trim() || !username.trim()}
-            onClick={() => onSave({ id: u?.id ?? null, username, name, role, hrAccess, employeeId: employeeId || null, active, phone, email })}
+            onClick={() => onSave({ id: u?.id ?? null, username, name, role, hrAccess: role === 'admin' || role === 'uprava', employeeId: employeeId || null, active, phone, email })}
           >
             Spremi
           </Button>
@@ -253,12 +253,6 @@ function UserDialog({
         <Field label="E-mail (za narudžbe dobavljačima)">
           <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
-        {role === 'uprava' && (
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" className="size-4 accent-copper-500" checked={hrAccess} onChange={(e) => setHr(e.target.checked)} />
-            Pristup plaćama, ugovorima, troškovima i zaradi (bez upravljačke lozinke)
-          </label>
-        )}
         {!self && (
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
             <input type="checkbox" className="size-4 accent-copper-500" checked={active} onChange={(e) => setActive(e.target.checked)} />

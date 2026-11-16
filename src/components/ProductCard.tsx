@@ -24,7 +24,8 @@ export function ProductCard({
   productId: string
   onClose: () => void
 }) {
-  const { products, movements, orders, receipts, employeeById, restricted } = useStore()
+  const { products, movements, orders, receipts, employeeById, seesCosts, full } = useStore()
+  const restricted = !seesCosts
   const [edit, setEdit] = useState(false)
   const p = products.find((x) => x.id === productId)
   if (!p) return null
@@ -114,10 +115,14 @@ export function ProductCard({
               <dd className="text-right font-semibold tabular">
                 {money2(p.avgCost)}
               </dd>
-              <dt className="text-walnut-500">Marža (bez PDV-a)</dt>
-              <dd className="text-right font-semibold tabular text-moss-600">
-                {net ? pct((net - p.avgCost) / net) : '—'}
-              </dd>
+              {full && (
+                <>
+                  <dt className="text-walnut-500">Marža (bez PDV-a)</dt>
+                  <dd className="text-right font-semibold tabular text-moss-600">
+                    {net ? pct((net - p.avgCost) / net) : '—'}
+                  </dd>
+                </>
+              )}
               <dt className="text-walnut-500">Vrijednost zalihe (nabavna)</dt>
               <dd className="text-right font-semibold tabular">
                 {money(Math.max(0, p.stock) * p.avgCost)}

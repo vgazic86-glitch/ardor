@@ -3,7 +3,6 @@ import {
   CopyPlus,
   FileSpreadsheet,
   Landmark,
-  LogOut,
   Paperclip,
   Pencil,
   Percent,
@@ -123,7 +122,7 @@ function FinancePage() {
       <PageHeader
         eyebrow="Poslovanje"
         title="Troškovi i zarada"
-        description="Unos troškova poslovanja i mjesečni obračun zarade: prihod bez PDV-a, minus nabavna vrijednost prodane robe, troškovi i plaće. Dostupno uz upravljačku lozinku."
+        description="Unos troškova poslovanja i mjesečni obračun zarade: prihod bez PDV-a, minus nabavna vrijednost prodane robe, troškovi i plaće. Vide samo administrator i uprava."
       />
       <AdminGate title="Troškovi i zarada">
         <FinanceContent />
@@ -135,7 +134,6 @@ function FinancePage() {
 function FinanceContent() {
   const fin = useFinance()
   const { currentMonth } = useStore()
-  const { logout } = useAdmin()
   const [tab, setTab] = useState<'zarada' | 'troskovi' | 'postavke'>('zarada')
   const [month, setMonth] = useState(currentMonth)
   const months = lastMonths(currentMonth, 12).reverse()
@@ -169,9 +167,6 @@ function FinanceContent() {
             options={months.map((k) => ({ value: k, label: label(k) }))}
           />
         )}
-        <Button variant="ghost" size="sm" className="ml-auto" onClick={logout}>
-          <LogOut className="size-3.5" /> Zaključaj
-        </Button>
       </div>
       {tab === 'zarada' && <ProfitTab data={fin.data} month={month} />}
       {tab === 'troskovi' && (

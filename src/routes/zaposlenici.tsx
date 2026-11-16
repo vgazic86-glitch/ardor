@@ -7,6 +7,7 @@ import {
   Users,
   Wallet,
   Receipt,
+  Target,
 } from 'lucide-react'
 import { useState } from 'react'
 import { EmployeeDialog } from '../components/EmployeeDialog'
@@ -21,7 +22,8 @@ import {
   Select,
   Stat,
 } from '../components/ui'
-import type { Employee } from '../lib/types'
+import { targetFor, type Employee } from '../lib/types'
+import { TargetsDialog } from '../components/TargetsDialog'
 import { count, money, monthShort } from '../lib/format'
 import {
   employeeStats,
@@ -43,6 +45,7 @@ function EmployeesPage() {
   const months = lastMonths(currentMonth, 12)
   const [month, setMonth] = useState(currentMonth)
   const [selected, setSelected] = useState(salesPeople[0]?.id ?? '')
+  const [plan, setPlan] = useState(false)
 
   const stats = employeeStats(orders, month, salesPeople).sort(
     (a, b) => b.revenue - a.revenue,
@@ -80,6 +83,9 @@ function EmployeesPage() {
                 .reverse()
                 .map((k) => ({ value: k, label: label(k) }))}
             />
+            <Button variant="outline" onClick={() => setPlan(true)}>
+              <Target className="size-4" /> Plan prometa
+            </Button>
             <Button onClick={() => setEdit('new')}>
               <Plus className="size-4" /> Novi zaposlenik
             </Button>
@@ -148,7 +154,7 @@ function EmployeesPage() {
               <div className="mt-3">
                 <div className="mb-1 flex justify-between text-xs">
                   <span className="text-walnut-500">
-                    Cilj {money(t.employee.monthlyTarget)}
+                    Plan {money(targetFor(t.employee, month))}
                   </span>
                   <span className="font-semibold">
                     {Math.round(t.targetPct * 100)}%
@@ -306,7 +312,7 @@ function EmployeesPage() {
                 <th>Zaposlenik</th>
                 <th>Uloga</th>
                 <th>Telefon</th>
-                <th className="text-right">Mjesečni cilj</th>
+                <th className="text-right">Osnovni cilj</th>
                 <th className="text-right">Provizija</th>
                 <th className="text-right" />
               </tr>
@@ -358,6 +364,8 @@ function EmployeesPage() {
           </table>
         </div>
       </Card>
+
+      {plan && <TargetsDialog initialMonth={month} onClose={() => setPlan(false)} />}
 
       {edit && (
         <EmployeeDialog

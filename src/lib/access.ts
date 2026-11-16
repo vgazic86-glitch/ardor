@@ -22,10 +22,14 @@ export type Area =
 /** Trgovac: samo ono što treba za prodaju i rad s kupcima. */
 const TRADER: Area[] = ['pregled', 'narudzbe', 'dostave', 'zalihe', 'radno', 'dokumenti']
 
+/** Operativa (srednji pristup): roba, nabava, primke, kartice dobavljača — bez tuđeg prometa i zarade. */
+const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura', 'dobavljaci']
+
 export function canSee(user: SessionUser | null, area: Area) {
   if (!user) return false
   if (area === 'korisnici') return user.role === 'admin'
   if (user.role === 'trgovac') return TRADER.includes(area)
+  if (user.role === 'operativa') return OPERATIONS.includes(area)
   return true
 }
 
@@ -55,5 +59,6 @@ export function areaOf(path: string): Area | null {
 export const ROLE_LABEL: Record<SessionUser['role'], string> = {
   admin: 'Administrator',
   uprava: 'Uprava',
+  operativa: 'Operativa',
   trgovac: 'Trgovac',
 }
