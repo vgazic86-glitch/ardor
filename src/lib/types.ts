@@ -66,6 +66,8 @@ export interface Product {
   /** Id slike (do 1200 px) i sličice; prikaz preko /api/slike/:id. */
   imageId: string | null
   thumbId: string | null
+  /** Varijante: jedna grupa po redu, „Štof: siva, bež”. */
+  options?: string
 }
 
 export interface Customer {
@@ -99,6 +101,8 @@ export interface OrderItem {
   qty: number
   unitPrice: number
   discountPct: number
+  /** Odabrana varijanta (štof, boja, dimenzija…). */
+  variant?: string
 }
 
 export interface Delivery {
@@ -464,4 +468,17 @@ export interface TaskData {
   /** Kome korisnik smije zadati zadatak (prazno = ne zadaje). */
   assignees: TaskAssignee[]
   me: string
+}
+
+/** „Štof: siva, bež\nNoge: hrast” → [{ name: 'Štof', values: ['siva','bež'] }, …] */
+export function parseOptions(raw: string | undefined): { name: string; values: string[] }[] {
+  return (raw ?? '')
+    .split('\n')
+    .map((l) => {
+      const i = l.indexOf(':')
+      if (i < 0) return null
+      const values = l.slice(i + 1).split(',').map((v) => v.trim()).filter(Boolean)
+      return values.length ? { name: l.slice(0, i).trim(), values } : null
+    })
+    .filter((x): x is { name: string; values: string[] } => !!x)
 }

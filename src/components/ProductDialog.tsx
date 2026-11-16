@@ -43,6 +43,7 @@ export function ProductDialog({
     product?.supplierId ?? suppliers[0]?.id ?? '',
   )
   const [opening, setOpening] = useState('0')
+  const [options, setOptions] = useState(product?.options ?? '')
 
   const p = parseAmount(price)
   const c = parseAmount(cost)
@@ -61,6 +62,7 @@ export function ProductDialog({
       minStock: Number(minStock) || 0,
       supplierId: supplierId || null,
       openingStock: product ? 0 : Number(opening) || 0,
+      options,
     })
     if (res) {
       if (!product && newImage) {
@@ -226,6 +228,18 @@ export function ProductDialog({
           </Field>
         )}
 
+        <Field
+          label="Varijante (neobavezno)"
+          hint="Jedna grupa po redu: naziv, dvotačka, vrijednosti odvojene zarezom. Kupac bira pri narudžbi."
+          className="sm:col-span-2"
+        >
+          <textarea
+            className={`${inputCls} min-h-20 font-mono text-[13px]`}
+            value={options}
+            onChange={(e) => setOptions(e.target.value)}
+            placeholder={'Štof: Soft siva, Soft bež, Velvet zelena\nNoge: hrast, crni metal\nOrijentacija: lijeva, desna'}
+          />
+        </Field>
         <div className="grid grid-cols-3 gap-3 rounded-xl border border-walnut-200 bg-walnut-50 p-4 text-sm sm:col-span-2">
           <div>
             <div className="text-xs text-walnut-500">

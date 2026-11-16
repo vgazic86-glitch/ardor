@@ -118,6 +118,24 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'katalog',
+    route: '/katalog',
+    title: 'Katalog za kupca',
+    purpose: 'Prikaz artikala na tabletu za kupca: slike, cijene i dostupnost, bez internih podataka.',
+    fields: ['Kupac bira kategoriju, traži i dodaje artikle u „Moj izbor”.', 'Prodavač iz izbora jednim klikom pravi ponudu.'],
+    details: [
+      {
+        h: 'Kako',
+        items: [
+          'Otvorite „Katalog za kupca” i dajte tablet kupcu — meni i interni podaci su skriveni.',
+          'Dostupnost: „Odmah dostupno” ili „Po narudžbi” s okvirnim rokom dobavljača; količine na zalihi se ne prikazuju.',
+          '„Napravi ponudu” otvara novu narudžbu sa svim odabranim artiklima, sa statusom Ponuda.',
+          'Strelica gore lijevo vraća na aplikaciju.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'dostave',
     route: '/dostave',
     title: 'Dostave',
@@ -180,6 +198,7 @@ export const HELP: HelpTopic[] = [
       {
         h: 'Tok',
         items: [
+          '„Prijedlog narudžbe” sam izračuna šta treba naručiti po dobavljaču (rezervacije kupaca + minimum + prodaja tokom roka isporuke − stanje − već naručeno) i jednim klikom pravi nacrte.',
           'Spremljena narudžba je nacrt — možete je mijenjati.',
           'Zaključite je i preuzmite PDF na memorandumu za slanje dobavljaču.',
           'Kad roba stigne, napravite prijem robe (primku) iz narudžbe.',
@@ -226,6 +245,7 @@ export const HELP: HelpTopic[] = [
           'Minimalna zaliha pokreće upozorenje na Pregledu i Zalihama.',
           'QR naljepnice za artikle štampate na stranici Naljepnice.',
           'Nabavnu cijenu vide samo korisnici s pristupom troškovima.',
+          'Varijante (štof, boja, noge, orijentacija) upisujete u polje „Varijante”, jedna grupa po redu, npr. „Štof: siva, bež”. Kupac ih bira pri narudžbi, a ispisuju se na ponudi, otpremnici i nalogu za dostavu.',
         ],
       },
     ],

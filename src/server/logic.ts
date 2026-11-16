@@ -150,6 +150,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
         leadTimeDays: s?.leadTimeDays ?? 0,
         imageId: str(p.imageId),
         thumbId: str(p.thumbId),
+        options: p.options,
       }
     }),
     customers: custs.map((c) => ({
@@ -175,6 +176,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
           qty: i.qty,
           unitPrice: i.unitPrice,
           discountPct: i.discountPct,
+          ...(i.variant ? { variant: i.variant } : {}),
         })),
         status: o.status as OrderStatus,
         paymentMethod: o.paymentMethod as PaymentMethod,
@@ -357,6 +359,7 @@ export interface CreateOrderInput {
     qty: number
     unitPrice: number
     discountPct: number
+    variant?: string
   }[]
   status: OrderStatus
   paymentMethod: PaymentMethod
@@ -423,6 +426,7 @@ export async function createOrder(input: CreateOrderInput) {
         qty: Math.max(1, Math.round(i.qty)),
         unitPrice: round2(i.unitPrice),
         discountPct: Math.min(100, Math.max(0, i.discountPct)),
+        variant: String(i.variant ?? '').slice(0, 200),
       })),
     )
     const paid = round2(
@@ -616,6 +620,23 @@ export interface ProductInput {
   supplierId: string | null
   openingStock: number
   actorId: string | null
+  options?: string
+}
+
+/** Varijante: jedna grupa po redu „Naziv: vrijednost, vrijednost”. */
+function normalizeOptions(raw: string) {
+  return raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.includes(':') && l.split(':')[1].trim())
+    .map((l) => {
+      const [name, ...rest] = l.split(':')
+      const vals = rest.join(':').split(',').map((v) => v.trim()).filter(Boolean)
+      return `${name.trim()}: ${[...new Set(vals)].join(', ')}`
+    })
+    .slice(0, 6)
+    .join('\n')
+    .slice(0, 1500)
 }
 
 export async function saveProduct(input: ProductInput) {
@@ -629,6 +650,7 @@ export async function saveProduct(input: ProductInput) {
     purchasePrice: round2(input.purchasePrice),
     minStock: Math.max(0, Math.round(input.minStock)),
     supplierId: id(input.supplierId),
+    options: normalizeOptions(input.options ?? ''),
   }
   return db.transaction(async (tx) => {
     const dup = await tx

@@ -45,6 +45,7 @@ interface StockRow {
   minStock: number
   supplier: string
   leadTimeDays: number
+  options: string
 }
 
 interface Contact {
@@ -71,6 +72,7 @@ async function gather() {
       minStock: p.minStock,
       supplier: p.supplier,
       leadTimeDays: p.leadTimeDays,
+      options: (p.options ?? '').replace(/\n/g, '; '),
     }
   })
   const emps = await db
@@ -96,7 +98,7 @@ const km = (n: number) => {
 }
 
 function stockLine(s: StockRow, costs: boolean) {
-  return `${s.sku} | ${s.name} | ${s.category} | ${km(s.price)}${costs ? ` | nab. ${km(s.purchase)}` : ''} | stanje ${s.stock}, rez. ${s.reserved}, slobodno ${s.free}${s.free < s.minStock ? ' (ispod minimuma)' : ''} | dobavljač ${s.supplier}, rok ${s.leadTimeDays} d`
+  return `${s.sku} | ${s.name} | ${s.category} | ${km(s.price)}${costs ? ` | nab. ${km(s.purchase)}` : ''} | stanje ${s.stock}, rez. ${s.reserved}, slobodno ${s.free}${s.free < s.minStock ? ' (ispod minimuma)' : ''} | dobavljač ${s.supplier}, rok ${s.leadTimeDays} d${s.options ? ` | varijante: ${s.options}` : ''}`
 }
 
 // ---------- lokalna pretraga (bez AI ključa) ----------

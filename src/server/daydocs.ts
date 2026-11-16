@@ -141,7 +141,7 @@ export async function deliveryPlanPdf(user: SessionUser, day: string, kind: Deli
   const prod = new Map(s.products.map((p) => [p.id, p]))
   const drivers = [...new Set(stops.map((x) => x.driver))]
   const meta = [`${dayName(day).charAt(0).toUpperCase()}${dayName(day).slice(1)}, ${dateBa(day)}`, `${stops.length} dostava · ${drivers.length} ${drivers.length === 1 ? 'vozač' : 'vozača'}`]
-  const itemLines = (o: Order) => o.items.map((i) => `${i.qty} × ${prod.get(i.productId)?.name ?? 'artikal'}`)
+  const itemLines = (o: Order) => o.items.map((i) => `${i.qty} × ${prod.get(i.productId)?.name ?? 'artikal'}${i.variant ? ` (${i.variant})` : ''}`)
 
   if (kind === 'skladiste') {
     const L = await Letter.create(company, `Plan dostava – skladište ${dateBa(day)}`)
@@ -273,7 +273,7 @@ export async function deliveryPlanPdf(user: SessionUser, day: string, kind: Deli
         { key: 'qty', label: 'Količina', w: 56, align: 'r', bold: true },
         { key: 'ok', label: 'Ispravno', w: 54, check: true },
       ],
-      x.o.items.map((i, k) => ({ n: `${k + 1}.`, sku: prod.get(i.productId)?.sku ?? '', name: prod.get(i.productId)?.name ?? '', qty: `${i.qty} kom`, ok: '' })),
+      x.o.items.map((i, k) => ({ n: `${k + 1}.`, sku: prod.get(i.productId)?.sku ?? '', name: `${prod.get(i.productId)?.name ?? ''}${i.variant ? ` (${i.variant})` : ''}`, qty: `${i.qty} kom`, ok: '' })),
       { minRow: 14 },
     )
     L.heading('Stanje pri preuzimanju')

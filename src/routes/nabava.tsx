@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
+  Lightbulb,
   CheckCircle2,
   FileDown,
   Mail,
@@ -14,6 +15,7 @@ import {
 import { useMemo, useState } from 'react'
 import { Modal } from '../components/Modal'
 import { ReceiptDialog } from '../components/ReceiptDialog'
+import { PurchaseSuggestions } from '../components/PurchaseSuggestions'
 import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader } from '../components/ui'
 import { openDownload } from '../lib/files'
 import { count, date, money2, parseAmount } from '../lib/format'
@@ -59,6 +61,7 @@ function PurchasePage() {
   const [sup, setSup] = useState(search.dobavljac ?? 'svi')
   const [editing, setEditing] = useState<PurchaseOrder | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [suggest, setSuggest] = useState(false)
   const orders = remote.data ?? []
   const list = orders.filter((o) => (status === 'sve' || o.status === status) && (sup === 'svi' || o.supplierId === sup))
   const open = orders.find((o) => o.id === openId) ?? null
@@ -72,9 +75,14 @@ function PurchasePage() {
         title="Narudžbe dobavljačima"
         description="Sastavite narudžbu, zaključite je i pošaljite dobavljaču kao PDF na službenom memorandumu. Kad roba stigne, primka se popuni iz narudžbe."
         actions={
-          <Button variant="copper" onClick={() => navigate({ search: { nova: true } })}>
-            <Plus className="size-4" /> Nova narudžba
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setSuggest(true)}>
+              <Lightbulb className="size-4" /> Prijedlog narudžbe
+            </Button>
+            <Button variant="copper" onClick={() => navigate({ search: { nova: true } })}>
+              <Plus className="size-4" /> Nova narudžba
+            </Button>
+          </>
         }
       />
 
@@ -189,6 +197,7 @@ function PurchasePage() {
           onReceived={(receiptId) => remote.run(() => linkPurchaseReceiptFn({ data: { id: open.id, receiptId } }), 'Narudžba je označena kao zaprimljena.')}
         />
       )}
+      {suggest && <PurchaseSuggestions onClose={() => setSuggest(false)} onCreated={() => remote.reload()} />}
     </div>
   )
 }

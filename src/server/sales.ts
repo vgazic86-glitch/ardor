@@ -113,7 +113,7 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
       cells: {
         rb: `${idx + 1}.`,
         code: x.sku,
-        name: x.name,
+        name: x.i.variant ? `${x.name} (${x.i.variant})` : x.name,
         qty: num(x.i.qty, 0),
         unit: 'kom',
         price: num(x.i.unitPrice),

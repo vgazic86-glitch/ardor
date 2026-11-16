@@ -189,6 +189,7 @@ export function OrderDrawer({
             >
               <div className="flex-1">
                 <div className="font-semibold">{p.name}</div>
+                {it.variant && <div className="text-xs font-medium text-copper-700">{it.variant}</div>}
                 <div className="text-xs text-walnut-500">
                   {p.sku} · {it.qty} × {money(it.unitPrice)}
                   {it.discountPct ? ` · popust ${it.discountPct}%` : ''}

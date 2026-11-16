@@ -61,6 +61,8 @@ export const products = pgTable('products', {
     onDelete: 'set null',
   }),
   active: boolean().notNull().default(true),
+  /** Varijante koje kupac bira (npr. „Štof: siva, bež” — jedna grupa po redu). */
+  options: text().notNull().default(''),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
@@ -119,6 +121,8 @@ export const orderItems = pgTable(
     })
       .notNull()
       .default(0),
+    /** Odabrana varijanta (npr. „Štof: siva · Noge: hrast”). */
+    variant: text().notNull().default(''),
   },
   (t) => [index('order_items_order_idx').on(t.orderId)],
 )

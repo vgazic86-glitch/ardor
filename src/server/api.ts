@@ -509,3 +509,28 @@ export const complaintPdfFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .validator(pass<{ id: string }>())
   .handler(async ({ data }) => (await import('./complaints')).complaintPdf(data.id))
+
+/** Katalog za kupca: samo prodajne cijene i dostupnost (bez nabavnih cijena i količina). */
+export const catalogFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(async () => {
+    const snap = await logic.loadSnapshot()
+    const { reservedQty } = await import('../lib/stats')
+    const res = reservedQty(snap.orders)
+    return snap.products.map((p) => ({
+      id: p.id,
+      sku: p.sku,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      imageId: p.imageId,
+      thumbId: p.thumbId,
+      available: p.stock - (res.get(p.id) ?? 0) > 0,
+      leadTimeDays: p.leadTimeDays,
+      options: p.options ?? '',
+    }))
+  })
+
+export const purchaseSuggestionsFn = createServerFn({ method: 'POST' })
+  .middleware([operations])
+  .handler(() => ops.purchaseSuggestions())

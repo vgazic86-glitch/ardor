@@ -5,8 +5,7 @@ import {
   type Delivery,
   type OrderItem,
   type OrderStatus,
-  type PaymentMethod,
-} from '../lib/types'
+  type PaymentMethod, parseOptions } from '../lib/types'
 import { money, money2, parseAmount } from '../lib/format'
 import { useStore } from '../lib/store'
 import { Modal } from './Modal'
@@ -18,9 +17,15 @@ const lbl = 'flex flex-col gap-1 text-xs font-semibold text-walnut-700'
 export function NewOrderDialog({
   onClose,
   onCreated,
+  initialItems,
+  asOffer = false,
 }: {
   onClose: () => void
   onCreated: (id: string) => void
+  /** Artikli unaprijed (npr. iz kataloga za kupca). */
+  initialItems?: { productId: string; qty: number }[]
+  /** Otvori kao ponudu. */
+  asOffer?: boolean
 }) {
   const {
     addOrder,
@@ -40,7 +45,11 @@ export function NewOrderDialog({
     me && me.role !== 'Dostava i montaža' ? me.id : (salesPeople[0]?.id ?? ''),
   )
   const [items, setItems] = useState<OrderItem[]>(
-    products[0]
+    initialItems?.length
+      ? initialItems
+          .filter((i) => products.some((p) => p.id === i.productId))
+          .map((i) => ({ productId: i.productId, qty: Math.max(1, i.qty), unitPrice: productById(i.productId).price, discountPct: 0 }))
+      : products[0]
       ? [
           {
             productId: products[0].id,
@@ -51,7 +60,7 @@ export function NewOrderDialog({
         ]
       : [],
   )
-  const [status, setStatus] = useState<OrderStatus>('potvrđena')
+  const [status, setStatus] = useState<OrderStatus>(asOffer ? 'ponuda' : 'potvrđena')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Kartica')
   const [paid, setPaid] = useState('')
   const [withDelivery, setWithDelivery] = useState(true)
@@ -235,6 +244,7 @@ export function NewOrderDialog({
                       update(i, {
                         productId: e.target.value,
                         unitPrice: productById(e.target.value).price,
+                        variant: '',
                       })
                     }
                   >
@@ -289,6 +299,11 @@ export function NewOrderDialog({
                 >
                   <Trash2 className="size-4" />
                 </button>
+                <VariantPicker
+                  options={productById(it.productId).options}
+                  value={it.variant ?? ''}
+                  onChange={(variant) => update(i, { variant })}
+                />
               </div>
             ))}
           </div>
@@ -429,5 +444,45 @@ export function NewOrderDialog({
         </label>
       </form>
     </Modal>
+  )
+}
+
+/** Izbor varijante (štof, boja, dimenzija…) za stavku narudžbe. */
+function VariantPicker({ options, value, onChange }: { options?: string; value: string; onChange: (v: string) => void }) {
+  const groups = parseOptions(options)
+  if (!groups.length) return null
+  const chosen = Object.fromEntries(
+    value
+      .split(' · ')
+      .map((p) => p.split(': '))
+      .filter((x) => x.length === 2),
+  ) as Record<string, string>
+  const set = (name: string, v: string) => {
+    const next = { ...chosen, [name]: v }
+    onChange(
+      groups
+        .filter((g) => next[g.name])
+        .map((g) => `${g.name}: ${next[g.name]}`)
+        .join(' · '),
+    )
+  }
+  return (
+    <div className="col-span-full flex flex-wrap gap-2 border-t border-walnut-200/70 pt-2">
+      {groups.map((g) => (
+        <label key={g.name} className="flex items-center gap-1.5 text-xs font-semibold text-walnut-700">
+          {g.name}
+          <select
+            className={`rounded-lg border px-2 py-1 text-sm font-medium ${chosen[g.name] ? 'border-walnut-200 bg-white' : 'border-amber-300 bg-amber-50'}`}
+            value={chosen[g.name] ?? ''}
+            onChange={(e) => set(g.name, e.target.value)}
+          >
+            <option value="">— odaberite —</option>
+            {g.values.map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+      ))}
+    </div>
   )
 }

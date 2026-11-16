@@ -16,6 +16,7 @@ import { Route as DostaveRouteImport } from './routes/dostave'
 import { Route as InventuraRouteImport } from './routes/inventura'
 import { Route as IzvjestajiRouteImport } from './routes/izvjestaji'
 import { Route as KadrovskaRouteImport } from './routes/kadrovska'
+import { Route as KatalogRouteImport } from './routes/katalog'
 import { Route as KorisniciRouteImport } from './routes/korisnici'
 import { Route as KufRouteImport } from './routes/kuf'
 import { Route as KupciRouteImport } from './routes/kupci'
@@ -70,6 +71,11 @@ const IzvjestajiRoute = IzvjestajiRouteImport.update({
 const KadrovskaRoute = KadrovskaRouteImport.update({
   id: '/kadrovska',
   path: '/kadrovska',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KatalogRoute = KatalogRouteImport.update({
+  id: '/katalog',
+  path: '/katalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KorisniciRoute = KorisniciRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
+  '/katalog': typeof KatalogRoute
   '/korisnici': typeof KorisniciRoute
   '/kuf': typeof KufRoute
   '/kupci': typeof KupciRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
+  '/katalog': typeof KatalogRoute
   '/korisnici': typeof KorisniciRoute
   '/kuf': typeof KufRoute
   '/kupci': typeof KupciRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/inventura': typeof InventuraRoute
   '/izvjestaji': typeof IzvjestajiRoute
   '/kadrovska': typeof KadrovskaRoute
+  '/katalog': typeof KatalogRoute
   '/korisnici': typeof KorisniciRoute
   '/kuf': typeof KufRoute
   '/kupci': typeof KupciRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/inventura'
     | '/izvjestaji'
     | '/kadrovska'
+    | '/katalog'
     | '/korisnici'
     | '/kuf'
     | '/kupci'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/inventura'
     | '/izvjestaji'
     | '/kadrovska'
+    | '/katalog'
     | '/korisnici'
     | '/kuf'
     | '/kupci'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/inventura'
     | '/izvjestaji'
     | '/kadrovska'
+    | '/katalog'
     | '/korisnici'
     | '/kuf'
     | '/kupci'
@@ -357,6 +369,7 @@ export interface RootRouteChildren {
   InventuraRoute: typeof InventuraRoute
   IzvjestajiRoute: typeof IzvjestajiRoute
   KadrovskaRoute: typeof KadrovskaRoute
+  KatalogRoute: typeof KatalogRoute
   KorisniciRoute: typeof KorisniciRoute
   KufRoute: typeof KufRoute
   KupciRoute: typeof KupciRoute
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/kadrovska'
       fullPath: '/kadrovska'
       preLoaderRoute: typeof KadrovskaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/katalog': {
+      id: '/katalog'
+      path: '/katalog'
+      fullPath: '/katalog'
+      preLoaderRoute: typeof KatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/korisnici': {
@@ -593,6 +613,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventuraRoute: InventuraRoute,
   IzvjestajiRoute: IzvjestajiRoute,
   KadrovskaRoute: KadrovskaRoute,
+  KatalogRoute: KatalogRoute,
   KorisniciRoute: KorisniciRoute,
   KufRoute: KufRoute,
   KupciRoute: KupciRoute,

@@ -444,3 +444,62 @@ export async function saveWorkRange(user: SessionUser, input: WorkRangeInput) {
     await saveWorkDay(user, { employeeId: input.employeeId, date: d, kind: input.kind, start: '', end: '', breakMin: 0, note: input.note })
   return { days: days.length }
 }
+
+export interface Suggestion {
+  supplierId: string
+  supplierName: string
+  leadTimeDays: number
+  lines: {
+    productId: string
+    sku: string
+    name: string
+    qty: number
+    price: number
+    stock: number
+    reserved: number
+    incoming: number
+    minStock: number
+    monthly: number
+    reason: string
+  }[]
+}
+
+/**
+ * Prijedlog narudžbe po dobavljaču: rezervacije kupaca + minimalna zaliha + prodaja tokom
+ * roka isporuke, umanjeno za stanje i robu koja je već naručena.
+ */
+export async function purchaseSuggestions(): Promise<Suggestion[]> {
+  const { loadSnapshot } = await import('./logic')
+  const { reservedQty } = await import('../lib/stats')
+  const snap = await loadSnapshot()
+  const reserved = reservedQty(snap.orders)
+  const pos = await listPurchaseOrders()
+  const incoming = new Map<string, number>()
+  for (const o of pos)
+    if (o.status === 'nacrt' || o.status === 'zakljucena')
+      for (const l of o.lines) if (l.productId) incoming.set(l.productId, (incoming.get(l.productId) ?? 0) + l.qty)
+  const from = new Date(`${snap.today}T12:00:00Z`)
+  from.setUTCDate(from.getUTCDate() - 90)
+  const since = from.toISOString().slice(0, 10)
+  const sold = new Map<string, number>()
+  for (const m of snap.movements) if (m.type === 'izlaz' && m.date >= since) sold.set(m.productId, (sold.get(m.productId) ?? 0) - m.qty)
+  const groups = new Map<string, Suggestion>()
+  for (const p of snap.products) {
+    if (!p.supplierId) continue
+    const r = reserved.get(p.id) ?? 0
+    const inc = incoming.get(p.id) ?? 0
+    const monthly = Math.round(((sold.get(p.id) ?? 0) / 3) * 10) / 10
+    const during = Math.ceil((monthly * Math.max(p.leadTimeDays, 7)) / 30)
+    const need = r + p.minStock + during - p.stock - inc
+    if (need <= 0) continue
+    const why: string[] = []
+    if (r > p.stock) why.push(`kupcima nedostaje ${r - p.stock}`)
+    if (p.minStock > 0 && p.stock - r < p.minStock) why.push(`ispod minimuma (${p.minStock})`)
+    if (during > 0) why.push(`prodaja ~${String(monthly).replace('.', ',')}/mj.`)
+    if (inc) why.push(`već naručeno ${inc}`)
+    const g = groups.get(p.supplierId) ?? { supplierId: p.supplierId, supplierName: p.supplier, leadTimeDays: p.leadTimeDays, lines: [] }
+    g.lines.push({ productId: p.id, sku: p.sku, name: p.name, qty: need, price: p.purchasePrice, stock: p.stock, reserved: r, incoming: inc, minStock: p.minStock, monthly, reason: why.join(' · ') })
+    groups.set(p.supplierId, g)
+  }
+  return [...groups.values()].sort((a, b) => b.lines.length - a.lines.length)
+}

@@ -34,8 +34,9 @@ import { useStore } from '../lib/store'
 export const Route = createFileRoute('/narudzbe')({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { nova?: boolean; otvori?: string; q?: string } => ({
+  ): { nova?: boolean; otvori?: string; q?: string; artikli?: string } => ({
     ...(s.nova === true || s.nova === 'true' ? { nova: true } : {}),
+    ...(typeof s.artikli === 'string' && /^[\d:,]+$/.test(s.artikli) ? { artikli: s.artikli } : {}),
     ...(s.otvori ? { otvori: String(s.otvori) } : {}),
     ...(s.q ? { q: String(s.q) } : {}),
   }),
@@ -47,7 +48,7 @@ const PAGE = 25
 function OrdersPage() {
   const { orders, salesPeople, customerById, employeeById, currentMonth, me, restricted } =
     useStore()
-  const { nova, otvori, q: initialQ } = Route.useSearch()
+  const { nova, otvori, q: initialQ, artikli } = Route.useSearch()
   const navigate = useNavigate({ from: '/narudzbe' })
   const [q, setQ] = useState(initialQ ?? '')
   const [status, setStatus] = useState<'sve' | OrderStatus>('sve')
@@ -332,6 +333,8 @@ function OrdersPage() {
       <OrderDrawer orderId={openId} onClose={() => setOpenId(null)} />
       {nova && (
         <NewOrderDialog
+          initialItems={artikli?.split(',').map((x) => ({ productId: x.split(':')[0], qty: Number(x.split(':')[1] || 1) }))}
+          asOffer={!!artikli}
           onClose={() => navigate({ search: {} })}
           onCreated={(id) => {
             navigate({ search: {} })

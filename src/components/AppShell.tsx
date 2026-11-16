@@ -38,11 +38,14 @@ import {
   XCircle,
   LifeBuoy,
   Wrench,
+  Tablet,
+  ScanLine,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../lib/store'
 import { CommandPalette } from './CommandPalette'
 import { HeaderClock } from './HeaderClock'
+import { QrScanner } from './QrScanner'
 import { HelpButton } from './Help'
 import { Assistant } from './Assistant'
 import { helpForPath } from '../lib/help'
@@ -66,6 +69,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/narudzbe', label: 'Narudžbe kupaca', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
       { to: '/kupci', label: 'Kupci', icon: Contact, area: 'kupci' },
       { to: '/reklamacije', label: 'Reklamacije', icon: Wrench, area: 'reklamacije' },
+      { to: '/katalog', label: 'Katalog za kupca', icon: Tablet, area: 'pregled' },
       { to: '/dostave', label: 'Dostave', icon: Truck, badge: 'deliveries', area: 'dostave' },
       { to: '/pazar', label: 'Dnevni pazar', icon: Wallet, area: 'pazar' },
     ],
@@ -429,6 +433,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   useHeartbeat()
   const [open, setOpen] = useState(false)
   const [palette, setPalette] = useState(false)
+  const [scan, setScan] = useState(false)
   const { busy, user } = useStore()
   const navigate = useNavigate()
 
@@ -530,6 +535,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <Search className="size-5" />
           </button>
+          <button onClick={() => setScan(true)} className="rounded-lg p-2 text-walnut-700 hover:bg-walnut-100 md:hidden" aria-label="Skeniraj QR naljepnicu">
+            <ScanLine className="size-5" />
+          </button>
           <div className="flex items-center gap-2 md:ml-auto">
             <HeaderClock />
             <PageHelp />
@@ -561,6 +569,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {palette && <CommandPalette onClose={() => setPalette(false)} />}
+      {scan && <QrScanner onClose={() => setScan(false)} />}
       <Assistant />
       <Toaster />
     </div>
