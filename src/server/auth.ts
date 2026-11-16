@@ -8,6 +8,7 @@ import { deleteCookie, getCookie, getRequestHeader, getRequestProtocol, setCooki
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { hashPassword, meta, setMeta, verifyPassword } from './hr'
+import * as audit from './audit'
 
 /**
  * admin — sve, uključujući korisnike
@@ -209,11 +210,20 @@ const fail = async (msg: string) => {
 
 export async function login(username: string, password: string): Promise<{ ok: true } | { needsActivation: true }> {
   await ensureUsers()
-  const [u] = await db.select().from(t.users).where(eq(t.users.username, normalizeUsername(username)))
-  if (!u || !u.active) return fail('Pogrešno korisničko ime ili lozinka.')
-  if (!u.passwordHash) return { needsActivation: true }
-  if (!verifyPassword(password, u.passwordHash)) return fail('Pogrešno korisničko ime ili lozinka.')
+  const name = normalizeUsername(username)
+  await audit.checkLock(name)
+  const [u] = await db.select().from(t.users).where(eq(t.users.username, name))
+  if (u?.active && !u.passwordHash) return { needsActivation: true }
+  if (!u || !u.active || !verifyPassword(password, u.passwordHash!)) {
+    await audit.record({ entity: 'Prijava', action: 'neuspjela', subject: name, detail: u ? (u.active ? 'pogrešna lozinka' : 'neaktivan račun') : 'nepostojeće korisničko ime', ok: false })
+    const left = await audit.failsLeft(name)
+    if (left === 0) {
+      await audit.checkLock(name)
+    }
+    return fail(left <= 2 ? `Pogrešno korisničko ime ili lozinka. Još ${left} ${left === 1 ? 'pokušaj' : 'pokušaja'} prije privremenog zaključavanja.` : 'Pogrešno korisničko ime ili lozinka.')
+  }
   await startSession(u.id)
+  await audit.record({ user: { id: String(u.id), name: u.name }, entity: 'Prijava', action: 'uspješna', subject: name })
   return { ok: true }
 }
 
@@ -225,13 +235,17 @@ export async function activate(username: string, code: string, password: string)
   await ensureUsers()
   if (password.length < 8) throw new Error('Lozinka mora imati najmanje 8 znakova.')
   const [u] = await db.select().from(t.users).where(eq(t.users.username, normalizeUsername(username)))
+  await audit.checkLock(normalizeUsername(username))
   if (!u || !u.active || u.passwordHash) return fail('Aktivacija nije moguća. Provjerite korisničko ime ili se prijavite lozinkom.')
   let ok = !!u.activationCode && normCode(code) === normCode(u.activationCode)
   if (!ok && u.role === 'admin') {
     const adminHash = await meta('admin_hash')
     ok = (!!adminHash && verifyPassword(code, adminHash)) || (!!process.env.ADMIN_LOZINKA && code === process.env.ADMIN_LOZINKA)
   }
-  if (!ok) return fail('Aktivacijski kod nije tačan.')
+  if (!ok) {
+    await audit.record({ entity: 'Prijava', action: 'neuspjela aktivacija', subject: u.username, detail: 'pogrešan aktivacijski kod', ok: false })
+    return fail('Aktivacijski kod nije tačan.')
+  }
   await db.update(t.users).set({ passwordHash: hashPassword(password), activationCode: null }).where(eq(t.users.id, u.id))
   await startSession(u.id)
   return { ok: true as const }

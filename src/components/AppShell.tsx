@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/react-ro
 import { canSee, ROLE_LABEL, type Area } from '../lib/access'
 import { computeAlerts } from '../lib/alerts'
 import { useInstall } from '../lib/pwa'
-import { logoutFn, pingFn } from '../server/api'
+import { logoutFn, pingFn, securityFn } from '../server/api'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import {
   BarChart3,
@@ -276,10 +276,38 @@ function PageHelp() {
   return topic ? <HelpButton key={topic.id} topic={topic} /> : null
 }
 
+/** Sigurnosna upozorenja za administratora (zaključani računi, neuspjele prijave). */
+function useSecurity(on: boolean) {
+  const [s, setS] = useState<{ failed24h: number; locked: string[] } | null>(null)
+  useEffect(() => {
+    if (!on) return
+    let alive = true
+    const load = () => securityFn().then((r) => alive && setS(r)).catch(() => {})
+    load()
+    const id = setInterval(load, 120_000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [on])
+  return s
+}
+
 function NotificationBell() {
-  const { orders, products, today, openTasks, restricted, me } = useStore()
+  const { orders, products, today, openTasks, restricted, me, user } = useStore()
   const [open, setOpen] = useState(false)
+  const security = useSecurity(user.role === 'admin')
   const alerts = computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null })
+  if (security && (security.locked.length || security.failed24h >= 3))
+    alerts.unshift({
+      key: 'sigurnost',
+      count: security.locked.length || 1,
+      title: security.locked.length ? `Zaključan račun: ${security.locked.join(', ')}` : `${security.failed24h} neuspjelih prijava (24 h)`,
+      detail: 'Previše pogrešnih lozinki — provjerite dnevnik prijava.',
+      tone: security.locked.length ? 'bad' : 'warn',
+      to: '/korisnici',
+      search: { tab: 'dnevnik' },
+    })
   const urgent = alerts.filter((a) => a.tone === 'bad' || a.key === 'zadaci').reduce((s, a) => s + a.count, 0)
   const total = alerts.reduce((s, a) => s + a.count, 0)
   return (

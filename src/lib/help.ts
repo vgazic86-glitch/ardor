@@ -372,6 +372,14 @@ export const HELP: HelpTopic[] = [
           'Deaktivacijom ili resetom lozinke korisnik se odmah odjavljuje sa svih uređaja.',
         ],
       },
+      {
+        h: 'Dnevnik izmjena i zaštita prijave',
+        items: [
+          'Kartica "Dnevnik izmjena" pokazuje ko je i kada šta unio, promijenio ili obrisao, te sve prijave.',
+          'Nakon 5 pogrešnih lozinki račun se zaključava na 15 minuta; administrator ga može odmah otključati.',
+          'Zaključan račun i učestale neuspjele prijave javljaju se administratoru u zvoncu.',
+        ],
+      },
     ],
   },
 ]

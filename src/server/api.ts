@@ -9,25 +9,32 @@ import * as ops from './ops'
 import * as tasks from './tasks'
 import * as sales from './sales'
 import * as daydocs from './daydocs'
+import * as audit from './audit'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 
 /** Svi pozivi osim prijave zahtijevaju prijavljenog korisnika. */
-const authed = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+const authed = createMiddleware({ type: 'function' }).server(async ({ next, data, serverFnMeta }) => {
   const user = await auth.requireUser()
-  return next({ context: { user } })
+  const res = await next({ context: { user } })
+  await audit.afterCall(serverFnMeta?.name, user, data)
+  return res
 })
 
 /** Operativni poslovi (primke, nabava, kartice, artikli, inventura): sve osim trgovaca. */
-const operations = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+const operations = createMiddleware({ type: 'function' }).server(async ({ next, data, serverFnMeta }) => {
   const user = await auth.requireOperations()
-  return next({ context: { user } })
+  const res = await next({ context: { user } })
+  await audit.afterCall(serverFnMeta?.name, user, data)
+  return res
 })
 
 /** Radnje samo za upravu i administratora (puni uvid u poslovanje). */
-const manager = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+const manager = createMiddleware({ type: 'function' }).server(async ({ next, data, serverFnMeta }) => {
   const user = await auth.requireManager()
-  return next({ context: { user } })
+  const res = await next({ context: { user } })
+  await audit.afterCall(serverFnMeta?.name, user, data)
+  return res
 })
 
 const pass =
@@ -444,3 +451,20 @@ export const askAssistantFn = createServerFn({ method: 'POST' })
     const a = await import('./assistant')
     return a.ask(context.user, data.messages, String(data.page ?? '').slice(0, 100))
   })
+
+export const auditListFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ q?: string; entity?: string; before?: number; onlyFails?: boolean }>())
+  .handler(async ({ data }) => {
+    await auth.requireAdminUser()
+    return { rows: await audit.list(data), entities: await audit.entities(), security: await audit.securitySummary() }
+  })
+
+export const unlockUserFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ username: string }>())
+  .handler(async ({ data }) => audit.unlock(String(data.username), await auth.requireAdminUser()))
+
+export const securityFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(async ({ context }) => (context.user.role === 'admin' ? audit.securitySummary() : { failed24h: 0, locked: [] as string[] }))

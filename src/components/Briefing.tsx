@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Smartphone, AlertTriangle, CalendarCheck, ClipboardList, HandCoins, ListChecks, PackageX, PartyPopper, Sparkles, Truck, X } from 'lucide-react'
+import { Smartphone, ShieldAlert, AlertTriangle, CalendarCheck, ClipboardList, HandCoins, ListChecks, PackageX, PartyPopper, Sparkles, Truck, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { computeAlerts, workingDaysLeft, type AlertKey } from '../lib/alerts'
 import { money } from '../lib/format'
@@ -15,6 +15,7 @@ const ICON: Record<AlertKey, typeof Truck> = {
   zaliha: PackageX,
   ponude: ClipboardList,
   dug: HandCoins,
+  sigurnost: ShieldAlert,
 }
 const TONE: Record<string, string> = {
   copper: 'border-copper-200 bg-copper-50 text-copper-800',

@@ -3,7 +3,7 @@ import { money } from './format'
 import { orderTotal } from './stats'
 import type { Order, Product } from './types'
 
-export type AlertKey = 'zadaci' | 'dostave' | 'kasni' | 'zaliha' | 'ponude' | 'dug'
+export type AlertKey = 'zadaci' | 'dostave' | 'kasni' | 'zaliha' | 'ponude' | 'dug' | 'sigurnost'
 
 export interface Alert {
   key: AlertKey

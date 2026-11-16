@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Building2, Copy, KeyRound, Pencil, Plus, ShieldCheck, UserX } from 'lucide-react'
+import { Building2, Copy, KeyRound, Pencil, Plus, ShieldAlert, ShieldCheck, Unlock, UserX } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { AuditRow } from '../server/audit'
 import { Modal } from '../components/Modal'
 import { Badge, Button, Card, Field, inputCls, PageHeader, Segmented } from '../components/ui'
 import { ROLE_LABEL } from '../lib/access'
@@ -8,10 +9,10 @@ import { useRemote } from '../lib/remote'
 import { useStore } from '../lib/store'
 import { DEFAULT_COMPANY, type CompanyInfo } from '../lib/types'
 import type { UserAdminView, UserRole } from '../server/auth'
-import { getCompanyFn, listUsersFn, presenceFn, resetUserFn, saveCompanyFn, saveUserFn } from '../server/api'
+import { auditListFn, unlockUserFn, getCompanyFn, listUsersFn, presenceFn, resetUserFn, saveCompanyFn, saveUserFn } from '../server/api'
 
 export const Route = createFileRoute('/korisnici')({
-  validateSearch: (s: Record<string, unknown>): { tab?: 'firma' } => ({ tab: s.tab === 'firma' ? 'firma' : undefined }),
+  validateSearch: (s: Record<string, unknown>): { tab?: 'firma' | 'dnevnik' } => ({ tab: s.tab === 'firma' || s.tab === 'dnevnik' ? s.tab : undefined }),
   component: UsersPage,
 })
 
@@ -27,15 +28,16 @@ function UsersPage() {
         actions={
           <Segmented
             value={tab ?? 'korisnici'}
-            onChange={(v) => navigate({ search: v === 'firma' ? { tab: 'firma' } : {} })}
+            onChange={(v) => navigate({ search: v === 'korisnici' ? {} : { tab: v } })}
             options={[
               { value: 'korisnici', label: 'Korisnici' },
+              { value: 'dnevnik', label: 'Dnevnik izmjena' },
               { value: 'firma', label: 'Podaci o firmi' },
             ]}
           />
         }
       />
-      {tab === 'firma' ? <CompanyForm /> : <UsersList />}
+      {tab === 'firma' ? <CompanyForm /> : tab === 'dnevnik' ? <AuditLog /> : <UsersList />}
     </div>
   )
 }
@@ -367,5 +369,120 @@ function CompanyForm() {
         </Button>
       </div>
     </Card>
+  )
+}
+
+const fmtAt = (iso: string) => {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Sarajevo' })
+      .formatToParts(new Date(iso))
+      .map((x) => [x.type, x.value]),
+  )
+  return `${p.day}. ${p.month}. ${p.year}. ${p.hour}:${p.minute}`
+}
+
+/** Dnevnik izmjena i prijava (samo administrator). */
+function AuditLog() {
+  const { notify } = useStore()
+  const [q, setQ] = useState('')
+  const [query, setQuery] = useState('')
+  const [entity, setEntity] = useState('')
+  const [onlyFails, setOnlyFails] = useState(false)
+  const [more, setMore] = useState<AuditRow[]>([])
+  const [end, setEnd] = useState(false)
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(q), 350)
+    return () => clearTimeout(id)
+  }, [q])
+  const r = useRemote(() => auditListFn({ data: { q: query, entity, onlyFails } }), [query, entity, onlyFails])
+  useEffect(() => {
+    setMore([])
+    setEnd(false)
+  }, [query, entity, onlyFails])
+  const rows = [...(r.data?.rows ?? []), ...more]
+  const sec = r.data?.security
+
+  const loadMore = async () => {
+    const last = rows[rows.length - 1]
+    if (!last) return
+    const next = await auditListFn({ data: { q: query, entity, onlyFails, before: last.id } })
+    setMore((m) => [...m, ...next.rows])
+    if (next.rows.length < 200) setEnd(true)
+  }
+  const unlock = async (username: string) => {
+    if (await r.run(() => unlockUserFn({ data: { username } }))) notify(`Račun ${username} je otključan.`)
+  }
+
+  return (
+    <div className="space-y-5">
+      {sec && (sec.locked.length > 0 || sec.failed24h > 0) && (
+        <Card className={sec.locked.length ? 'border-rose-200 bg-rose-50/60' : 'border-amber-200 bg-amber-50/60'}>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <ShieldAlert className={`size-5 ${sec.locked.length ? 'text-rose-600' : 'text-amber-600'}`} />
+            <span>
+              <strong>{sec.failed24h}</strong> neuspjelih prijava u zadnja 24 sata.
+              {sec.locked.length > 0 && ' Privremeno zaključano (15 min):'}
+            </span>
+            {sec.locked.map((u) => (
+              <Button key={u} size="sm" variant="outline" onClick={() => unlock(u)}>
+                <Unlock className="size-4" /> Otključaj {u}
+              </Button>
+            ))}
+          </div>
+        </Card>
+      )}
+      <Card
+        title="Dnevnik izmjena"
+        subtitle="Ko je i kada šta unio, promijenio ili obrisao, uključujući prijave. Čitanja i pregledi se ne bilježe."
+        flush
+      >
+        <div className="flex flex-wrap items-center gap-2 border-b border-walnut-100 px-5 py-3">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Traži: korisnik, broj narudžbe, artikal…" className={`${inputCls} max-w-xs`} />
+          <select value={entity} onChange={(e) => setEntity(e.target.value)} className={`${inputCls} max-w-[220px]`}>
+            <option value="">Sve cjeline</option>
+            {(r.data?.entities ?? []).map((e) => (
+              <option key={e}>{e}</option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-sm text-walnut-700">
+            <input type="checkbox" checked={onlyFails} onChange={(e) => setOnlyFails(e.target.checked)} /> Samo neuspjele prijave
+          </label>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-walnut-500">
+                <th className="px-5 py-2.5">Vrijeme</th>
+                <th className="px-3 py-2.5">Ko</th>
+                <th className="px-3 py-2.5">Cjelina</th>
+                <th className="px-3 py-2.5">Radnja</th>
+                <th className="px-3 py-2.5">Detalji</th>
+                <th className="px-3 py-2.5">IP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-walnut-100">
+              {rows.map((x) => (
+                <tr key={x.id} className={x.ok ? '' : 'bg-rose-50/60'}>
+                  <td suppressHydrationWarning className="whitespace-nowrap px-5 py-2 text-xs tabular text-walnut-600">{fmtAt(x.at)}</td>
+                  <td className="px-3 py-2 font-medium">{x.userName || <span className="text-walnut-500">{x.subject || '—'}</span>}</td>
+                  <td className="px-3 py-2">{x.entity}</td>
+                  <td className={`px-3 py-2 ${x.ok ? '' : 'font-semibold text-rose-700'}`}>{x.action}</td>
+                  <td className="max-w-md px-3 py-2 text-walnut-700">{x.detail}</td>
+                  <td className="px-3 py-2 text-xs text-walnut-500">{x.ip}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!rows.length && <p className="px-5 py-8 text-sm text-walnut-500">{r.data ? 'Nema zapisa.' : 'Učitavam…'}</p>}
+        </div>
+        {rows.length >= 200 && !end && (
+          <div className="border-t border-walnut-100 px-5 py-3">
+            <Button size="sm" variant="ghost" onClick={loadMore}>
+              Učitaj starije
+            </Button>
+          </div>
+        )}
+      </Card>
+    </div>
   )
 }

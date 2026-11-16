@@ -483,3 +483,22 @@ export const sessions = pgTable(
   },
   (t) => [index('sessions_user_idx').on(t.userId)],
 )
+
+/** Dnevnik izmjena i prijava: ko je, kada i šta uradio. */
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: serial().primaryKey(),
+    at: timestamp().notNull(),
+    userId: integer('user_id'),
+    userName: text('user_name').notNull().default(''),
+    entity: text().notNull(),
+    action: text().notNull(),
+    detail: text().notNull().default(''),
+    /** Za prijave: korisničko ime koje je upisano. */
+    subject: text().notNull().default(''),
+    ip: text().notNull().default(''),
+    ok: boolean().notNull().default(true),
+  },
+  (t) => [index('audit_at_idx').on(t.at), index('audit_subject_idx').on(t.subject, t.at)],
+)
