@@ -309,7 +309,7 @@ function Overview() {
           )}
         </Card>
 
-        <Card title="Kategorije (3 mj.)">
+        <Card title="Prodaja po kategorijama za zadnja 3 mjeseca">
           <CategoryChart
             labels={cats.map(([c]) => c)}
             values={cats.map(([, v]) => v)}
