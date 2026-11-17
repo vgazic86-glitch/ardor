@@ -1,10 +1,14 @@
 import { useRouter } from '@tanstack/react-router'
 import { KeyRound, LogIn, Quote, ShieldCheck } from 'lucide-react'
 import { messageFor, todayBL } from '../lib/motivation'
+import { tipFor } from '../lib/savjeti'
 import { useState } from 'react'
 import { activateFn, loginFn } from '../server/api'
 import { BrandMark, Logo } from './Logo'
 import { Button, Field, inputCls } from './ui'
+
+/** Poruka dana ima vlastiti (serifni) font; mali tekst ostaje u Ubuntu. */
+const QUOTE_FONT = { fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 700 } as const
 
 /** Prijava u aplikaciju; prva prijava = aktivacijski kod + nova lozinka. */
 export function LoginPage() {
@@ -19,6 +23,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const today = todayBL()
   const message = messageFor(today)
+  const tip = tipFor(today)
   const rawLabel = new Intl.DateTimeFormat('bs-BA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Sarajevo' })
     .format(new Date(`${today}T12:00:00Z`))
     .toLowerCase()
@@ -63,12 +68,18 @@ export function LoginPage() {
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-copper-400">
                 <Quote className="size-4" /> Poruka dana
               </div>
-              <p suppressHydrationWarning className="mt-3 font-display text-3xl font-bold leading-snug text-linen">
+              <p suppressHydrationWarning className="mt-3 text-3xl leading-snug text-linen" style={QUOTE_FONT}>
                 {message}
               </p>
               <p suppressHydrationWarning className="mt-4 text-sm text-walnut-300">
                 {dayLabel}
               </p>
+              <div className="mt-8 rounded-2xl border border-linen/20 bg-white/5 p-5">
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-copper-400">Savjet za dom</div>
+                <p suppressHydrationWarning className="mt-2 text-sm leading-relaxed text-walnut-100">
+                  {tip}
+                </p>
+              </div>
             </div>
             <p className="mt-8 text-sm uppercase tracking-[0.25em] text-copper-400">Namještaj za svačiji džep</p>
           </div>
@@ -83,8 +94,14 @@ export function LoginPage() {
             <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-copper-700">
               <Quote className="size-3.5" /> Poruka dana
             </div>
-            <p suppressHydrationWarning className="mt-1.5 text-sm font-medium text-walnut-900">
+            <p suppressHydrationWarning className="mt-1.5 text-base leading-snug text-walnut-900" style={QUOTE_FONT}>
               {message}
+            </p>
+          </div>
+          <div className="mb-8 rounded-2xl border border-walnut-200 bg-white p-4 lg:hidden">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-copper-700">Savjet za dom</div>
+            <p suppressHydrationWarning className="mt-1.5 text-sm leading-relaxed text-walnut-800">
+              {tip}
             </p>
           </div>
           <h2 className="font-display text-3xl font-bold">{step === 'login' ? 'Prijava' : 'Prva prijava'}</h2>
