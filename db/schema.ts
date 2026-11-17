@@ -516,6 +516,8 @@ export const sessions = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
     userAgent: text('user_agent').notNull().default(''),
+    /** Prozor aplikacije je javio da se zatvara; ako se ne javi ponovo u par sekundi (osvježavanje), sesija prestaje. */
+    closingAt: timestamp('closing_at'),
   },
   (t) => [index('sessions_user_idx').on(t.userId)],
 )

@@ -56,6 +56,7 @@ import { helpForPath } from '../lib/help'
 import { waitingOrders } from '../lib/stats'
 import { receivables } from '../lib/collection'
 import { setTheme, useTheme } from '../lib/theme'
+import { useCloseLogout } from '../lib/closeLogout'
 import { Avatar } from './ui'
 import { BrandMark, Logo } from './Logo'
 
@@ -451,6 +452,7 @@ function useHeartbeat() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  useCloseLogout(true) // zatvaranje zadnjeg prozora = odjava
   useHeartbeat()
   const theme = useTheme()
   const [open, setOpen] = useState(false)

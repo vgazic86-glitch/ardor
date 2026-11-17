@@ -35,6 +35,7 @@ import { Route as ZadaciRouteImport } from './routes/zadaci'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
 import { Route as ApiIzvjestajSedmicniRouteImport } from './routes/api.izvjestaj-sedmicni'
+import { Route as ApiZatvaranjeRouteImport } from './routes/api.zatvaranje'
 import { Route as DobavljaciIndexRouteImport } from './routes/dobavljaci/index'
 import { Route as DobavljaciIdRouteImport } from './routes/dobavljaci/$id'
 import { Route as DokumentiIndexRouteImport } from './routes/dokumenti/index'
@@ -171,6 +172,11 @@ const ApiIzvjestajSedmicniRoute = ApiIzvjestajSedmicniRouteImport.update({
   path: '/api/izvjestaj-sedmicni',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiZatvaranjeRoute = ApiZatvaranjeRouteImport.update({
+  id: '/api/zatvaranje',
+  path: '/api/zatvaranje',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DobavljaciIndexRoute = DobavljaciIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/api/izvjestaj-sedmicni': typeof ApiIzvjestajSedmicniRoute
+  '/api/zatvaranje': typeof ApiZatvaranjeRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dobavljaci/': typeof DobavljaciIndexRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/api/izvjestaj-sedmicni': typeof ApiIzvjestajSedmicniRoute
+  '/api/zatvaranje': typeof ApiZatvaranjeRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dobavljaci': typeof DobavljaciIndexRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
   '/api/izvjestaj-sedmicni': typeof ApiIzvjestajSedmicniRoute
+  '/api/zatvaranje': typeof ApiZatvaranjeRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dobavljaci/': typeof DobavljaciIndexRoute
@@ -325,6 +334,7 @@ export interface FileRouteTypes {
     | '/zalihe'
     | '/zaposlenici'
     | '/api/izvjestaj-sedmicni'
+    | '/api/zatvaranje'
     | '/dobavljaci/$id'
     | '/dokumenti/$slug'
     | '/dobavljaci/'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/zalihe'
     | '/zaposlenici'
     | '/api/izvjestaj-sedmicni'
+    | '/api/zatvaranje'
     | '/dobavljaci/$id'
     | '/dokumenti/$slug'
     | '/dobavljaci'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/zalihe'
     | '/zaposlenici'
     | '/api/izvjestaj-sedmicni'
+    | '/api/zatvaranje'
     | '/dobavljaci/$id'
     | '/dokumenti/$slug'
     | '/dobavljaci/'
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
   ApiIzvjestajSedmicniRoute: typeof ApiIzvjestajSedmicniRoute
+  ApiZatvaranjeRoute: typeof ApiZatvaranjeRoute
   DokumentiSlugRoute: typeof DokumentiSlugRoute
   DokumentiIndexRoute: typeof DokumentiIndexRoute
   ApiSlikeIdRoute: typeof ApiSlikeIdRoute
@@ -613,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIzvjestajSedmicniRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/zatvaranje': {
+      id: '/api/zatvaranje'
+      path: '/api/zatvaranje'
+      fullPath: '/api/zatvaranje'
+      preLoaderRoute: typeof ApiZatvaranjeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dobavljaci/': {
       id: '/dobavljaci/'
       path: '/'
@@ -692,6 +712,7 @@ const rootRouteChildren: RootRouteChildren = {
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,
   ApiIzvjestajSedmicniRoute: ApiIzvjestajSedmicniRoute,
+  ApiZatvaranjeRoute: ApiZatvaranjeRoute,
   DokumentiSlugRoute: DokumentiSlugRoute,
   DokumentiIndexRoute: DokumentiIndexRoute,
   ApiSlikeIdRoute: ApiSlikeIdRoute,

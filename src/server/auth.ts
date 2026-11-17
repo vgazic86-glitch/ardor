@@ -136,6 +136,19 @@ const toSession = (u: typeof t.users.$inferSelect): SessionUser => ({
 const IDLE_MINUTES = 10
 /** Korisnik se smatra „online” ako se javio u zadnje 2 minute. */
 export const ONLINE_MINUTES = 2
+/**
+ * Odjava pri zatvaranju prozora (Vladimir, 17. 11. 2026.): prozor pri zatvaranju javi „zatvaram”.
+ * Ako se ista sesija ne javi u 20 s, prijava prestaje. Osvježavanje (F5) se javi odmah i ne odjavljuje.
+ */
+export const CLOSE_GRACE_MS = 20_000
+
+/** Prozor aplikacije se zatvara (zadnja otvorena kartica) — vidi CLOSE_GRACE_MS. */
+export async function markClosing() {
+  const raw = getCookie(COOKIE)
+  const sid = raw?.split('.')[2]
+  if (!sid || !(await currentUser())) return
+  await db.update(t.sessions).set({ closingAt: new Date() }).where(eq(t.sessions.id, sid))
+}
 
 async function startSession(userId: number) {
   const exp = Date.now() + SESSION_HOURS * 3_600_000
@@ -169,6 +182,14 @@ export async function currentUser(): Promise<SessionUser | null> {
   if (idle > IDLE_MINUTES * 60_000) {
     await db.delete(t.sessions).where(eq(t.sessions.id, sid))
     return null
+  }
+  // Prozor je javio zatvaranje: ako se u CLOSE_GRACE_MS nije ponovo javio (osvježavanje), prijava prestaje.
+  if (sess.closingAt) {
+    if (Date.now() - sess.closingAt.getTime() > CLOSE_GRACE_MS) {
+      await db.delete(t.sessions).where(eq(t.sessions.id, sid))
+      return null
+    }
+    await db.update(t.sessions).set({ closingAt: null }).where(eq(t.sessions.id, sid))
   }
   const [u] = await db.select().from(t.users).where(eq(t.users.id, Number(id)))
   if (!u || !u.active || !u.passwordHash) return null

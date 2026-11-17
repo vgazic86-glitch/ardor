@@ -523,7 +523,7 @@ export const HELP: HelpTopic[] = [
         h: 'Prisutnost i odjava',
         items: [
           'Zelena tačka: korisnik je trenutno online.',
-          'Zatvaranjem preglednika ili aplikacije korisnik se odjavljuje; bez aktivnosti 10 min također.',
+          'Zatvaranjem prozora aplikacije korisnik se odjavljuje (ako je otvoreno više kartica — kad se zatvori zadnja). Osvježavanje stranice ne odjavljuje.', 'Bez aktivnosti 10 min korisnik se također odjavljuje.',
           'Deaktivacijom ili resetom lozinke korisnik se odmah odjavljuje sa svih uređaja.',
         ],
       },
