@@ -1,2 +1,4 @@
 allowBuilds:
   esbuild: true
+# Skripte iz package.json rade jednako na Windowsu, macOS-u i Linuxu (VAR=x naredba, ${PORT:-3000}).
+shellEmulator: true

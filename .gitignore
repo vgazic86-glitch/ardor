@@ -1,0 +1,14 @@
+# Local Netlify folder
+.netlify
+node_modules
+dist
+.tanstack
+
+# Lokalne postavke i tajne — nikad u repo
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+.claude/settings.local.json
+test-results
+playwright-report

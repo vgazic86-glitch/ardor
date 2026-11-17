@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "node --env-file-if-exists=.env node_modules/vite/bin/vite.js dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -12,8 +12,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:node": "DEPLOY_TARGET=node vite build",
-    "migrate": "node scripts/migrate.mjs",
-    "start": "node scripts/migrate.mjs && srvx serve --prod --entry dist/server/server.js --static ../client --port ${PORT:-3000}"
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
+    "start": "node scripts/migrate.mjs && srvx serve --prod --entry dist/server/server.js --static ../client --port ${PORT:-3000}",
+    "start:lokalno": "node --env-file-if-exists=.env scripts/migrate.mjs && node --env-file-if-exists=.env node_modules/srvx/bin/srvx.mjs serve --prod --entry dist/server/server.js --static ../client --port 3000"
   },
   "dependencies": {
     "@netlify/database": "^2.0.3",

@@ -28,19 +28,24 @@ Interna web aplikacija salona namještaja **Ardor**: narudžbe, dostave i monta�
 
 Ostalo: brza pretraga **Ctrl+K**, odabir „ko radi u aplikaciji” dolje lijevo (pamti se u pregledniku), obavijesti o spremanju.
 
-Podaci se čuvaju u Netlify Database (Postgres). Pri prvom pokretanju baza se puni primjernim podacima.
+Podaci se čuvaju u Postgres bazi (Render). Pri prvoj prijavi na praznu bazu ona se puni primjernim podacima.
 
 ## Tehnologije
-TanStack Start (React 19), Tailwind CSS 4, Chart.js, lucide-react, write-excel-file, Netlify Database + Drizzle.
+TanStack Start (React 19), Tailwind CSS 4, Drizzle ORM + Postgres, srvx, pdf-lib, Chart.js, lucide-react, write-excel-file. Objava na Render (`render.yaml`).
 
 ## Lokalno pokretanje
+Treba: Node 22.13+ ili 24, pnpm 12.21.0 (`npm i -g pnpm@12.21.0`) i Postgres.
 ```bash
 pnpm install
-netlify dev   # ili: pnpm dev
+cp .env.example .env     # upiši DATABASE_URL lokalne baze
+pnpm migrate
+pnpm dev                 # http://localhost:3000
 ```
+Provjere: `pnpm typecheck`, `pnpm test`, `pnpm build:node`, pa `pnpm start:lokalno` (produkcijski server na :3000).
+Upute za rad s Claude Codeom su u [CLAUDE.md](./CLAUDE.md).
 
 ## Plan
-Sljedeće faze (baza podataka, prijava zaposlenika, kupci, PDF dokumenti, obavijesti, izvještaji) opisane su u [PLAN.md](./PLAN.md).
+Što je napravljeno i što slijedi: [PLAN.md](./PLAN.md).
 
 ## Objava na Renderu
 `render.yaml` opisuje cijelu postavku (web servis + Postgres, Frankfurt). U Renderu: **New → Blueprint** → odaberite ovaj repozitorij → **Apply**.
