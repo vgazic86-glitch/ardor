@@ -115,6 +115,8 @@ export const HELP: HelpTopic[] = [
           'Kako se nešto radi u aplikaciji, šta ponuditi kupcu, ima li artikla na stanju, broj telefona kolege.',
           'Asistent ne mijenja ništa u aplikaciji — kaže vam gdje to sami uradite.',
           'Razgovor vidi samo onaj ko je prijavljen; briše se pri odjavi i zatvaranju preglednika.',
+          'Asistent koristi Google Gemini. Imena kupaca i kolega šalju se šifrirano, a telefoni i e-pošta se ne šalju — pitanja o kontaktima odgovara aplikacija sama.',
+          'U pitanje ne upisujte osobne podatke kupaca (puno ime, telefon, JMBG, adresu): ono što upišete ide Googleu.',
         ],
       },
       {
