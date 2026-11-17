@@ -23,6 +23,27 @@ export interface HelpTopic {
 
 export const HELP: HelpTopic[] = [
   {
+    id: 'obavijesti',
+    route: '/',
+    title: 'Obavijesti i oglasna ploča',
+    purpose: 'Objave uprave i voditelja salona te obavijesti o događajima u salonu.',
+    fields: ['Oglasna ploča: naslov i tekst objave (samo uprava, admin i voditelj salona).'],
+    details: [
+      {
+        h: 'Šta vidite',
+        items: [
+          'Oglasna ploča na Pregledu: objave. Kliknite „Pročitao/la sam” kad pročitate, da uprava vidi tko je pročitao.',
+          'Zvono gore desno: nove objave i, za voditelja salona, svaki događaj iz salona (prodaja, dostava, uplata, primka, zadatak, kupac, reklamacija, dolazak na posao…).',
+          'Plaće, bonusi, troškovi i prijave u aplikaciji se ne javljaju u obavijestima.',
+        ],
+      },
+      {
+        h: 'Savjet',
+        items: ['Kad otvorite zvono, obavijesti se označavaju kao pročitane. Brojka na zvonu pokazuje nepročitane.'],
+      },
+    ],
+  },
+  {
     id: 'pregled',
     route: '/',
     title: 'Pregled',

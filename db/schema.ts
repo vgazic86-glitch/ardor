@@ -543,6 +543,62 @@ export const auditLog = pgTable(
   (t) => [index('audit_at_idx').on(t.at), index('audit_subject_idx').on(t.subject, t.at)],
 )
 
+/** Obavijesti u zvonu (po korisniku): voditelj dobiva događaje iz salona, svi dobivaju objave. */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: serial().primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    at: timestamp().notNull(),
+    title: text().notNull(),
+    text: text().notNull().default(''),
+    readAt: timestamp('read_at'),
+  },
+  (t) => [index('notifications_user_idx').on(t.userId, t.at)],
+)
+
+/** Smjene trgovaca po danu: otvaranje ili zatvaranje salona. */
+export const shifts = pgTable(
+  'shifts',
+  {
+    id: serial().primaryKey(),
+    date: date({ mode: 'string' }).notNull(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** otvaranje | zatvaranje */
+    shift: text().notNull(),
+  },
+  (t) => [uniqueIndex('shifts_day_user_uq').on(t.date, t.userId)],
+)
+
+/** Oglasna ploča: objave uprave i voditelja salona. */
+export const announcements = pgTable('announcements', {
+  id: serial().primaryKey(),
+  title: text().notNull(),
+  body: text().notNull().default(''),
+  authorId: integer('author_id').references(() => users.id, { onDelete: 'set null' }),
+  authorName: text('author_name').notNull().default(''),
+  createdAt: timestamp('created_at').notNull(),
+})
+
+/** Tko je potvrdio da je objavu pročitao. */
+export const announcementReads = pgTable(
+  'announcement_reads',
+  {
+    announcementId: integer('announcement_id')
+      .notNull()
+      .references(() => announcements.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    readAt: timestamp('read_at').notNull(),
+  },
+  (t) => [uniqueIndex('announcement_reads_uq').on(t.announcementId, t.userId)],
+)
+
 /** Reklamacije kupaca: oštećenja, greške, servis. Status: prijavljena → u_obradi → kod_dobavljaca → rijesena | odbijena. */
 export const complaints = pgTable(
   'complaints',

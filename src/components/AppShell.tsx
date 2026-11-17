@@ -2,7 +2,9 @@ import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/react-ro
 import { canSee, ROLE_LABEL, type Area } from '../lib/access'
 import { computeAlerts } from '../lib/alerts'
 import { useInstall } from '../lib/pwa'
-import { logoutFn, pingFn, securityFn } from '../server/api'
+import { getInboxFn, logoutFn, markInboxReadFn, pingFn, securityFn } from '../server/api'
+import { useRemote } from '../lib/remote'
+import type { InboxData } from '../lib/inbox'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import {
   BarChart3,
@@ -325,6 +327,18 @@ function NotificationBell() {
   const { orders, products, today, openTasks, restricted, me, user, priceChanges } = useStore()
   const [open, setOpen] = useState(false)
   const security = useSecurity(user.role === 'admin')
+  const inbox = useRemote<InboxData>(() => getInboxFn(), [])
+  const notes = inbox.data?.notifications ?? []
+  /** Otvaranje zvona: osvježi popis i označi obavijesti pročitanima. */
+  const openBell = () => {
+    const next = !open
+    setOpen(next)
+    if (!next) return
+    void inbox.reload().then(async () => {
+      await markInboxReadFn()
+      await inbox.reload()
+    })
+  }
   const alerts = computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null, priceChanges })
   if (security && (security.locked.length || security.failed24h >= 3))
     alerts.unshift({
@@ -337,11 +351,11 @@ function NotificationBell() {
       search: { tab: 'dnevnik' },
     })
   const urgent = alerts.filter((a) => a.tone === 'bad' || a.key === 'zadaci').reduce((s, a) => s + a.count, 0)
-  const total = alerts.reduce((s, a) => s + a.count, 0)
+  const total = alerts.reduce((s, a) => s + a.count, 0) + (inbox.data?.unread ?? 0)
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={openBell}
         className="relative rounded-lg p-2 text-walnut-700 hover:bg-walnut-100"
         aria-label={`Obavijesti (${total})`}
         aria-expanded={open}
@@ -358,9 +372,23 @@ function NotificationBell() {
           <button className="fixed inset-0 z-40 cursor-default" aria-label="Zatvori" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-walnut-200 bg-white shadow-lift">
             <div className="border-b border-walnut-100 px-4 py-3 font-display font-semibold">Obavijesti</div>
-            {alerts.length === 0 ? (
+            {notes.length > 0 && (
+              <>
+                <div className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-walnut-500">Događaji i objave</div>
+                <ul className="max-h-[40vh] divide-y divide-walnut-100 overflow-y-auto">
+                  {notes.map((n) => (
+                    <li key={n.id} className="px-4 py-2.5">
+                      <div className="text-sm font-semibold text-walnut-900">{n.title}</div>
+                      {n.text && <div className="text-xs text-walnut-600">{n.text}</div>}
+                      <div className="text-[11px] text-walnut-400">{new Date(n.at).toLocaleString('bs-BA', { timeZone: 'Europe/Sarajevo', dateStyle: 'short', timeStyle: 'short' })}</div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {alerts.length === 0 && notes.length === 0 ? (
               <p className="px-4 py-5 text-sm text-walnut-500">Nema ništa hitno. Sve je pod kontrolom.</p>
-            ) : (
+            ) : alerts.length === 0 ? null : (
               <ul className="max-h-[60vh] divide-y divide-walnut-100 overflow-y-auto">
                 {alerts.map((a) => (
                   <li key={a.key}>

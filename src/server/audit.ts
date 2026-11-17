@@ -4,6 +4,8 @@ import { getRequestHeader } from '@tanstack/react-start/server'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import type { SessionUser } from './auth'
+import { isSalonEvent } from '../lib/inbox'
+import { notifyManagers } from './inbox'
 
 export const MAX_FAILS = 5
 export const LOCK_MINUTES = 15
@@ -260,6 +262,9 @@ const MAP: Record<string, [string, string, Detail?]> = {
   addComplaintPhotoFn: ['Reklamacija', 'dodana fotografija', async (d) => resolveComplaint(d.id)],
   deleteComplaintPhotoFn: ['Reklamacija', 'obrisana fotografija'],
   deleteComplaintFn: ['Reklamacija', 'obrisana', async (d) => `#${d.id}`],
+  postAnnouncementFn: ['Oglasna ploča', 'objava', (d) => String(d.title ?? '').slice(0, 80)],
+  confirmAnnouncementFn: ['Oglasna ploča', 'pročitano', (d) => `#${d.id}`],
+  saveShiftsFn: ['Smjene', 'upisane', (d) => `${d.date}: ${(d.assignments ?? []).filter((a: { shift: string }) => a.shift).length} trgovaca`],
 }
 
 /** Poziva se iz middlewarea nakon uspješne serverske radnje. */
@@ -273,6 +278,8 @@ export async function afterCall(fn: string | undefined, user: SessionUser, data:
     detail = describe(data)
   }
   await record({ user, entity: m[0], action: m[1], detail })
+  // Voditelj salona dobiva obavijest o svakom događaju iz salona.
+  if (isSalonEvent(m[0])) await notifyManagers(`${m[0]} · ${m[1]}`, [detail, `radi: ${user.name}`].filter(Boolean).join(' · '))
 }
 
 async function resolveComplaint(id: unknown) {

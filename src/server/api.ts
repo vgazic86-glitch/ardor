@@ -12,6 +12,7 @@ import * as daydocs from './daydocs'
 import * as audit from './audit'
 import * as weekly from './weekly'
 import * as collection from './collection'
+import * as inbox from './inbox'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 import { visibleDocuments } from '../lib/manuals'
@@ -32,6 +33,9 @@ const DELIVERY_FNS = new Set([
   'askAssistantFn',
   'securityFn',
   'adminStatusFn',
+  'getInboxFn',
+  'markInboxReadFn',
+  'confirmAnnouncementFn',
 ])
 
 /** Svi pozivi osim prijave zahtijevaju prijavljenog korisnika. */
@@ -75,6 +79,11 @@ export const getSnapshot = createServerFn({ method: 'GET' }).handler(async () =>
     await tasks.ensureOfferFollowups(data.today)
   } catch (e) {
     console.error('Praćenje ponuda nije uspjelo', e)
+  }
+  try {
+    await inbox.ensureDailyTasks(data.today)
+  } catch (e) {
+    console.error('Dnevni zadaci nisu napravljeni', e)
   }
   const openTasks = await tasks.openTaskCount(user)
   // Dokumenti i priručnici: svaka uloga vidi samo svoje (admin i uprava sve).
@@ -430,6 +439,37 @@ export const saveWorkRangeFn = createServerFn({ method: 'POST' })
 export const listTasksFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .handler(({ context }) => tasks.listTasks(context.user))
+
+/** Obavijesti u zvonu i oglasna ploča. */
+export const getInboxFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(({ context }) => inbox.listInbox(context.user))
+
+export const markInboxReadFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .handler(({ context }) => inbox.markInboxRead(context.user))
+
+export const postAnnouncementFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ title: string; body: string }>())
+  .handler(({ data, context }) => inbox.postAnnouncement(context.user, data))
+
+/** Smjene trgovaca za zadane dane (danas i sutra). */
+export const listShiftsFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ days: string[] }>())
+  .handler(({ data, context }) => inbox.listShifts(context.user, data.days))
+
+/** Upis smjena (otvaranje ili zatvaranje) za jedan dan. */
+export const saveShiftsFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ date: string; today: string; assignments: { userId: string; shift: 'otvaranje' | 'zatvaranje' | '' }[] }>())
+  .handler(({ data, context }) => inbox.saveShifts(context.user, data.date, data.assignments, data.today))
+
+export const confirmAnnouncementFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ id: string }>())
+  .handler(({ data, context }) => inbox.confirmAnnouncement(context.user, data.id))
 
 export const saveTaskFn = createServerFn({ method: 'POST' })
   .middleware([authed])

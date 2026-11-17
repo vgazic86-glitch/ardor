@@ -46,6 +46,8 @@ import {
   previousMonthKey,
   revenueIn,
 } from '../lib/stats'
+import { AnnouncementsCard } from '../components/Announcements'
+import { ShiftsCard } from '../components/Shifts'
 import { Briefing, greeting } from '../components/Briefing'
 import { MyTasksCard } from '../components/Tasks'
 import { useStore } from '../lib/store'
@@ -138,6 +140,8 @@ function Overview() {
       />
 
       <Briefing />
+      <AnnouncementsCard />
+      <ShiftsCard />
       <MyTasksCard />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
