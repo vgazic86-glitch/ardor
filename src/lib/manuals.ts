@@ -17,6 +17,7 @@ export const MANUALS: { slug: string; title: string; roles: AppRole[]; summary: 
   { slug: 'prirucnik-voditelj-marketinga', title: 'Priručnik za voditelja marketinga', roles: [], summary: 'Društvene mreže, kampanje i vizualni identitet.', sortOrder: 15 },
   { slug: 'prirucnik-vlasnika', title: 'Priručnik vlasnika', roles: [], summary: 'Pregled poslovanja, zarada, odluke i kontrola.', sortOrder: 16 },
   { slug: 'nagradjivanje-stimulacija', title: 'Nagrađivanje i stimulacija radnika', roles: [], summary: 'Pravila nagrađivanja, bonusa i stimulacije radnika (samo vlasnici).', sortOrder: 17 },
+  { slug: 'digitalni-marketing', title: 'Digitalni marketing', roles: ['voditelj'], summary: 'Digitalni marketing salona: mreže, oglasi i pravila nastupa (vlasnici i voditelj salona).', sortOrder: 18 },
 ]
 
 /** Uloge iz baze („trgovac,voditelj”) u listu. */

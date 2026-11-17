@@ -10,15 +10,18 @@ const all = MANUALS.map((m) => manual(m.slug))
 const seen = (role: string) => visibleDocuments(all, role).map((d) => d.slug).sort()
 
 describe('priručnici po ulozi', () => {
-  it('admin i uprava vide svih 8', () => {
-    expect(seen('admin')).toHaveLength(8)
-    expect(seen('uprava')).toHaveLength(8)
+  it('admin i uprava vide svih 9', () => {
+    expect(seen('admin')).toHaveLength(9)
+    expect(seen('uprava')).toHaveLength(9)
   })
   it('trgovac: svoj + uređenje salona', () => {
     expect(seen('trgovac')).toEqual(['prirucnik-trgovac', 'prirucnik-uredjenje-salona'])
   })
-  it('voditelj: svoj + uređenje salona', () => {
-    expect(seen('voditelj')).toEqual(['prirucnik-uredjenje-salona', 'prirucnik-voditelj-salona'])
+  it('voditelj: svoj + uređenje salona + digitalni marketing', () => {
+    expect(seen('voditelj')).toEqual(['digitalni-marketing', 'prirucnik-uredjenje-salona', 'prirucnik-voditelj-salona'])
+  })
+  it('nagrađivanje vide samo admin i uprava', () => {
+    for (const r of ['trgovac', 'voditelj', 'operativa', 'dostava']) expect(seen(r)).not.toContain('nagradjivanje-stimulacija')
   })
   it('operativa i dostava: samo svoj', () => {
     expect(seen('operativa')).toEqual(['prirucnik-operativa-skladiste'])
