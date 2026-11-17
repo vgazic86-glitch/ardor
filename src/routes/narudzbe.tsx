@@ -13,6 +13,7 @@ import { NewOrderDialog } from '../components/NewOrderDialog'
 import { OrderDrawer } from '../components/OrderDrawer'
 import {
   Avatar,
+  Badge,
   Button,
   Card,
   OrderBadge,
@@ -28,6 +29,7 @@ import {
   monthKey,
   orderTotal,
   outstanding,
+  waitingOrders,
 } from '../lib/stats'
 import { useStore } from '../lib/store'
 
@@ -46,7 +48,7 @@ export const Route = createFileRoute('/narudzbe')({
 const PAGE = 25
 
 function OrdersPage() {
-  const { orders, salesPeople, customerById, employeeById, currentMonth, me, restricted } =
+  const { orders, products, salesPeople, customerById, employeeById, currentMonth, me, restricted } =
     useStore()
   const { nova, otvori, q: initialQ, artikli } = Route.useSearch()
   const navigate = useNavigate({ from: '/narudzbe' })
@@ -61,6 +63,7 @@ function OrdersPage() {
     if (initialQ !== undefined) setQ(initialQ)
   }, [otvori, initialQ])
 
+  const waiting = useMemo(() => waitingOrders(orders, products), [orders, products])
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return orders.filter((o) => {
@@ -113,8 +116,8 @@ function OrdersPage() {
     <div className="rise">
       <PageHeader
         eyebrow="Prodaja"
-        title="Narudžbe"
-        description="Sve ponude i narudžbe salona — od prve ponude do isporuke i naplate."
+        title="Prodaja"
+        description="Sve ponude i prodaje salona. Prodaja za koju robe nema u salonu vodi se i pod „Narudžbe kupaca” dok roba ne stigne."
         actions={
           <>
             {!restricted && (
@@ -123,7 +126,7 @@ function OrdersPage() {
               </Button>
             )}
             <Button onClick={() => navigate({ search: { nova: true } })}>
-              <Plus className="size-4" /> Nova narudžba
+              <Plus className="size-4" /> Nova prodaja
             </Button>
           </>
         }
@@ -290,6 +293,7 @@ function OrdersPage() {
                     </td>
                     <td className="py-3">
                       <OrderBadge status={o.status} />
+                      {waiting.has(o.id) && <Badge tone="warn" className="ml-1">čeka robu</Badge>}
                       {o.issuedAt && (
                         <div className="mt-1 text-[11px] text-walnut-500">
                           roba izašla {date(o.issuedAt)}

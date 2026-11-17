@@ -1,5 +1,6 @@
 import {
   FileText,
+  Hourglass,
   CalendarDays,
   MapPin,
   Phone,
@@ -16,7 +17,7 @@ import {
   money2,
   orderStatusLabel,
 } from '../lib/format'
-import { orderTotal } from '../lib/stats'
+import { orderTotal, waitingOrders } from '../lib/stats'
 import { useStore } from '../lib/store'
 import { openDownload } from '../lib/files'
 import { customerDocPdfFn } from '../server/api'
@@ -48,6 +49,7 @@ export function OrderDrawer({
 }) {
   const {
     orders,
+    products,
     setOrderStatus,
     addPayment,
     customerById,
@@ -71,6 +73,7 @@ export function OrderDrawer({
   }
   const order = orders.find((o) => o.id === orderId)
   if (!order) return null
+  const missing = waitingOrders(orders, products).get(order.id)
 
   const c = customerById(order.customerId)
   const e = employeeById(order.employeeId)
@@ -127,6 +130,17 @@ export function OrderDrawer({
         </div>
       }
     >
+      {missing && (
+        <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Hourglass className="mt-0.5 size-4 shrink-0" />
+          <div>
+            <div className="font-semibold">Narudžba kupca — čeka robu</div>
+            <div className="text-xs">
+              {missing.map((m) => `${productById(m.productId).name}: nedostaje ${m.missing} od ${m.qty}`).join(' · ')}. Kad se upiše primka, oznaka nestaje sama.
+            </div>
+          </div>
+        </div>
+      )}
       {order.status !== 'otkazana' && (
         <ol className="mb-6 grid grid-cols-5 gap-1.5">
           {flow.map((s, i) => (

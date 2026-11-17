@@ -46,6 +46,7 @@ export function areaOf(path: string): Area | null {
   if (seg === '') return 'pregled'
   const map: Record<string, Area> = {
     narudzbe: 'narudzbe',
+    'narudzbe-kupaca': 'narudzbe',
     dostave: 'dostave',
     zalihe: 'zalihe',
     primke: 'primke',

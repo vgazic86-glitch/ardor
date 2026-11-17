@@ -40,6 +40,7 @@ import {
   Wrench,
   Tablet,
   ScanLine,
+  Hourglass,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../lib/store'
@@ -49,6 +50,7 @@ import { QrScanner } from './QrScanner'
 import { HelpButton } from './Help'
 import { Assistant } from './Assistant'
 import { helpForPath } from '../lib/help'
+import { waitingOrders } from '../lib/stats'
 import { Avatar } from './ui'
 import { Logo } from './Logo'
 
@@ -56,7 +58,7 @@ type NavItem = {
   to: string
   label: string
   icon: typeof LayoutDashboard
-  badge?: 'orders' | 'deliveries' | 'low' | 'tasks'
+  badge?: 'orders' | 'deliveries' | 'low' | 'tasks' | 'waiting'
   area: Area
 }
 
@@ -66,7 +68,8 @@ const groups: { title: string; items: NavItem[] }[] = [
     items: [
       { to: '/', label: 'Pregled', icon: LayoutDashboard, area: 'pregled' },
       { to: '/zadaci', label: 'Zadaci', icon: ListChecks, badge: 'tasks', area: 'zadaci' },
-      { to: '/narudzbe', label: 'Narudžbe kupaca', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
+      { to: '/narudzbe', label: 'Prodaja', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
+      { to: '/narudzbe-kupaca', label: 'Narudžbe kupaca', icon: Hourglass, badge: 'waiting', area: 'narudzbe' },
       { to: '/kupci', label: 'Kupci', icon: Contact, area: 'kupci' },
       { to: '/reklamacije', label: 'Reklamacije', icon: Wrench, area: 'reklamacije' },
       { to: '/katalog', label: 'Katalog za kupca', icon: Tablet, area: 'pregled' },
@@ -78,7 +81,7 @@ const groups: { title: string; items: NavItem[] }[] = [
     title: 'Roba',
     items: [
       { to: '/zalihe', label: 'Zalihe', icon: Package, badge: 'low', area: 'zalihe' },
-      { to: '/nabava', label: 'Narudžbe dobavljačima', icon: Send, area: 'nabava' },
+      { to: '/nabava', label: 'Nabava od dobavljača', icon: Send, area: 'nabava' },
       { to: '/primke', label: 'Prijem robe', icon: PackagePlus, area: 'primke' },
       { to: '/artikli', label: 'Artikli', icon: Boxes, area: 'artikli' },
       { to: '/inventura', label: 'Inventura', icon: ClipboardCheck, area: 'inventura' },
@@ -122,6 +125,7 @@ function useBadges() {
         o.status !== 'otkazana',
     ).length,
     low: products.filter((p) => p.minStock > 0 && p.stock <= p.minStock).length,
+    waiting: waitingOrders(orders, products).size,
   }
 }
 
@@ -141,7 +145,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div className="flex flex-col gap-0.5">
             {g.items.map(({ to, label, icon: Icon, badge }) => {
-              const active = to === '/' ? path === '/' : path.startsWith(to)
+              const active = to === '/' ? path === '/' : path === to || path.startsWith(`${to}/`)
               const n = badge ? badges[badge] : 0
               return (
                 <Link
@@ -164,7 +168,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                   {n > 0 && (
                     <span
                       className={`min-w-5 rounded-full px-1.5 py-px text-center text-[10.5px] font-bold tabular ${
-                        badge === 'low' || badge === 'tasks'
+                        badge === 'low' || badge === 'tasks' || badge === 'waiting'
                           ? 'bg-copper-500/25 text-copper-400'
                           : 'bg-white/10 text-walnut-200'
                       }`}

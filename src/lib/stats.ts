@@ -91,3 +91,30 @@ export function reservedQty(orders: Order[]) {
         map.set(i.productId, (map.get(i.productId) ?? 0) + i.qty)
   return map
 }
+
+export interface Missing {
+  productId: string
+  qty: number
+  missing: number
+}
+
+/**
+ * Narudžbe kupaca koje čekaju robu: prodaje čija roba nije (u cijelosti) u salonu.
+ * Zaliha se dodjeljuje najstarijim otvorenim prodajama; ko ostane bez pokrića, čeka robu.
+ */
+export function waitingOrders(orders: Order[], products: { id: string; stock: number }[]) {
+  const left = new Map(products.map((p) => [p.id, p.stock]))
+  const out = new Map<string, Missing[]>()
+  const open = orders.filter(isReserving).sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number))
+  for (const o of open) {
+    const miss: Missing[] = []
+    for (const i of o.items) {
+      const have = Math.max(0, left.get(i.productId) ?? 0)
+      const take = Math.min(have, i.qty)
+      left.set(i.productId, have - take)
+      if (take < i.qty) miss.push({ productId: i.productId, qty: i.qty, missing: i.qty - take })
+    }
+    if (miss.length) out.set(o.id, miss)
+  }
+  return out
+}

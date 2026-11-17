@@ -1,4 +1,6 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2,
+  Hourglass,
+} from 'lucide-react'
 import { useState } from 'react'
 import {
   itemsTotal,
@@ -8,6 +10,7 @@ import {
   type PaymentMethod, parseOptions } from '../lib/types'
 import { money, money2, parseAmount } from '../lib/format'
 import { useStore } from '../lib/store'
+import { reservedQty } from '../lib/stats'
 import { Modal } from './Modal'
 import { ProductImage } from './ProductImage'
 import { Button, inputCls } from './ui'
@@ -32,6 +35,7 @@ export function NewOrderDialog({
     customers,
     drivers,
     products,
+    orders,
     salesPeople,
     today: TODAY,
     productById,
@@ -40,6 +44,7 @@ export function NewOrderDialog({
     restricted,
   } = useStore()
   const maxDiscount = restricted ? 10 : 50
+  const reserved = reservedQty(orders)
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? '')
   const [employeeId, setEmployeeId] = useState(
     me && me.role !== 'Dostava i montaža' ? me.id : (salesPeople[0]?.id ?? ''),
@@ -117,8 +122,9 @@ export function NewOrderDialog({
 
   return (
     <Modal
-      title="Nova narudžba"
-      subtitle="Unesite kupca, artikle, plaćanje i termin dostave."
+      title="Nova prodaja"
+      help="narudzba"
+      subtitle="Kupac, artikli, plaćanje i dostava. Ako robe nema u salonu, prodaja se vodi kao narudžba kupca dok roba ne stigne."
       onClose={onClose}
       footer={
         <div className="flex items-center gap-3">
@@ -132,7 +138,7 @@ export function NewOrderDialog({
             Odustani
           </Button>
           <Button type="submit" form="new-order" disabled={busy}>
-            {busy ? 'Spremam…' : 'Spremi narudžbu'}
+            {busy ? 'Spremam…' : 'Spremi prodaju'}
           </Button>
         </div>
       }
@@ -299,6 +305,18 @@ export function NewOrderDialog({
                 >
                   <Trash2 className="size-4" />
                 </button>
+                {(() => {
+                  const p = productById(it.productId)
+                  const free = p.stock - (reserved.get(p.id) ?? 0)
+                  const asked = items.filter((x) => x.productId === it.productId).reduce((n, x) => n + x.qty, 0)
+                  return status !== 'ponuda' && asked > free ? (
+                    <div className="col-span-full flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800">
+                      <Hourglass className="size-3.5 shrink-0" />
+                      U salonu je slobodno {Math.max(0, free)} kom. Prodaja će se voditi pod „Narudžbe kupaca” dok roba ne stigne
+                      {p.leadTimeDays ? ` (rok dobavljača oko ${p.leadTimeDays} dana)` : ''}.
+                    </div>
+                  ) : null
+                })()}
                 <VariantPicker
                   options={productById(it.productId).options}
                   value={it.variant ?? ''}

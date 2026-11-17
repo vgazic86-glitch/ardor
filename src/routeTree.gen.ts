@@ -23,6 +23,7 @@ import { Route as KupciRouteImport } from './routes/kupci'
 import { Route as NabavaRouteImport } from './routes/nabava'
 import { Route as NaljepniceRouteImport } from './routes/naljepnice'
 import { Route as NarudzbeRouteImport } from './routes/narudzbe'
+import { Route as NarudzbeKupacaRouteImport } from './routes/narudzbe-kupaca'
 import { Route as PazarRouteImport } from './routes/pazar'
 import { Route as PomocRouteImport } from './routes/pomoc'
 import { Route as PrimkeRouteImport } from './routes/primke'
@@ -106,6 +107,11 @@ const NaljepniceRoute = NaljepniceRouteImport.update({
 const NarudzbeRoute = NarudzbeRouteImport.update({
   id: '/narudzbe',
   path: '/narudzbe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NarudzbeKupacaRoute = NarudzbeKupacaRouteImport.update({
+  id: '/narudzbe-kupaca',
+  path: '/narudzbe-kupaca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PazarRoute = PazarRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/nabava': typeof NabavaRoute
   '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
+  '/narudzbe-kupaca': typeof NarudzbeKupacaRoute
   '/pazar': typeof PazarRoute
   '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/nabava': typeof NabavaRoute
   '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
+  '/narudzbe-kupaca': typeof NarudzbeKupacaRoute
   '/pazar': typeof PazarRoute
   '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/nabava': typeof NabavaRoute
   '/naljepnice': typeof NaljepniceRoute
   '/narudzbe': typeof NarudzbeRoute
+  '/narudzbe-kupaca': typeof NarudzbeKupacaRoute
   '/pazar': typeof PazarRoute
   '/pomoc': typeof PomocRoute
   '/primke': typeof PrimkeRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/nabava'
     | '/naljepnice'
     | '/narudzbe'
+    | '/narudzbe-kupaca'
     | '/pazar'
     | '/pomoc'
     | '/primke'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/nabava'
     | '/naljepnice'
     | '/narudzbe'
+    | '/narudzbe-kupaca'
     | '/pazar'
     | '/pomoc'
     | '/primke'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/nabava'
     | '/naljepnice'
     | '/narudzbe'
+    | '/narudzbe-kupaca'
     | '/pazar'
     | '/pomoc'
     | '/primke'
@@ -376,6 +388,7 @@ export interface RootRouteChildren {
   NabavaRoute: typeof NabavaRoute
   NaljepniceRoute: typeof NaljepniceRoute
   NarudzbeRoute: typeof NarudzbeRoute
+  NarudzbeKupacaRoute: typeof NarudzbeKupacaRoute
   PazarRoute: typeof PazarRoute
   PomocRoute: typeof PomocRoute
   PrimkeRoute: typeof PrimkeRoute
@@ -488,6 +501,13 @@ declare module '@tanstack/react-router' {
       path: '/narudzbe'
       fullPath: '/narudzbe'
       preLoaderRoute: typeof NarudzbeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/narudzbe-kupaca': {
+      id: '/narudzbe-kupaca'
+      path: '/narudzbe-kupaca'
+      fullPath: '/narudzbe-kupaca'
+      preLoaderRoute: typeof NarudzbeKupacaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pazar': {
@@ -620,6 +640,7 @@ const rootRouteChildren: RootRouteChildren = {
   NabavaRoute: NabavaRoute,
   NaljepniceRoute: NaljepniceRoute,
   NarudzbeRoute: NarudzbeRoute,
+  NarudzbeKupacaRoute: NarudzbeKupacaRoute,
   PazarRoute: PazarRoute,
   PomocRoute: PomocRoute,
   PrimkeRoute: PrimkeRoute,

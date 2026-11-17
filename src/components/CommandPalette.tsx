@@ -51,7 +51,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           key: 'p1',
           icon: ClipboardList,
           title: 'Nova prodaja',
-          meta: 'Otvori formu za novu narudžbu',
+          meta: 'Otvori formu za novu prodaju ili ponudu',
           go: close(() =>
             navigate({ to: '/narudzbe', search: { nova: true } }),
           ),

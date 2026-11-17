@@ -46,21 +46,29 @@ export const HELP: HelpTopic[] = [
   {
     id: 'narudzba',
     route: '/narudzbe',
-    title: 'Narudžbe kupaca',
-    purpose: 'Unos i praćenje narudžbi kupaca od ponude do isporuke.',
+    title: 'Prodaja',
+    purpose: 'Sve ponude i prodaje kupcima, od ponude do isporuke i naplate.',
     fields: [
       'Kupac: ime, telefon, adresa dostave.',
-      'Artikli: izbor iz kataloga, količina, cijena i popust.',
+      'Artikli: izbor iz kataloga, količina, varijanta, popust.',
       'Plaćanje: avans, način plaćanja, ostatak.',
       'Termin dostave ili preuzimanja.',
     ],
     details: [
       {
-        h: 'Nova narudžba',
+        h: 'Tri pojma koja se ne miješaju',
         items: [
-          'Gumb "Nova narudžba" ili Ctrl+K → "Nova narudžba".',
-          'Upišite kupca — ako već postoji, ponudiće se iz liste kupaca.',
-          'Dodajte artikle; rezervacija na zalihi se pravi automatski.',
+          'Prodaja: sve što je kupac kupio ili mu je ponuđeno. Unosi se gumbom „Nova prodaja”.',
+          'Narudžba kupca: prodaja za koju robe nema u salonu. Vodi se na posebnoj stranici dok roba ne stigne.',
+          'Nabava od dobavljača: ono što salon naručuje od dobavljača. To je posao skladišta i uprave.',
+        ],
+      },
+      {
+        h: 'Nova prodaja',
+        items: [
+          'Gumb „Nova prodaja” ili Ctrl+K → „Nova prodaja”.',
+          'Upišite kupca i dodajte artikle; ako robe nema dovoljno, aplikacija to odmah napiše ispod stavke.',
+          'Roba koja je u salonu rezerviše se za kupca automatski.',
           'Unesite avans ako je kupac platio dio; ostatak se računa sam.',
         ],
       },
@@ -68,12 +76,27 @@ export const HELP: HelpTopic[] = [
         h: 'Statusi',
         items: [
           'Ponuda → Potvrđena → Spremna → Isporučena. Otkazana oslobađa rezervaciju.',
-          'Iz narudžbe se štampa ponuda, predračun i otpremnica (PDF).',
+          'Iz prodaje se štampa ponuda, predračun i otpremnica (PDF).',
         ],
       },
+    ],
+  },
+  {
+    id: 'narudzbe-kupaca',
+    route: '/narudzbe-kupaca',
+    title: 'Narudžbe kupaca',
+    purpose: 'Prodaje za koje robe nema u salonu, dok roba ne stigne.',
+    fields: ['Ništa se ne unosi — lista se puni sama iz prodaje i prazni kad se upiše primka.'],
+    details: [
       {
-        h: 'Savjet',
-        items: ['Ako artikla nema dovoljno, sistem upozorava — možete odmah napraviti narudžbu dobavljaču.'],
+        h: 'Kako radi',
+        items: [
+          'Kad prodate artikal kojeg nema dovoljno u salonu, prodaja se pojavi ovdje s onim što nedostaje.',
+          'Roba u salonu dodjeljuje se najstarijim prodajama; ko ostane bez pokrića, čeka robu.',
+          'Uz svaki artikal piše je li već naručen kod dobavljača (vide operativa, voditelj i uprava).',
+          'Kad roba stigne i primka se upiše, narudžba sama nestaje s liste i spremna je za isporuku.',
+          'Ovo nisu narudžbe dobavljačima: one su pod Roba → Nabava od dobavljača.',
+        ],
       },
     ],
   },
@@ -192,8 +215,8 @@ export const HELP: HelpTopic[] = [
   {
     id: 'nabava',
     route: '/nabava',
-    title: 'Narudžbe dobavljačima',
-    purpose: 'Naručivanje robe od dobavljača s memorandumom za slanje.',
+    title: 'Nabava od dobavljača',
+    purpose: 'Ono što salon naručuje od dobavljača (nije isto što i narudžbe kupaca).',
     fields: ['Dobavljač.', 'Artikli i količine (nabavne cijene).', 'Očekivani rok isporuke, napomena.'],
     details: [
       {

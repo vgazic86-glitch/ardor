@@ -72,15 +72,15 @@ function PurchasePage() {
     <div className="rise">
       <PageHeader
         eyebrow="Nabava"
-        title="Narudžbe dobavljačima"
-        description="Sastavite narudžbu, zaključite je i pošaljite dobavljaču kao PDF na službenom memorandumu. Kad roba stigne, primka se popuni iz narudžbe."
+        title="Nabava od dobavljača"
+        description="Ovdje salon naručuje robu od dobavljača (to nisu narudžbe kupaca). Sastavite narudžbu, zaključite je i pošaljite dobavljaču kao PDF na službenom memorandumu. Kad roba stigne, primka se popuni iz narudžbe."
         actions={
           <>
             <Button variant="outline" onClick={() => setSuggest(true)}>
               <Lightbulb className="size-4" /> Prijedlog narudžbe
             </Button>
             <Button variant="copper" onClick={() => navigate({ search: { nova: true } })}>
-              <Plus className="size-4" /> Nova narudžba
+              <Plus className="size-4" /> Nova narudžba dobavljaču
             </Button>
           </>
         }
@@ -122,7 +122,7 @@ function PurchasePage() {
           <div className="px-5 py-10 text-center text-sm text-walnut-500">Učitavam…</div>
         ) : list.length === 0 ? (
           <EmptyState icon={Send} title="Nema narudžbi">
-            Kliknite „Nova narudžba”, odaberite dobavljača i dodajte artikle.
+            Kliknite „Nova narudžba dobavljaču”, odaberite dobavljača i dodajte artikle.
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
