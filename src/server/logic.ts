@@ -945,11 +945,43 @@ export async function deactivateEmployee(employeeId: string) {
  * Briše primjerne narudžbe, kupce, uplate, dostave, prijeme i kretanja robe.
  * Zaposlenici, dobavljači i artikli ostaju; stanje zaliha kreće od nule.
  */
+/** Što će „Brisanje primjernih podataka” obrisati (brojevi redova) — prikazuje se prije potvrde. */
+export async function clearPreview() {
+  const count = async (q: ReturnType<typeof sql>) => Number(((await db.execute(q)).rows[0] as { n: number }).n)
+  return {
+    prodaje: await count(sql`select count(*)::int n from orders`),
+    kupci: await count(sql`select count(*)::int n from customers`),
+    uplate: await count(sql`select count(*)::int n from payments`),
+    primke: await count(sql`select count(*)::int n from receipts`),
+    narudzbeDobavljacima: await count(sql`select count(*)::int n from purchase_orders`),
+    reklamacije: await count(sql`select count(*)::int n from complaints`),
+    zadaci: await count(sql`select count(*)::int n from tasks`),
+    primjerniTroskovi: await count(sql`select count(*)::int n from expenses where description like '%(primjer)%'`),
+    primjernePlace: await count(sql`select count(*)::int n from salaries where note = 'Primjerni podatak'`),
+    // ostaje
+    artikli: await count(sql`select count(*)::int n from products where active`),
+    dobavljaci: await count(sql`select count(*)::int n from suppliers`),
+    zaposlenici: await count(sql`select count(*)::int n from employees where active`),
+    korisnici: await count(sql`select count(*)::int n from users`),
+  }
+}
+
+/**
+ * Brisanje primjernih podataka prije stvarnog rada (odluka Vladimira 17. 11. 2026.: katalog i ljudi ostaju).
+ * Briše: prodaje i sve uz njih (stavke, uplate, rate, podsjetnici, dostave), kupce, reklamacije, primke,
+ * kretanja zaliha (zaliha svih artikala → 0), narudžbe dobavljačima, kartice dobavljača, zadatke,
+ * radno vrijeme, povijest cijena, bonuse i primjerne troškove/plaće.
+ * Ostaje: artikli, dobavljači, zaposlenici, korisnici, planovi prometa, dokumenti, kadrovski dosjei, dnevnik izmjena.
+ */
 export async function clearTransactions() {
   await db.transaction(async (tx) => {
+    // Fotografije reklamacija su u tablici files — obriši i njih, da ne ostanu kao smeće.
+    const photos = await tx.select({ a: t.complaintPhotos.imageId, b: t.complaintPhotos.thumbId }).from(t.complaintPhotos)
+    const photoFiles = photos.flatMap((p) => [p.a, p.b])
     await tx.execute(
-      sql`truncate table stock_movements, receipts, deliveries, payments, order_items, orders, customers, bonuses restart identity cascade`,
+      sql`truncate table stock_movements, receipts, deliveries, payments, order_items, installments, payment_reminders, orders, complaint_photos, complaints, customers, purchase_order_items, purchase_orders, supplier_ledger, work_time, tasks, price_changes, bonuses restart identity cascade`,
     )
+    if (photoFiles.length) await tx.delete(t.files).where(inArray(t.files.id, photoFiles))
     await tx.execute(sql`delete from salaries where note = 'Primjerni podatak'`)
     await tx.execute(
       sql`delete from expenses where description like '%(primjer)%'`,

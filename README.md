@@ -51,3 +51,20 @@ Upute za rad s Claude Codeom su u [CLAUDE.md](./CLAUDE.md).
 `render.yaml` opisuje cijelu postavku (web servis + Postgres, Frankfurt). U Renderu: **New → Blueprint** → odaberite ovaj repozitorij → **Apply**.
 Pri pokretanju `npm run start` primijeni SQL migracije iz `netlify/database/migrations` i, ako je baza prazna, napuni je primjernim podacima.
 Lokalno kao na Renderu: `DATABASE_URL=postgres://… pnpm build:node && pnpm start`.
+
+## Kopija baze (pg_dump) i vraćanje
+
+Render free baza nema automatski backup. Prije većih promjena (npr. brisanja primjernih podataka) i redovno:
+
+1. U Render Dashboardu → `ardor-db` → **Connections** kopiraj **External Database URL**. Ne upisuj ga u repo ni u chat; zalijepi ga samo u terminal.
+2. Kopija (PowerShell; mapa `kopije` je izvan repoa):
+   ```powershell
+   & "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe" -Fc -f "..\kopije\ardor-$(Get-Date -Format yyyyMMdd-HHmm).dump" "<External Database URL>"
+   ```
+3. Uz to u aplikaciji: Izvještaji → **Kopija svih podataka** (Excel, čitljivo bez programa).
+4. Vraćanje (samo uz odluku vlasnika; prepisuje bazu):
+   ```powershell
+   & "C:\Program Files\PostgreSQL\17\bin\pg_restore.exe" --clean --if-exists --no-owner -d "<External Database URL>" "..\kopije\ardor-GGGGMMDD-HHMM.dump"
+   ```
+
+Postupak je isproban na lokalnoj bazi (kopija → brisanje primjernih podataka → vraćanje, 17. 11. 2026.).

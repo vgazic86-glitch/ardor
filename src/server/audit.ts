@@ -217,7 +217,7 @@ const MAP: Record<string, [string, string, Detail?]> = {
   saveSupplierFn: ['Dobavljač', 'spremljen'],
   saveEmployeeFn: ['Zaposlenik', 'spremljen'],
   deactivateEmployeeFn: ['Zaposlenik', 'deaktiviran'],
-  clearTransactionsFn: ['Podaci', 'OBRISANI SVI PROMETI'],
+  clearTransactionsFn: ['Podaci', 'OBRISANI PRIMJERNI PODACI (promet, kupci, primke…)'],
   saveDocumentFn: ['Dokument', 'spremljen'],
   archiveDocumentFn: ['Dokument', 'arhiviran'],
   addEmployeeFileFn: ['Kadrovska', 'dodana datoteka'],

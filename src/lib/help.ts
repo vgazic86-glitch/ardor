@@ -510,6 +510,16 @@ export const HELP: HelpTopic[] = [
         ],
       },
       {
+        h: 'Brisanje primjernih podataka (jednom, prije stvarnog rada)',
+        items: [
+          'Kartica „Podaci o firmi” → dolje „Brisanje primjernih podataka”. Vidi samo administrator.',
+          'Prvo napravite kopiju: Izvještaji → Kopija svih podataka (Excel) i kopiju baze.',
+          'Briše prodaje, kupce, uplate, rate, dostave, primke, reklamacije, narudžbe dobavljačima, zadatke, radno vrijeme i primjerne troškove i plaće.',
+          'Ostaju artikli, dobavljači, zaposlenici, korisnici, planovi i dokumenti. Zaliha svih artikala postaje 0 — zatim uradite inventuru.',
+          'Potvrda je dvostruka: kvačica za kopiju i upisano OBRIŠI, pa još „Da, obriši”. U dnevniku izmjena ostaje ko je i kada obrisao.',
+        ],
+      },
+      {
         h: 'Prisutnost i odjava',
         items: [
           'Zelena tačka: korisnik je trenutno online.',

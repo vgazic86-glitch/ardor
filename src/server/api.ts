@@ -156,11 +156,20 @@ export const deactivateEmployeeFn = createServerFn({ method: 'POST' }).middlewar
   .validator(pass<{ id: string }>())
   .handler(({ data }) => logic.deactivateEmployee(data.id))
 
+/** Brisanje primjernih podataka: samo administrator, uz upisanu potvrdu „OBRIŠI”. */
 export const clearTransactionsFn = createServerFn({ method: 'POST' }).middleware([manager])
   .validator(pass<{ confirm: 'OBRIŠI' }>())
-  .handler(({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== 'admin') throw new Error('Brisanje podataka smije samo administrator.')
     if (data.confirm !== 'OBRIŠI') throw new Error('Potvrda nije ispravna.')
-    return logic.clearTransactions()
+    await logic.clearTransactions()
+    return true
+  })
+
+export const clearPreviewFn = createServerFn({ method: 'GET' }).middleware([manager])
+  .handler(({ context }) => {
+    if (context.user.role !== 'admin') throw new Error('Samo administrator.')
+    return logic.clearPreview()
   })
 
 /* ───────── upravljačka lozinka, dokumenti, kadrovska ───────── */

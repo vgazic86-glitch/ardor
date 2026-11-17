@@ -3,6 +3,7 @@ import { Building2, Copy, KeyRound, Pencil, Plus, ShieldAlert, ShieldCheck, Unlo
 import { useEffect, useState } from 'react'
 import type { AuditRow } from '../server/audit'
 import { Modal } from '../components/Modal'
+import { ClearDemoCard } from '../components/ClearDemoCard'
 import { Badge, Button, Card, Field, inputCls, PageHeader, Segmented } from '../components/ui'
 import { ROLE_LABEL } from '../lib/access'
 import { useRemote } from '../lib/remote'
@@ -37,7 +38,16 @@ function UsersPage() {
           />
         }
       />
-      {tab === 'firma' ? <CompanyForm /> : tab === 'dnevnik' ? <AuditLog /> : <UsersList />}
+      {tab === 'firma' ? (
+        <>
+          <CompanyForm />
+          <ClearDemoCard />
+        </>
+      ) : tab === 'dnevnik' ? (
+        <AuditLog />
+      ) : (
+        <UsersList />
+      )}
     </div>
   )
 }
