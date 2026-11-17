@@ -2,13 +2,23 @@ import { useRouterState } from '@tanstack/react-router'
 import { Loader2, RotateCcw, Send, Sparkles, X } from 'lucide-react'
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { askAssistantFn } from '../server/api'
+import { useStore } from '../lib/store'
 
 interface Msg {
   role: 'user' | 'assistant'
   content: string
 }
 
-const KEY = 'ardor.asistent'
+const BASE_KEY = 'ardor.asistent'
+
+/** Razgovor pripada prijavljenom korisniku (na zajedničkom računaru u salonu ne smije ostati sljedećem). */
+export function clearAssistantHistory() {
+  try {
+    for (const k of Object.keys(sessionStorage)) if (k.startsWith(BASE_KEY)) sessionStorage.removeItem(k)
+  } catch {
+    /* nije važno */
+  }
+}
 const SUGGEST = [
   'Kako upisati bolovanje?',
   'Šta imamo slobodno od kauča?',
@@ -60,6 +70,8 @@ function Rich({ text }: { text: string }) {
 /** AI asistent u donjem desnom kutu. */
 export function Assistant() {
   const path = useRouterState({ select: (s) => s.location.pathname })
+  const { user } = useStore()
+  const KEY = `${BASE_KEY}:${user.id}`
   const [open, setOpen] = useState(false)
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [text, setText] = useState('')
@@ -71,11 +83,11 @@ export function Assistant() {
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(KEY)
-      if (saved) setMsgs(JSON.parse(saved))
+      setMsgs(saved ? JSON.parse(saved) : [])
     } catch {
       /* nije važno */
     }
-  }, [])
+  }, [KEY])
   useEffect(() => {
     try {
       sessionStorage.setItem(KEY, JSON.stringify(msgs.slice(-30)))

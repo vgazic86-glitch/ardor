@@ -104,6 +104,32 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'asistent',
+    title: 'AI asistent',
+    purpose: 'Pitanja o radu u aplikaciji, savjeti za kupce, zalihe i kontakti; upravi i odgovori o poslovanju.',
+    fields: ['Gumb „Asistent” dolje desno; pitanje se piše običnim riječima.'],
+    details: [
+      {
+        h: 'Za sve',
+        items: [
+          'Kako se nešto radi u aplikaciji, šta ponuditi kupcu, ima li artikla na stanju, broj telefona kolege.',
+          'Asistent ne mijenja ništa u aplikaciji — kaže vam gdje to sami uradite.',
+          'Razgovor vidi samo onaj ko je prijavljen; briše se pri odjavi i zatvaranju preglednika.',
+        ],
+      },
+      {
+        h: 'Za upravu i administratora',
+        items: [
+          'Asistent zna i sažetak poslovanja: promet po mjesecima i plan, realizaciju i maržu, maržu po kategorijama, prodavače, najprodavanije artikle, zalihe (ispod minimuma, bez prodaje 90 dana), narudžbe kupaca i naplatu (ko kasni i koliko).',
+          'Primjeri: „Kakav je promet u odnosu na plan?”, „Ko najviše kasni s plaćanjem?”, „Koja kategorija ima najmanju maržu?”, „Šta nam stoji na zalihi bez prodaje?”.',
+          'Plaće, ugovori i troškovi nisu u sažetku — to se gleda u Kadrovskoj i u Troškovi i zarada.',
+          'Trgovac i ostale uloge ne dobijaju ove podatke.',
+          'Bez AI ključa asistent na poslovna pitanja prikaže gotov sažetak brojki.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'naplata',
     route: '/naplata',
     title: 'Naplata',

@@ -24,7 +24,7 @@ pnpm install
 pnpm migrate          # primijeni SQL migracije na DATABASE_URL (čita .env)
 pnpm dev              # razvoj s hot reloadom, http://localhost:3000 (čita .env)
 pnpm typecheck        # tsc --noEmit — mora proći bez grešaka
-pnpm test             # vitest (src/**/*.test.ts) — trenutno 57 testova
+pnpm test             # vitest (src/**/*.test.ts) — trenutno 63 testa
 pnpm build:node       # produkcijski build za Node/Render (DEPLOY_TARGET=node)
 pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao Render
 pnpm start            # isto, ali za Render (PORT i DATABASE_URL iz okruženja) — lokalno ne treba
@@ -108,6 +108,7 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 - **Zaliha** = zbir `stock_movements`. Rezervirano = otvorene prodaje. Prihod se priznaje po `issuedAt` (`reports.ts`).
 - **Promjene cijena** — `saveProduct` upisuje `price_changes`; oznaka i obavijest 7 dana.
 - **Čeka robu = nema „Spremna”/„Isporučena”** — `stats.goodsBlock`, na serveru `logic.assertGoods` (status, dostava u putu/dostavljeno, „kupac odmah preuzima”). Vrijedi za sve uloge.
+- **AI asistent za upravu** — `lib/brief.ts` (sažetak: promet/plan, realizacija i marža, kategorije, prodavači, artikli, zalihe, narudžbe kupaca, naplata) ide u system prompt samo za admin/uprava (`isFull`); bez ključa poslovno pitanje vraća sažetak. Razgovor u `sessionStorage` po korisniku, briše se pri odjavi.
 - **Naplata** (`/naplata`) — `lib/collection.ts` (rok = `dueDate` ili dan isporuke; „Rate” = naš plan rata u tablici `installments`; uplate pokrivaju avans pa rate redom), `server/collection.ts` (trgovac/operativa samo svoje prodaje), podsjetnici u `payment_reminders`. U prozoru prodaje komponenta `PaymentTerms`.
 - **Sedmični izvještaj** — `lib/weekly.ts` (sadržaj, HTML), `server/weekly.ts` (Resend, primaoci = aktivni admin/uprava s e-poštom, jednom po sedmici preko `app_meta`), ruta `api.izvjestaj-sedmicni.ts`, okidač `.github/workflows/sedmicni-izvjestaj.yml` (pon 05:00 i 06:00 UTC; server šalje od 7:00 po Sarajevu). Kartica na dnu Izvještaja: pregled i probni primjerak.
 - **Dnevnik** (`audit_log`) — prijave, neuspjele prijave (zaključavanje nakon 5), sve izmjene iz `MAP`.
@@ -122,6 +123,7 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 - Modali idu kroz portal (`Modal.tsx`); CSS za ispis naljepnica je ograničen na `.label .qr svg`.
 - `routeTree.gen.ts` generira build/dev — ne uređuj ga ručno.
 - Na **svježoj** bazi korisnici `trgovacN` se ne naprave (seed zaposlenika dođe tek nakon prve prijave) — trgovce dodaj u Korisnici i pristup.
+- **`node --env-file` ne pregazi varijable koje već postoje u okruženju.** Claude Code nasljeđuje `ANTHROPIC_BASE_URL`, pa za lokalni test s lažnim API-jem postavi varijable izričito u ljusci prije `pnpm start:lokalno` — inače zahtjev ode na pravi API.
 - Lokalni Postgres u drugoj zoni (npr. Europe/Zagreb) skriva greške s vremenom — testiraj i rubne slučajeve oko ponoći.
 
 ## Objava (deploy)

@@ -49,7 +49,7 @@ import { CommandPalette } from './CommandPalette'
 import { HeaderClock } from './HeaderClock'
 import { QrScanner } from './QrScanner'
 import { HelpButton } from './Help'
-import { Assistant } from './Assistant'
+import { Assistant, clearAssistantHistory } from './Assistant'
 import { helpForPath } from '../lib/help'
 import { waitingOrders } from '../lib/stats'
 import { receivables } from '../lib/collection'
@@ -198,6 +198,7 @@ function UserSwitcher() {
   const [pw, setPw] = useState(false)
   const pwa = useInstall()
   async function logout() {
+    clearAssistantHistory()
     await logoutFn()
     await router.invalidate()
   }
