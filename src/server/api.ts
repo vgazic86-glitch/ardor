@@ -10,6 +10,7 @@ import * as tasks from './tasks'
 import * as sales from './sales'
 import * as daydocs from './daydocs'
 import * as audit from './audit'
+import * as weekly from './weekly'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 
@@ -534,3 +535,19 @@ export const catalogFn = createServerFn({ method: 'POST' })
 export const purchaseSuggestionsFn = createServerFn({ method: 'POST' })
   .middleware([operations])
   .handler(() => ops.purchaseSuggestions())
+
+/** Sedmični izvještaj upravi: stanje podešenosti, pregled poruke i probno slanje. */
+export const weeklyStatusFn = createServerFn({ method: 'GET' })
+  .middleware([manager])
+  .handler(() => weekly.weeklyStatus())
+
+export const weeklyPreviewFn = createServerFn({ method: 'GET' })
+  .middleware([manager])
+  .handler(async () => {
+    const m = await weekly.composeWeekly()
+    return { subject: m.subject, html: m.html }
+  })
+
+export const weeklySendTestFn = createServerFn({ method: 'POST' })
+  .middleware([manager])
+  .handler(() => weekly.sendWeekly({ scheduled: false }))

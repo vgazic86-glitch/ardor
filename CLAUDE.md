@@ -24,7 +24,7 @@ pnpm install
 pnpm migrate          # primijeni SQL migracije na DATABASE_URL (čita .env)
 pnpm dev              # razvoj s hot reloadom, http://localhost:3000 (čita .env)
 pnpm typecheck        # tsc --noEmit — mora proći bez grešaka
-pnpm test             # vitest (src/**/*.test.ts) — trenutno 36 testova
+pnpm test             # vitest (src/**/*.test.ts) — trenutno 44 testa
 pnpm build:node       # produkcijski build za Node/Render (DEPLOY_TARGET=node)
 pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao Render
 pnpm start            # isto, ali za Render (PORT i DATABASE_URL iz okruženja) — lokalno ne treba
@@ -43,6 +43,10 @@ npx drizzle-kit generate --name kratki_opis   # nova migracija iz db/schema.ts
 | `ADMIN_LOZINKA` | ne | upravljačka lozinka (Kadrovska) i rezervni aktivacijski kod za admina. |
 | `ANTHROPIC_API_KEY` | ne | AI asistent; bez ključa asistent pretražuje pomoć lokalno. |
 | `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL` | ne | model (default `claude-haiku-4-5`) i adresa API-ja. |
+| `RESEND_API_KEY` | ne | e-pošta (sedmični izvještaj) preko Resenda; domena ardornamjestaj.com potvrđena u Resendu. |
+| `IZVJESTAJ_TOKEN` | ne | tajni token za `POST /api/izvjestaj-sedmicni`; ista vrijednost kao GitHub secret `IZVJESTAJ_TOKEN`. |
+| `IZVJESTAJ_OD`, `APP_URL` | ne | pošiljalac (default `ARDOR izvještaji <izvjestaji@ardornamjestaj.com>`) i adresa aplikacije u poruci. |
+| `RESEND_API_URL` | ne | **samo lokalni test**: lažni Resend (npr. `http://localhost:4010`). Na Renderu se ne postavlja. |
 
 ## Stack
 
@@ -103,6 +107,8 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 - **Nabava od dobavljača** (`/nabava`) — naše narudžbe prema dobavljačima. Ne miješati s narudžbama kupaca.
 - **Zaliha** = zbir `stock_movements`. Rezervirano = otvorene prodaje. Prihod se priznaje po `issuedAt` (`reports.ts`).
 - **Promjene cijena** — `saveProduct` upisuje `price_changes`; oznaka i obavijest 7 dana.
+- **Čeka robu = nema „Spremna”/„Isporučena”** — `stats.goodsBlock`, na serveru `logic.assertGoods` (status, dostava u putu/dostavljeno, „kupac odmah preuzima”). Vrijedi za sve uloge.
+- **Sedmični izvještaj** — `lib/weekly.ts` (sadržaj, HTML), `server/weekly.ts` (Resend, primaoci = aktivni admin/uprava s e-poštom, jednom po sedmici preko `app_meta`), ruta `api.izvjestaj-sedmicni.ts`, okidač `.github/workflows/sedmicni-izvjestaj.yml` (pon 05:00 i 06:00 UTC; server šalje od 7:00 po Sarajevu). Kartica na dnu Izvještaja: pregled i probni primjerak.
 - **Dnevnik** (`audit_log`) — prijave, neuspjele prijave (zaključavanje nakon 5), sve izmjene iz `MAP`.
 - **Prva prijava** — korisnik dobije jednokratni aktivacijski kod (vidi ga admin u Korisnicima) i sam postavi lozinku. Sesija ističe nakon 10 min neaktivnosti i pri zatvaranju preglednika.
 

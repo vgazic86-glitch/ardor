@@ -33,6 +33,7 @@ import { Route as TroskoviRouteImport } from './routes/troskovi'
 import { Route as ZadaciRouteImport } from './routes/zadaci'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
+import { Route as ApiIzvjestajSedmicniRouteImport } from './routes/api.izvjestaj-sedmicni'
 import { Route as DobavljaciIndexRouteImport } from './routes/dobavljaci/index'
 import { Route as DobavljaciIdRouteImport } from './routes/dobavljaci/$id'
 import { Route as DokumentiIndexRouteImport } from './routes/dokumenti/index'
@@ -159,6 +160,11 @@ const ZaposleniciRoute = ZaposleniciRouteImport.update({
   path: '/zaposlenici',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIzvjestajSedmicniRoute = ApiIzvjestajSedmicniRouteImport.update({
+  id: '/api/izvjestaj-sedmicni',
+  path: '/api/izvjestaj-sedmicni',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DobavljaciIndexRoute = DobavljaciIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/api/izvjestaj-sedmicni': typeof ApiIzvjestajSedmicniRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dobavljaci/': typeof DobavljaciIndexRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/api/izvjestaj-sedmicni': typeof ApiIzvjestajSedmicniRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dobavljaci': typeof DobavljaciIndexRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
+  '/api/izvjestaj-sedmicni': typeof ApiIzvjestajSedmicniRoute
   '/dobavljaci/$id': typeof DobavljaciIdRoute
   '/dokumenti/$slug': typeof DokumentiSlugRoute
   '/dobavljaci/': typeof DobavljaciIndexRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
+    | '/api/izvjestaj-sedmicni'
     | '/dobavljaci/$id'
     | '/dokumenti/$slug'
     | '/dobavljaci/'
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
+    | '/api/izvjestaj-sedmicni'
     | '/dobavljaci/$id'
     | '/dokumenti/$slug'
     | '/dobavljaci'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
+    | '/api/izvjestaj-sedmicni'
     | '/dobavljaci/$id'
     | '/dokumenti/$slug'
     | '/dobavljaci/'
@@ -398,6 +410,7 @@ export interface RootRouteChildren {
   ZadaciRoute: typeof ZadaciRoute
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
+  ApiIzvjestajSedmicniRoute: typeof ApiIzvjestajSedmicniRoute
   DokumentiSlugRoute: typeof DokumentiSlugRoute
   DokumentiIndexRoute: typeof DokumentiIndexRoute
   ApiSlikeIdRoute: typeof ApiSlikeIdRoute
@@ -573,6 +586,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ZaposleniciRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/izvjestaj-sedmicni': {
+      id: '/api/izvjestaj-sedmicni'
+      path: '/api/izvjestaj-sedmicni'
+      fullPath: '/api/izvjestaj-sedmicni'
+      preLoaderRoute: typeof ApiIzvjestajSedmicniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dobavljaci/': {
       id: '/dobavljaci/'
       path: '/'
@@ -650,6 +670,7 @@ const rootRouteChildren: RootRouteChildren = {
   ZadaciRoute: ZadaciRoute,
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,
+  ApiIzvjestajSedmicniRoute: ApiIzvjestajSedmicniRoute,
   DokumentiSlugRoute: DokumentiSlugRoute,
   DokumentiIndexRoute: DokumentiIndexRoute,
   ApiSlikeIdRoute: ApiSlikeIdRoute,

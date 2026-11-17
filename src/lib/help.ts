@@ -333,7 +333,19 @@ export const HELP: HelpTopic[] = [
     title: 'Izvještaji',
     purpose: 'Promet, prodaja po zaposlenicima i artiklima, trendovi.',
     fields: ['Izbor perioda i filtera.'],
-    details: [{ h: 'Savjet', items: ['Svaki izvještaj se može izvesti u Excel.'] }],
+    details: [
+      { h: 'Savjet', items: ['Svaki izvještaj se može izvesti u Excel.'] },
+      {
+        h: 'Sedmični izvještaj e-poštom',
+        items: [
+          'Svakog ponedjeljka u 7:00 upravi stiže e-pošta s pregledom prošle sedmice (ponedjeljak–nedjelja).',
+          'U poruci su: prodaja sedmice i poređenje s prethodnom, isporučeno i naplaćeno, plan mjeseca, prodaja po prodavaču, najprodavaniji artikli, narudžbe kupaca koje čekaju robu, najveći dužnici i reklamacije s probijenim rokom.',
+          'Primaoci su korisnici s ulogom administrator ili uprava koji imaju upisanu e-poštu (Korisnici i pristup). Za novog primaoca samo upišite e-poštu.',
+          'Na dnu stranice Izvještaji: „Pregled poruke” pokazuje kako izvještaj izgleda, a „Pošalji probni primjerak” ga odmah šalje primaocima.',
+          'Ako piše „Nije podešeno”, nedostaje ključ za e-poštu ili za automatsko slanje — to podešava administrator.',
+        ],
+      },
+    ],
   },
   {
     id: 'kartica',

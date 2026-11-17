@@ -246,6 +246,7 @@ const MAP: Record<string, [string, string, Detail?]> = {
   deleteTaskFn: ['Zadatak', 'obrisan', byTask],
   saveCustomerFn: ['Kupac', 'spremljen'],
   exportAllFn: ['Podaci', 'izvoz svih podataka'],
+  weeklySendTestFn: ['Izvještaj', 'probni sedmični poslan'],
   unlockUserFn: ['Korisnik', 'otključan'],
   saveComplaintFn: ['Reklamacija', 'spremljena', async (d) => [d.id ? await resolveComplaint(d.id) : 'nova', String(d.description ?? '').slice(0, 80)].join(' · ')],
   setComplaintStatusFn: ['Reklamacija', 'promjena statusa', async (d) => [await resolveComplaint(d.id), `status ${d.status}`, d.status === 'rijesena' || d.status === 'odbijena' ? (d.resolution ?? '') : ''].filter(Boolean).join(' · ')],

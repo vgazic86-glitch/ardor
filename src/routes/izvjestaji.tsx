@@ -15,6 +15,7 @@ import { exportAllFn, getFinanceFn } from '../server/api'
 import { useRemote } from '../lib/remote'
 import { inputBook } from '../lib/kuf'
 import { GroupedChart } from '../components/Charts'
+import { WeeklyReportCard } from '../components/WeeklyReportCard'
 import {
   Badge,
   Button,
@@ -741,6 +742,8 @@ function ReportsPage() {
           </div>
         )}
       </Card>
+
+      <WeeklyReportCard />
 
       <div className="mt-6 flex justify-center">
         <Button variant="outline" onClick={doExport} disabled={exporting}>

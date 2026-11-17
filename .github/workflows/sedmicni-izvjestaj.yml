@@ -1,0 +1,36 @@
+# Sedmični izvještaj upravi: ponedjeljkom u 7:00 po vremenu Sarajeva.
+# GitHub cron je u UTC-u, pa se pokreće u 05:00 i 06:00 UTC (ljetno i zimsko vrijeme);
+# aplikacija šalje najviše jednom po sedmici i ne prije 7:00.
+# Tajne (GitHub → Settings → Secrets and variables → Actions):
+#   IZVJESTAJ_TOKEN — ista vrijednost kao IZVJESTAJ_TOKEN na Renderu.
+# Ručno pokretanje: Actions → Sedmični izvještaj → Run workflow.
+name: Sedmični izvještaj
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  posalji:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probudi aplikaciju i pošalji izvještaj
+        env:
+          TOKEN: ${{ secrets.IZVJESTAJ_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "Nedostaje tajna IZVJESTAJ_TOKEN."; exit 1; fi
+          URL="https://ardor-4mdu.onrender.com"
+          # Besplatni Render se budi i do minutu.
+          for i in 1 2 3 4 5 6; do
+            curl -fsS --max-time 60 "$URL/favicon.svg" -o /dev/null && break
+            echo "Čekam da se aplikacija probudi ($i)…"; sleep 15
+          done
+          code=$(curl -sS --max-time 120 -o odgovor.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $TOKEN" "$URL/api/izvjestaj-sedmicni")
+          cat odgovor.json; echo
+          [ "$code" = "200" ] || { echo "Greška: HTTP $code"; exit 1; }
