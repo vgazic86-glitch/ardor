@@ -346,17 +346,17 @@ export async function downloadDocumentFile(documentId: string, role: string) {
 /** Mjesta za priručnike po ulogama (PDF učitava administrator). Uloge se usklade pri svakom pokretanju. */
 export async function ensureManuals() {
   // Jednom po verziji popisa (promjena uloga u MANUALS → povećaj broj).
-  if (await meta('prirucnici_v4')) return
+  if (await meta('prirucnici_v5')) return
   for (const m of MANUALS) {
     const values = { title: m.title, category: MANUAL_CATEGORY, summary: m.summary, roles: m.roles.join(','), sortOrder: m.sortOrder }
     await db
       .insert(t.documents)
       .values({ ...values, slug: m.slug, body: '', version: '—' })
-      .onConflictDoUpdate({ target: t.documents.slug, set: { roles: values.roles, category: MANUAL_CATEGORY } })
+      .onConflictDoUpdate({ target: t.documents.slug, set: { roles: values.roles, category: MANUAL_CATEGORY, title: m.title, summary: m.summary } })
   }
   // Stari tekstualni „Priručnik za prodavače” (Dokumenti → Prodaja) je za trgovce i voditelja.
   await db.update(t.documents).set({ roles: 'trgovac,voditelj' }).where(eq(t.documents.slug, 'prirucnik-za-prodavace'))
-  await setMeta('prirucnici_v4', today())
+  await setMeta('prirucnici_v5', today())
 }
 
 /** Učitaj (ili zamijeni) PDF priručnika — administrator i uprava. */
