@@ -310,6 +310,18 @@ export interface Snapshot {
   receipts: Receipt[]
   movements: StockMovement[]
   documents: CompanyDocument[]
+  /** Promjene maloprodajnih cijena u zadnjih 30 dana, najnovije prve. */
+  priceChanges: PriceChange[]
+}
+
+export interface PriceChange {
+  id: string
+  productId: string
+  oldPrice: number
+  newPrice: number
+  /** Datum promjene (YYYY-MM-DD, po lokalnom vremenu). */
+  date: string
+  by: string
 }
 
 export function itemsTotal(items: OrderItem[]) {

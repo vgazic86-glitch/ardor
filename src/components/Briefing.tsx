@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Smartphone, ShieldAlert, AlertTriangle, CalendarCheck, ClipboardList, HandCoins, ListChecks, PackageX, PartyPopper, Sparkles, Truck, X } from 'lucide-react'
+import { Smartphone, ShieldAlert, Tag, AlertTriangle, CalendarCheck, ClipboardList, HandCoins, ListChecks, PackageX, PartyPopper, Sparkles, Truck, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { computeAlerts, workingDaysLeft, type AlertKey } from '../lib/alerts'
 import { money } from '../lib/format'
@@ -16,6 +16,7 @@ const ICON: Record<AlertKey, typeof Truck> = {
   ponude: ClipboardList,
   dug: HandCoins,
   sigurnost: ShieldAlert,
+  cijene: Tag,
 }
 const TONE: Record<string, string> = {
   copper: 'border-copper-200 bg-copper-50 text-copper-800',
@@ -32,9 +33,9 @@ export function greeting() {
 
 /** Jutarnji brifing: šta danas traži pažnju i koliko fali do plana. */
 export function Briefing() {
-  const { orders, products, today, currentMonth, openTasks, restricted, me, salesPeople } = useStore()
+  const { orders, products, today, currentMonth, openTasks, restricted, me, salesPeople, priceChanges } = useStore()
   const alerts = useMemo(
-    () => computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null }),
+    () => computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null, priceChanges }),
     [orders, products, today, openTasks, restricted, me],
   )
   const mine = restricted ? orders.filter((o) => o.employeeId === me?.id) : orders

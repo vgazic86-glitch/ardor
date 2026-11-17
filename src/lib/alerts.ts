@@ -1,9 +1,9 @@
 /** Upozorenja za brifing i zvonce: šta danas traži pažnju. */
 import { money } from './format'
 import { orderTotal } from './stats'
-import type { Order, Product } from './types'
+import type { Order, PriceChange, Product } from './types'
 
-export type AlertKey = 'zadaci' | 'dostave' | 'kasni' | 'zaliha' | 'ponude' | 'dug' | 'sigurnost'
+export type AlertKey = 'zadaci' | 'dostave' | 'kasni' | 'zaliha' | 'ponude' | 'dug' | 'sigurnost' | 'cijene'
 
 export interface Alert {
   key: AlertKey
@@ -23,6 +23,7 @@ export function computeAlerts({
   today,
   openTasks,
   ownEmployeeId,
+  priceChanges = [],
 }: {
   orders: Order[]
   products: Product[]
@@ -30,6 +31,7 @@ export function computeAlerts({
   openTasks: number
   /** Ako je zadano, ponude i dugovanja samo za tog prodavača. */
   ownEmployeeId?: string | null
+  priceChanges?: PriceChange[]
 }): Alert[] {
   const mine = (o: Order) => !ownEmployeeId || o.employeeId === ownEmployeeId
   const active = orders.filter((o) => o.status !== 'otkazana')
@@ -51,8 +53,24 @@ export function computeAlerts({
     out.push({ key: 'ponude', count: oldOffers.length, title: `${oldOffers.length} ${oldOffers.length === 1 ? 'ponuda čeka' : 'ponuda čeka'} odgovor`, detail: 'starije od 7 dana — nazovite kupca', tone: 'warn', to: '/narudzbe' })
   if (debts.length)
     out.push({ key: 'dug', count: debts.length, title: `${debts.length} ${debts.length === 1 ? 'kupac duguje' : 'kupaca duguje'} 30+ dana`, detail: `ukupno ${money(debtSum)}`, tone: 'bad', to: '/kupci', search: { dug: true } })
+  const fresh = priceChanges.filter((c) => daysBetween(c.date, today) <= PRICE_NEWS_DAYS)
+  if (fresh.length) {
+    const names = [...new Set(fresh.map((c) => products.find((p) => p.id === c.productId)?.name).filter(Boolean))]
+    out.push({
+      key: 'cijene',
+      count: names.length || fresh.length,
+      title: `${names.length || fresh.length} ${(names.length || fresh.length) === 1 ? 'artikal ima novu cijenu' : 'artikala ima novu cijenu'}`,
+      detail: `${names.slice(0, 2).join(', ')}${names.length > 2 ? '…' : ''} — zamijenite oznake u salonu`,
+      tone: 'info',
+      to: '/zalihe',
+      search: { cijene: true },
+    })
+  }
   return out
 }
+
+/** Koliko dana se promjena cijene prikazuje kao novost. */
+export const PRICE_NEWS_DAYS = 7
 
 /** Radni dani (pon–sub) od sutra do kraja mjeseca. */
 export function workingDaysLeft(today: string) {

@@ -300,10 +300,10 @@ function useSecurity(on: boolean) {
 }
 
 function NotificationBell() {
-  const { orders, products, today, openTasks, restricted, me, user } = useStore()
+  const { orders, products, today, openTasks, restricted, me, user, priceChanges } = useStore()
   const [open, setOpen] = useState(false)
   const security = useSecurity(user.role === 'admin')
-  const alerts = computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null })
+  const alerts = computeAlerts({ orders, products, today, openTasks, ownEmployeeId: restricted ? (me?.id ?? null) : null, priceChanges })
   if (security && (security.locked.length || security.failed24h >= 3))
     alerts.unshift({
       key: 'sigurnost',

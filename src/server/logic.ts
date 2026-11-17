@@ -1,5 +1,5 @@
 /** Serverska logika nad Netlify Database. Uvozi se samo iz serverskih funkcija. */
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
@@ -50,6 +50,13 @@ async function ensureSeeded() {
     if (n > 0) return
     await seedDemo(tx, todayIso())
   })
+}
+
+async function recentPriceChanges() {
+  const since = new Date(Date.now() - 30 * 86_400_000)
+  const rows = await db.select().from(t.priceChanges).where(gte(t.priceChanges.at, since)).orderBy(desc(t.priceChanges.id)).limit(200)
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo' })
+  return rows.map((r) => ({ id: String(r.id), productId: String(r.productId), oldPrice: r.oldPrice, newPrice: r.newPrice, date: fmt.format(r.at), by: r.userName }))
 }
 
 export async function loadSnapshot(): Promise<Snapshot> {
@@ -233,6 +240,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       note: m.note,
     })),
     documents: docs,
+    priceChanges: await recentPriceChanges(),
   }
 }
 
@@ -639,7 +647,7 @@ function normalizeOptions(raw: string) {
     .slice(0, 1500)
 }
 
-export async function saveProduct(input: ProductInput) {
+export async function saveProduct(input: ProductInput, byName = '') {
   if (!input.sku.trim() || !input.name.trim())
     throw new Error('Šifra i naziv su obavezni.')
   const values = {
@@ -660,10 +668,13 @@ export async function saveProduct(input: ProductInput) {
     if (dup.length && String(dup[0].id) !== input.id)
       throw new Error(`Šifra ${values.sku} već postoji.`)
     if (input.id) {
+      const [before] = await tx.select({ price: t.products.price }).from(t.products).where(eq(t.products.id, Number(input.id)))
       await tx
         .update(t.products)
         .set(values)
         .where(eq(t.products.id, Number(input.id)))
+      if (before && Math.abs(before.price - values.price) >= 0.005)
+        await tx.insert(t.priceChanges).values({ productId: Number(input.id), oldPrice: before.price, newPrice: values.price, at: new Date(), userName: byName })
       return { id: input.id }
     }
     const [p] = await tx.insert(t.products).values(values).returning()

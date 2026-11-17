@@ -111,7 +111,7 @@ export const createReceiptFn = createServerFn({ method: 'POST' }).middleware([op
 
 export const saveProductFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.ProductInput>())
-  .handler(({ data }) => logic.saveProduct(data))
+  .handler(({ data, context }) => logic.saveProduct(data, context.user.name))
 
 export const archiveProductFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<{ id: string }>())

@@ -34,10 +34,13 @@ import {
 import { reservedQty } from '../lib/stats'
 import { useStore } from '../lib/store'
 import type { Category, Product } from '../lib/types'
+import { PriceBadge, PriceChangesDialog, useFreshPrice } from '../components/PriceChanges'
 
 export const Route = createFileRoute('/zalihe')({
-  validateSearch: (s: Record<string, unknown>): { artikal?: string } =>
-    s.artikal ? { artikal: String(s.artikal) } : {},
+  validateSearch: (s: Record<string, unknown>): { artikal?: string; cijene?: boolean } => ({
+    ...(s.artikal ? { artikal: String(s.artikal) } : {}),
+    ...(s.cijene === true || s.cijene === 'true' ? { cijene: true } : {}),
+  }),
   component: StockPage,
 })
 
@@ -54,7 +57,8 @@ function stateOf(p: Product, free: number) {
 function StockPage() {
   const { orders, products, suppliers, movements, productById, seesCosts } = useStore()
   const restricted = !seesCosts
-  const { artikal } = Route.useSearch()
+  const { artikal, cijene } = Route.useSearch()
+  const freshPrice = useFreshPrice()
   const navigate = useNavigate({ from: '/zalihe' })
   const [cat, setCat] = useState<'sve' | Category>('sve')
   const [view, setView] = useState<View>('sve')
@@ -106,7 +110,20 @@ function StockPage() {
         title="Zalihe"
         description="Stanje se računa iz svih kretanja: početno stanje, prijemi, izlazi kupcima, povrati i inventura. Rezervisano je ono što je prodano, a još nije izašlo iz salona."
         actions={
-          restricted ? undefined : <>
+          restricted ? <button
+              onClick={() => navigate({ search: { cijene: true } })}
+              className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
+            >
+              <Tag className="size-4" /> Promjene cijena
+              {freshPrice.size > 0 && <span className="rounded-full bg-copper-500 px-1.5 text-[11px] font-bold text-white">{freshPrice.size}</span>}
+            </button> : <>
+            <button
+              onClick={() => navigate({ search: { cijene: true } })}
+              className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold shadow-sm hover:bg-white"
+            >
+              <Tag className="size-4" /> Promjene cijena
+              {freshPrice.size > 0 && <span className="rounded-full bg-copper-500 px-1.5 text-[11px] font-bold text-white">{freshPrice.size}</span>}
+            </button>
             <Link
               to="/nabava"
               search={{ nova: true }}
@@ -229,7 +246,10 @@ function StockPage() {
                         <div className="flex items-center gap-3">
                           <ProductImage product={p} />
                           <div>
-                            <div className="font-semibold">{p.name}</div>
+                            <div className="font-semibold">
+                              {p.name}
+                              {freshPrice.has(p.id) && <PriceBadge change={freshPrice.get(p.id)!} />}
+                            </div>
                             <div className="text-xs text-walnut-500">
                               {p.sku} · {p.category} · {p.supplier}
                             </div>
@@ -364,6 +384,15 @@ function StockPage() {
         </div>
       </div>
 
+      {cijene && !open && (
+        <PriceChangesDialog
+          onClose={() => navigate({ search: {} })}
+          onOpen={(id) => {
+            navigate({ search: {} })
+            setOpen(id)
+          }}
+        />
+      )}
       {open && (
         <ProductCard
           productId={open}

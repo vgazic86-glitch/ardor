@@ -206,7 +206,7 @@ const MAP: Record<string, [string, string, Detail?]> = {
   addPaymentFn: ['Uplata', 'nova', byOrder],
   createReceiptFn: ['Primka', 'nova'],
   setReceiptVatFn: ['Primka', 'PDV upisan'],
-  saveProductFn: ['Artikal', 'spremljen'],
+  saveProductFn: ['Artikal', 'spremljen', (d) => `${d.name ?? ''} · ${d.sku ?? ''} · cijena ${d.price ?? ''} KM`],
   archiveProductFn: ['Artikal', 'arhiviran', byProduct],
   setProductImageFn: ['Artikal', 'slika', byProduct],
   adjustStockFn: ['Zaliha', 'korekcija', byProduct],

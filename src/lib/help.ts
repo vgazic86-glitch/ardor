@@ -184,6 +184,7 @@ export const HELP: HelpTopic[] = [
           'Rezervisano: obećano kupcima u otvorenim narudžbama.',
           'Slobodno: stanje minus rezervisano — to se smije prodati.',
           'Crveno: ispod minimalne zalihe — vrijeme za narudžbu.',
+          'Promjena cijene: artikal sedam dana nosi oznaku „nova cijena”, svi dobiju obavijest u zvoncu, a gumb „Promjene cijena” pokazuje staru i novu cijenu, datum i ko je mijenjao. Nakon promjene zamijenite oznaku u salonu.',
         ],
       },
     ],

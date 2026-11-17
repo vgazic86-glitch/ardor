@@ -548,3 +548,19 @@ export const complaintPhotos = pgTable(
   },
   (t) => [index('complaint_photos_idx').on(t.complaintId)],
 )
+
+/** Historija promjena maloprodajne cijene artikla. */
+export const priceChanges = pgTable(
+  'price_changes',
+  {
+    id: serial().primaryKey(),
+    productId: integer('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    oldPrice: money('old_price').notNull(),
+    newPrice: money('new_price').notNull(),
+    at: timestamp().notNull(),
+    userName: text('user_name').notNull().default(''),
+  },
+  (t) => [index('price_changes_at_idx').on(t.at)],
+)
