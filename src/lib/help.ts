@@ -76,6 +76,8 @@ export const HELP: HelpTopic[] = [
         h: 'Statusi',
         items: [
           'Ponuda → Potvrđena → Spremna → Isporučena. Otkazana oslobađa rezervaciju.',
+          'Dok prodaja čeka robu (vidi Narudžbe kupaca), ne može se označiti kao „Spremna” ni „Isporučena”, niti dostava kao „U putu” ili „Dostavljeno”. Gumb je zasivljen i piše koji artikli fale. To vrijedi za sve uloge.',
+          '„Kupac odmah preuzima” radi samo za robu koja je slobodna u salonu.',
           'Iz prodaje se štampa ponuda, predračun i otpremnica (PDF).',
         ],
       },
@@ -95,6 +97,7 @@ export const HELP: HelpTopic[] = [
           'Roba u salonu dodjeljuje se najstarijim prodajama; ko ostane bez pokrića, čeka robu.',
           'Uz svaki artikal piše je li već naručen kod dobavljača (vide operativa, voditelj i uprava).',
           'Kad roba stigne i primka se upiše, narudžba sama nestaje s liste i spremna je za isporuku.',
+          'Dok je narudžba na ovoj listi, status „Spremna” i „Isporučena” nije moguć — tek kad roba stigne.',
           'Ovo nisu narudžbe dobavljačima: one su pod Roba → Nabava od dobavljača.',
         ],
       },

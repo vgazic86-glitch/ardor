@@ -309,7 +309,15 @@ export function NewOrderDialog({
                   const p = productById(it.productId)
                   const free = p.stock - (reserved.get(p.id) ?? 0)
                   const asked = items.filter((x) => x.productId === it.productId).reduce((n, x) => n + x.qty, 0)
-                  return status !== 'ponuda' && asked > free ? (
+                  if (asked <= free) return null
+                  if (pickupNow)
+                    return (
+                      <div className="col-span-full flex items-center gap-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-800">
+                        <Hourglass className="size-3.5 shrink-0" />
+                        U salonu je slobodno {Math.max(0, free)} kom. Kupac ne može odmah preuzeti ovaj artikal — isključite „Kupac odmah preuzima” ili smanjite količinu.
+                      </div>
+                    )
+                  return status !== 'ponuda' ? (
                     <div className="col-span-full flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800">
                       <Hourglass className="size-3.5 shrink-0" />
                       U salonu je slobodno {Math.max(0, free)} kom. Prodaja će se voditi pod „Narudžbe kupaca” dok roba ne stigne

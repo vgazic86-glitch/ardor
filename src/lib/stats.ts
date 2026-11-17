@@ -1,10 +1,15 @@
-import { itemsTotal, targetFor, type Employee, type Order, type Product } from './types'
+import { itemsTotal, targetFor, type Employee, type Order, type OrderStatus, type Product } from './types'
+
+/** Najmanje što računanje „čeka robu” treba od prodaje (isto na serveru i u pregledniku). */
+export type StockOrder = Pick<Order, 'id' | 'number' | 'date' | 'status' | 'issuedAt'> & {
+  items: { productId: string; qty: number }[]
+}
 
 export const orderTotal = (o: Order) => itemsTotal(o.items)
 export const isRevenue = (o: Order) =>
   o.status !== 'ponuda' && o.status !== 'otkazana'
 /** Otvorena narudžba čija roba još nije izašla iz salona (rezerviše zalihu). */
-export const isReserving = (o: Order) =>
+export const isReserving = (o: Pick<Order, 'status' | 'issuedAt'>) =>
   ['potvrđena', 'u_izradi', 'spremna'].includes(o.status) && !o.issuedAt
 
 export const monthKey = (iso: string) => iso.slice(0, 7)
@@ -102,7 +107,7 @@ export interface Missing {
  * Narudžbe kupaca koje čekaju robu: prodaje čija roba nije (u cijelosti) u salonu.
  * Zaliha se dodjeljuje najstarijim otvorenim prodajama; ko ostane bez pokrića, čeka robu.
  */
-export function waitingOrders(orders: Order[], products: { id: string; stock: number }[]) {
+export function waitingOrders(orders: StockOrder[], products: { id: string; stock: number }[]) {
   const left = new Map(products.map((p) => [p.id, p.stock]))
   const out = new Map<string, Missing[]>()
   const open = orders.filter(isReserving).sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number))
@@ -117,4 +122,39 @@ export function waitingOrders(orders: Order[], products: { id: string; stock: nu
     if (miss.length) out.set(o.id, miss)
   }
   return out
+}
+
+/** Statusi za koje roba mora biti u salonu. */
+export const needsGoods = (s: OrderStatus) => s === 'spremna' || s === 'isporučena'
+
+/**
+ * Smije li prodaja dobiti `status`? Vraća artikle koji fale (prodaja čeka robu)
+ * ili null ako smije. Pravilo (Vladimir, 17. 11. 2026.): „Spremna” i „Isporučena”
+ * nisu dozvoljene nikome dok prodaja čeka robu. Prodaja koja još nije rezervirala
+ * zalihu (npr. ponuda) računa se kao da je rezervira, jer bi tim korakom uzela robu.
+ */
+export function goodsBlock(
+  orders: StockOrder[],
+  products: { id: string; stock: number }[],
+  orderId: string,
+  status: OrderStatus,
+): Missing[] | null {
+  if (!needsGoods(status)) return null
+  const target = orders.find((o) => o.id === orderId)
+  if (!target || target.issuedAt) return null
+  const list = orders.map((o) =>
+    o.id === orderId && !isReserving(o) ? { ...o, status: 'potvrđena' as const } : o,
+  )
+  return waitingOrders(list, products).get(orderId) ?? null
+}
+
+/** Poruka zaposleniku kad status nije dozvoljen. */
+export function goodsBlockMessage(
+  missing: Missing[],
+  status: OrderStatus,
+  nameOf: (productId: string) => string,
+) {
+  const what = missing.map((m) => `${nameOf(m.productId)} (fali ${m.missing} od ${m.qty} kom)`).join(', ')
+  const when = status === 'spremna' ? 'Status „Spremna” je moguć' : 'Isporuka i dostava su moguće'
+  return `Prodaja čeka robu: ${what}. ${when} kad roba stigne u salon (prijem robe).`
 }

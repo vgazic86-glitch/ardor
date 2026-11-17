@@ -17,7 +17,7 @@ import {
   money2,
   orderStatusLabel,
 } from '../lib/format'
-import { orderTotal, waitingOrders } from '../lib/stats'
+import { goodsBlock, orderTotal, waitingOrders } from '../lib/stats'
 import { useStore } from '../lib/store'
 import { openDownload } from '../lib/files'
 import { customerDocPdfFn } from '../server/api'
@@ -81,6 +81,8 @@ export function OrderDrawer({
   const left = Math.max(0, total - order.paid)
   const step = flow.indexOf(order.status)
   const next = step >= 0 && step < flow.length - 1 ? flow[step + 1] : null
+  // „Spremna” / „Isporučena” nisu dozvoljene dok prodaja čeka robu (provjerava i server).
+  const blocked = next ? goodsBlock(orders, products, order.id, next) : null
 
   return (
     <Modal
@@ -101,7 +103,11 @@ export function OrderDrawer({
       footer={
         <div className="flex flex-wrap items-center gap-2">
           {next && (
-            <Button onClick={() => setOrderStatus(order.id, next)}>
+            <Button
+              disabled={!!blocked}
+              title={blocked ? 'Prodaja čeka robu — status je moguć kad roba stigne u salon.' : undefined}
+              onClick={() => setOrderStatus(order.id, next)}
+            >
               Označi: {orderStatusLabel[next]}
             </Button>
           )}
@@ -138,6 +144,12 @@ export function OrderDrawer({
             <div className="text-xs">
               {missing.map((m) => `${productById(m.productId).name}: nedostaje ${m.missing} od ${m.qty}`).join(' · ')}. Kad se upiše primka, oznaka nestaje sama.
             </div>
+            {blocked && next && (
+              <div className="mt-1 text-xs font-semibold">
+                Status „{orderStatusLabel[next]}” nije moguć dok roba ne stigne u salon.
+              </div>
+            )}
+
           </div>
         </div>
       )}

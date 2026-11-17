@@ -1,5 +1,6 @@
 /** Serverska logika nad Netlify Database. Uvozi se samo iz serverskih funkcija. */
-import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm'
+import { goodsBlock, goodsBlockMessage, needsGoods, type StockOrder } from '../lib/stats'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
@@ -273,6 +274,56 @@ async function avgCosts(tx: Tx, productIds: number[]) {
   return map
 }
 
+/**
+ * Zabrana statusa „Spremna” / „Isporučena” dok prodaja čeka robu (svim ulogama).
+ * Računa isto kao lista Narudžbe kupaca (`stats.waitingOrders`), ali iz baze, unutar transakcije.
+ */
+async function assertGoods(tx: Tx, orderId: number, status: OrderStatus) {
+  if (!needsGoods(status)) return
+  const open = await tx
+    .select()
+    .from(t.orders)
+    .where(
+      or(
+        eq(t.orders.id, orderId),
+        and(inArray(t.orders.status, ['potvrđena', 'u_izradi', 'spremna']), isNull(t.orders.issuedAt)),
+      ),
+    )
+  if (!open.some((o) => o.id === orderId)) return
+  const its = await tx
+    .select({ orderId: t.orderItems.orderId, productId: t.orderItems.productId, qty: t.orderItems.qty })
+    .from(t.orderItems)
+    .where(inArray(t.orderItems.orderId, open.map((o) => o.id)))
+  const productIds = [...new Set(its.map((i) => i.productId))]
+  if (!productIds.length) return
+  const stockRows = await tx
+    .select({ productId: t.stockMovements.productId, stock: sql<number>`coalesce(sum(${t.stockMovements.qty}), 0)::int` })
+    .from(t.stockMovements)
+    .where(inArray(t.stockMovements.productId, productIds))
+    .groupBy(t.stockMovements.productId)
+  const orders: StockOrder[] = open.map((o) => ({
+    id: String(o.id),
+    number: o.number,
+    date: o.date,
+    status: o.status as OrderStatus,
+    issuedAt: o.issuedAt,
+    items: its.filter((i) => i.orderId === o.id).map((i) => ({ productId: String(i.productId), qty: i.qty })),
+  }))
+  const missing = goodsBlock(
+    orders,
+    stockRows.map((r) => ({ id: String(r.productId), stock: Number(r.stock) })),
+    String(orderId),
+    status,
+  )
+  if (!missing) return
+  const names = await tx
+    .select({ id: t.products.id, name: t.products.name })
+    .from(t.products)
+    .where(inArray(t.products.id, missing.map((m) => Number(m.productId))))
+  const nameOf = (pid: string) => names.find((n) => String(n.id) === pid)?.name ?? 'artikal'
+  throw new Error(goodsBlockMessage(missing, status, nameOf))
+}
+
 /** Roba je izašla iz salona: skini sa zaliha (jednom po narudžbi). */
 async function issueOrder(
   tx: Tx,
@@ -460,6 +511,8 @@ export async function createOrder(input: CreateOrderInput) {
         status: 'zakazana',
       })
     }
+    // Nova prodaja odmah kao „Spremna” ili „kupac odmah preuzima” — samo ako je roba u salonu.
+    await assertGoods(tx, next, status)
     if (input.pickupNow)
       await issueOrder(tx, next, today, actor ?? Number(input.employeeId))
     return { id: String(next) }
@@ -474,6 +527,7 @@ export async function setOrderStatus(
   const oid = Number(orderId)
   const today = todayIso()
   await db.transaction(async (tx) => {
+    await assertGoods(tx, oid, status)
     await tx.update(t.orders).set({ status }).where(eq(t.orders.id, oid))
     if (status === 'isporučena') {
       await tx
@@ -501,6 +555,8 @@ export async function setDeliveryStatus(
   const oid = Number(orderId)
   const today = todayIso()
   await db.transaction(async (tx) => {
+    // Dostava „u putu” / „dostavljeno” izdaje robu iz salona — isto pravilo kao „Isporučena”.
+    if (status === 'u_putu' || status === 'dostavljeno') await assertGoods(tx, oid, 'isporučena')
     await tx
       .update(t.deliveries)
       .set({ status })
