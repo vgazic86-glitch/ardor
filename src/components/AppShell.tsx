@@ -21,6 +21,8 @@ import {
   Clock,
   KeyRound,
   LogOut,
+  Moon,
+  Sun,
   Send,
   ShieldCheck,
   ClipboardCheck,
@@ -53,8 +55,9 @@ import { Assistant, clearAssistantHistory } from './Assistant'
 import { helpForPath } from '../lib/help'
 import { waitingOrders } from '../lib/stats'
 import { receivables } from '../lib/collection'
+import { setTheme, useTheme } from '../lib/theme'
 import { Avatar } from './ui'
-import { Logo } from './Logo'
+import { BrandMark, Logo } from './Logo'
 
 type NavItem = {
   to: string
@@ -197,6 +200,7 @@ function UserSwitcher() {
   const [open, setOpen] = useState(false)
   const [pw, setPw] = useState(false)
   const pwa = useInstall()
+  const theme = useTheme()
   async function logout() {
     clearAssistantHistory()
     await logoutFn()
@@ -238,6 +242,13 @@ function UserSwitcher() {
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-walnut-200 hover:bg-white/5"
             >
               <KeyRound className="size-4 text-walnut-400" /> Promijeni lozinku
+            </button>
+            <button
+              onClick={() => setTheme(theme === 'tamni' ? 'svijetli' : 'tamni')}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-walnut-200 hover:bg-white/5"
+            >
+              {theme === 'tamni' ? <Sun className="size-4 text-walnut-400" /> : <Moon className="size-4 text-walnut-400" />}
+              {theme === 'tamni' ? 'Svijetli način' : 'Tamni način'}
             </button>
             {pwa.canInstall && (
               <button
@@ -441,6 +452,7 @@ function useHeartbeat() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   useHeartbeat()
+  const theme = useTheme()
   const [open, setOpen] = useState(false)
   const [palette, setPalette] = useState(false)
   const [scan, setScan] = useState(false)
@@ -517,7 +529,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <div className="min-w-0">
-        <header className="no-print sticky top-0 z-30 flex items-center gap-3 border-b border-walnut-200/60 bg-paper/80 px-4 py-3 backdrop-blur-md sm:px-8">
+        <header className="no-print sticky top-0 z-30 flex items-center gap-1.5 border-b border-walnut-200/60 bg-paper/80 px-3 py-3 backdrop-blur-md sm:gap-3 sm:px-8">
           <button
             className="text-walnut-700 lg:hidden"
             onClick={() => setOpen(true)}
@@ -525,8 +537,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <Menu className="size-6" />
           </button>
-          <Link to="/" aria-label="Pregled" className="lg:hidden">
-            <Logo className="h-8" />
+          <Link to="/" aria-label="Pregled" className="shrink-0 lg:hidden">
+            {/* Na mobitelu samo znak (mjesto za sat u zaglavlju), puni logo od tableta naviše. */}
+            <BrandMark className="size-8 sm:hidden" />
+            <Logo light={theme === 'tamni'} className="hidden h-8 sm:block" />
           </Link>
           <button
             onClick={() => setPalette(true)}

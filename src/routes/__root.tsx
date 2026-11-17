@@ -14,6 +14,7 @@ import { AppShell } from '../components/AppShell'
 import { getSnapshot } from '../server/api'
 import { StoreProvider } from '../lib/store'
 import { AdminProvider } from '../lib/admin'
+import { THEME_INIT_SCRIPT } from '../lib/theme'
 
 import '../styles.css'
 
@@ -98,8 +99,10 @@ function NoAccess() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bs">
+    <html lang="bs" suppressHydrationWarning>
       <head>
+        {/* Tamni način prije iscrtavanja (klasa na <html> dolazi iz preglednika, pa suppressHydrationWarning). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>

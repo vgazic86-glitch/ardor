@@ -125,6 +125,24 @@ export function HeaderClock() {
   const d = w ? describe(w.code) : null
   const next = w?.days.slice(1, 4) ?? []
   return (
+    <>
+    {/* Mobitel i manji ekrani: samo sat i temperatura (puni prikaz je od xl naviše). */}
+    <div
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-walnut-200/80 bg-white/70 px-2 py-1 leading-none xl:hidden"
+      title={`${DAYS_FULL[wd]}, ${parts.day}. ${MONTHS_FULL[Number(parts.month) - 1]} ${parts.year}.${w && d ? ` · Banja Luka ${w.temp}° ${d.text}` : ''}`}
+    >
+      <span className="font-display text-base font-bold tabular text-walnut-900">
+        {parts.hour}
+        <span className="clock-colon text-copper-500">:</span>
+        {parts.minute}
+      </span>
+      {w && d && (
+        <span className="hidden items-center gap-0.5 border-l border-walnut-200/80 pl-1.5 text-sm font-semibold tabular text-walnut-800 min-[400px]:flex">
+          <d.Icon className="size-4 text-copper-500" />
+          {w.temp}°
+        </span>
+      )}
+    </div>
     <div className="mr-2 hidden shrink-0 items-stretch whitespace-nowrap rounded-2xl border border-walnut-200/80 bg-white/70 shadow-sm xl:flex">
       <div className="flex items-center gap-3 px-4 py-1.5">
         <div className="font-display text-[30px] font-bold leading-none tracking-tight tabular text-walnut-900">
@@ -180,6 +198,7 @@ export function HeaderClock() {
         </div>
       )}
     </div>
+    </>
   )
 }
 

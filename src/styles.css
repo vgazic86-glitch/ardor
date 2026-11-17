@@ -61,6 +61,98 @@ body {
   background-attachment: fixed;
 }
 
+/* ───────── Tamni način (klasa .dark na <html>; izbor u izborniku korisnika, pamti se u pregledniku) ─────────
+   Boje su CSS varijable, pa se tamni način radi zamjenom varijabli: orah (walnut) skala se okreće,
+   pozadine postaju tamne, a tonovi upozorenja (rose, amber, emerald…) dobiju tamnu pozadinu i svjetliji tekst.
+   Samo na ekranu — ispis (PDF, naljepnice) ostaje svijetao. */
+@media screen {
+  html.dark {
+    color-scheme: dark;
+    --color-paper: #14100d;
+    --color-linen: #1e1814;
+    --color-walnut-950: #fbf8f3;
+    --color-walnut-900: #f3ece3;
+    --color-walnut-800: #e6dbcf;
+    --color-walnut-700: #d6c7b8;
+    --color-walnut-600: #bfac9a;
+    --color-walnut-500: #a28d7b;
+    --color-walnut-400: #85715f;
+    --color-walnut-300: #5c4b3f;
+    --color-walnut-200: #3d3129;
+    --color-walnut-100: #2c231d;
+    --color-walnut-50: #241d18;
+    --color-copper-700: #ff9d73;
+    --color-copper-600: #ff8152;
+    --color-copper-200: #6e3518;
+    --color-copper-100: #3f2416;
+    --color-copper-50: #2c1a11;
+    --color-moss-700: #a9c7a2;
+    --color-moss-600: #8fb487;
+    --color-moss-100: #22301f;
+    --color-moss-50: #1b2619;
+    --color-rose-50: #35191e;
+    --color-rose-100: #452027;
+    --color-rose-200: #6b2b36;
+    --color-rose-600: #fb7185;
+    --color-rose-700: #fda4af;
+    --color-rose-800: #fecdd3;
+    --color-red-50: #35191a;
+    --color-amber-50: #30240e;
+    --color-amber-200: #6b4f14;
+    --color-amber-600: #fbbf24;
+    --color-amber-700: #fcd34d;
+    --color-amber-800: #fde68a;
+    --color-amber-900: #fef3c7;
+    --color-emerald-50: #0f2a1f;
+    --color-emerald-100: #123426;
+    --color-emerald-200: #1d5c41;
+    --color-emerald-600: #34d399;
+    --color-emerald-700: #6ee7b7;
+    --color-emerald-800: #a7f3d0;
+    --color-sky-50: #0f2433;
+    --color-sky-200: #1c4a66;
+    --color-sky-800: #bae6fd;
+    --color-violet-50: #221a38;
+    --color-violet-200: #43307a;
+    --color-violet-800: #ddd6fe;
+    --color-stone-100: #2a2622;
+    --color-stone-300: #57504a;
+    --color-stone-700: #e7e5e4;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -18px rgb(0 0 0 / 0.6);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -20px rgb(0 0 0 / 0.7);
+  }
+  html.dark body {
+    background-image: none;
+  }
+  /* Bijele kartice i polja → tamna podloga (tekst na bijelim gumbima ostaje bijel). */
+  html.dark .bg-white,
+  html.dark .bg-white\/90,
+  html.dark .bg-white\/80,
+  html.dark .bg-white\/70,
+  html.dark .bg-white\/60 {
+    background-color: var(--color-linen);
+  }
+  html.dark .hover\:bg-white:hover {
+    background-color: var(--color-walnut-100);
+  }
+  /* Bočni izbornik je i inače taman: u njemu vrijede izvorne (svijetle) boje. */
+  html.dark .sidebar-bg {
+    --color-paper: #f5f0e8;
+    --color-linen: #fcfaf6;
+    --color-walnut-950: #1a1410;
+    --color-walnut-900: #2b211b;
+    --color-walnut-800: #3d2f26;
+    --color-walnut-700: #5a463a;
+    --color-walnut-600: #6f5a4c;
+    --color-walnut-500: #8b7464;
+    --color-walnut-400: #a8927f;
+    --color-walnut-300: #c9b8a8;
+    --color-walnut-200: #e4d8cb;
+    --color-walnut-100: #efe7dd;
+    --color-walnut-50: #f7f2ec;
+  }
+}
+
 .font-display {
   font-variation-settings:
     'opsz' 96,

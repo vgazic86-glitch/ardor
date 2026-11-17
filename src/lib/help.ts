@@ -39,7 +39,7 @@ export const HELP: HelpTopic[] = [
       },
       {
         h: 'Prečice',
-        items: ['Ctrl+K (ili ⌘K) otvara brzu pretragu i komande.', 'Klik na logo uvijek vraća na Pregled.'],
+        items: ['Ctrl+K (ili ⌘K) otvara brzu pretragu i komande.', 'Klik na logo uvijek vraća na Pregled.', 'Tamni način: dolje lijevo klik na svoje ime → „Tamni način” (pamti se na tom uređaju; isto mjesto vraća svijetli).', 'Na mobitelu je sat u gornjoj traci; na većem ekranu uz sat su datum i prognoza (klik za 7 dana).'],
       },
     ],
   },
