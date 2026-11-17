@@ -578,6 +578,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <PackagePlus className="size-4 text-copper-600" /> Prijem robe
             </button>
             )}
+            {canSee(user, 'narudzbe') && (
             <button
               onClick={() =>
                 navigate({ to: '/narudzbe', search: { nova: true } })
@@ -587,6 +588,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Plus className="size-4" />{' '}
               <span className="hidden sm:inline">Nova prodaja</span>
             </button>
+            )}
           </div>
         </header>
         <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8">

@@ -209,8 +209,8 @@ export function StoreProvider({
     const salesPeople = data.employees.filter(
       (e) => e.role !== 'Dostava i montaža' && e.id !== '0',
     )
-    const restricted = user.role === 'trgovac' || user.role === 'operativa'
-    const seesCosts = user.role !== 'trgovac'
+    const restricted = user.role === 'trgovac' || user.role === 'operativa' || user.role === 'dostava'
+    const seesCosts = user.role !== 'trgovac' && user.role !== 'dostava'
     const full = user.role === 'admin' || user.role === 'uprava'
     const me =
       (restricted && user.employeeId ? emp.get(user.employeeId) : null) ||

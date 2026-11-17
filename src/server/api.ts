@@ -14,10 +14,31 @@ import * as weekly from './weekly'
 import * as collection from './collection'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
+import { visibleDocuments } from '../lib/manuals'
+
+/**
+ * Uloga „Dostava” (dostavljači i montažeri, odluka 17. 11. 2026.) smije samo ove radnje:
+ * status dostave, radno vrijeme, zadaci, dokumenti/priručnik, asistent i lozinka. Sve ostalo server odbija.
+ */
+const DELIVERY_FNS = new Set([
+  'setDeliveryStatusFn',
+  'downloadDocumentFileFn',
+  'changePasswordFn',
+  'listWorkTimeFn',
+  'clockFn',
+  'listTasksFn',
+  'setTaskStatusFn',
+  'pingFn',
+  'askAssistantFn',
+  'securityFn',
+  'adminStatusFn',
+])
 
 /** Svi pozivi osim prijave zahtijevaju prijavljenog korisnika. */
 const authed = createMiddleware({ type: 'function' }).server(async ({ next, data, serverFnMeta }) => {
   const user = await auth.requireUser()
+  if (user.role === 'dostava' && !DELIVERY_FNS.has(serverFnMeta?.name ?? ''))
+    throw new Error('Za ovu radnju nemate ovlaštenje (uloga Dostava).')
   const res = await next({ context: { user } })
   await audit.afterCall(serverFnMeta?.name, user, data)
   return res
@@ -56,7 +77,10 @@ export const getSnapshot = createServerFn({ method: 'GET' }).handler(async () =>
     console.error('Praćenje ponuda nije uspjelo', e)
   }
   const openTasks = await tasks.openTaskCount(user)
-  if (user.role === 'trgovac') return { user, openTasks, data: logic.forTrader(data, user.employeeId) }
+  // Dokumenti i priručnici: svaka uloga vidi samo svoje (admin i uprava sve).
+  data.documents = visibleDocuments(data.documents, user.role)
+  // Trgovac i dostava: bez nabavnih cijena i tuđeg prometa.
+  if (user.role === 'trgovac' || user.role === 'dostava') return { user, openTasks, data: logic.forTrader(data, user.employeeId) }
   // Operativa: nabavne cijene i primke vidi, tuđi promet ne.
   if (user.role === 'operativa') return { user, openTasks, data: logic.forTrader(data, user.employeeId, true) }
   return { user, openTasks, data }
@@ -204,7 +228,7 @@ export const archiveDocumentFn = createServerFn({ method: 'POST' }).middleware([
 
 export const downloadDocumentFileFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<{ id: string }>())
-  .handler(({ data }) => hr.downloadDocumentFile(data.id))
+  .handler(({ data, context }) => hr.downloadDocumentFile(data.id, context.user.role))
 
 export const getHrFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<{ token: string }>())
@@ -577,3 +601,9 @@ export const recordReminderFn = createServerFn({ method: 'POST' })
   .middleware([authed])
   .validator(pass<{ orderId: string; channel: string }>())
   .handler(async ({ data, context }) => (await collection.recordReminder(context.user, data), true))
+
+/** Priručnici: učitavanje PDF-a (admin i uprava). */
+export const uploadManualFn = createServerFn({ method: 'POST' })
+  .middleware([manager])
+  .validator(pass<{ id: string; file: { name: string; mime: string; dataB64: string } }>())
+  .handler(({ data, context }) => hr.uploadManual(data, context.user.employeeId))

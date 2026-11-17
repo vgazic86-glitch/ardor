@@ -246,7 +246,7 @@ export async function ask(user: SessionUser, history: ChatMessage[], page: strin
   rateLimit(user.id)
   const msgs = clean(history)
   const ctx = await gather()
-  const costs = user.role !== 'trgovac'
+  const costs = user.role !== 'trgovac' && user.role !== 'dostava'
   const question = msgs[msgs.length - 1].content
 
   // Uprava i administrator dobijaju i sažetak poslovanja (promet, marža, zalihe, naplata).

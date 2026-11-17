@@ -7,6 +7,7 @@ import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
 import {
   ensureBrandBook,
+  ensureManuals,
   ensureDocumentsSeeded,
   ensureHrSeeded,
   listDocuments,
@@ -65,6 +66,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
   await ensureSeeded()
   await ensureDocumentsSeeded()
   await ensureBrandBook()
+  await ensureManuals()
   await ensureHrSeeded()
   const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets, insts, reminders] =
     await Promise.all([

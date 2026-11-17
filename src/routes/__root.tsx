@@ -1,6 +1,7 @@
 import {
   HeadContent,
   Link,
+  Navigate,
   Outlet,
   Scripts,
   createRootRoute,
@@ -79,7 +80,16 @@ function RootComponent() {
   return (
     <StoreProvider data={data} user={user} openTasks={openTasks}>
       <AdminProvider sessionHr={user.hrAccess}>
-        <AppShell>{area && !canSee(user, area) ? <NoAccess /> : <Outlet />}</AppShell>
+        <AppShell>
+          {/* Dostava nema Pregled prodaje: početna je raspored dostava. */}
+          {user.role === 'dostava' && path === '/' ? (
+            <Navigate to="/dostave" />
+          ) : area && !canSee(user, area) ? (
+            <NoAccess />
+          ) : (
+            <Outlet />
+          )}
+        </AppShell>
       </AdminProvider>
     </StoreProvider>
   )

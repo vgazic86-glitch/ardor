@@ -265,6 +265,8 @@ export const documents = pgTable('documents', {
   version: text().notNull().default('1.0'),
   sortOrder: integer('sort_order').notNull().default(100),
   archived: boolean().notNull().default(false),
+  /** Koje uloge vide dokument (npr. 'trgovac,voditelj'); prazno = svi. Admin i uprava uvijek vide sve. */
+  roles: text().notNull().default(''),
   updatedBy: integer('updated_by').references(() => employees.id),
   updatedAt: timestamp('updated_at').defaultNow(),
 })

@@ -24,7 +24,7 @@ pnpm install
 pnpm migrate          # primijeni SQL migracije na DATABASE_URL (čita .env)
 pnpm dev              # razvoj s hot reloadom, http://localhost:3000 (čita .env)
 pnpm typecheck        # tsc --noEmit — mora proći bez grešaka
-pnpm test             # vitest (src/**/*.test.ts) — trenutno 71 test
+pnpm test             # vitest (src/**/*.test.ts) — trenutno 79 testova
 pnpm build:node       # produkcijski build za Node/Render (DEPLOY_TARGET=node)
 pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao Render
 pnpm start            # isto, ali za Render (PORT i DATABASE_URL iz okruženja) — lokalno ne treba
@@ -96,6 +96,7 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 | `uprava` | sve osim korisnika (zarada, plaće, troškovi) |
 | `voditelj` | voditelj salona: promet tima, pazar, nabava, roba, zadaci trgovcima; bez zarade, plaća, troškova, izvještaja |
 | `operativa` | primke, nabava, kartice dobavljača, artikli, inventura; bez tuđeg prometa i zarade |
+| `dostava` | dostavljači i montažeri: samo Dostave (status s terena), radno vrijeme, zadaci, dokumenti/svoj priručnik; server dopušta samo radnje iz `DELIVERY_FNS` u `api.ts`; početna = `/dostave` |
 | `trgovac` | prodaja u svoje ime, kupci, reklamacije, katalog, dostave, zalihe **bez nabavnih cijena**; popust najviše **10 %** (provjera u `api.ts`) |
 
 `auth.ts`: `isFull` (admin/uprava), `requireOperations` (svi osim trgovca), `requireManager` (puni uvid), `requireAdminUser`. Trgovac i operativa dobijaju okrnjen snimak (`logic.forTrader`). Plaće i ugovori **nikad** ne idu u snimak.
@@ -108,6 +109,7 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 - **Zaliha** = zbir `stock_movements`. Rezervirano = otvorene prodaje. Prihod se priznaje po `issuedAt` (`reports.ts`).
 - **Promjene cijena** — `saveProduct` upisuje `price_changes`; oznaka i obavijest 7 dana.
 - **Čeka robu = nema „Spremna”/„Isporučena”** — `stats.goodsBlock`, na serveru `logic.assertGoods` (status, dostava u putu/dostavljeno, „kupac odmah preuzima”). Vrijedi za sve uloge.
+- **Priručnici po ulogama** — `lib/manuals.ts` (popis 7 priručnika i uloga, `canSeeDocument`), `documents.roles`, mjesta se naprave pri pokretanju (`hr.ensureManuals`, meta `prirucnici_v2`). PDF učitava admin/uprava na Dokumenti → „Priručnici po ulogama” (u bazu, ne u repo). Snimak filtrira dokumente po ulozi, preuzimanje provjerava ulogu.
 - **Tamni način** — `lib/theme.ts` (klasa `.dark` na <html>, `localStorage` 'ardor.tema', skripta u `__root` prije iscrtavanja), boje u `styles.css` (zamjena CSS varijabli; bočni izbornik zadržava svijetle; ispis uvijek svijetao). Grafikoni: `ct()` u `Charts.tsx`. Nove boje uvijek iz teme (walnut/copper…), ne tvrdo kodirane.
 - **Brisanje primjernih podataka** — Korisnici i pristup → Podaci o firmi → kartica `ClearDemoCard` (samo admin, kvačica za kopiju + OBRIŠI + „Da, obriši”). `logic.clearTransactions` (katalog i ljudi ostaju), pregled `clearPreview`. Kopija baze: README → „Kopija baze”.
 - **AI asistent za upravu** — `lib/brief.ts` (sažetak: promet/plan, realizacija i marža, kategorije, prodavači, artikli, zalihe, narudžbe kupaca, naplata) ide Geminiju (imena šifrirana, `lib/pseudo.ts`) samo za admin/uprava (`isFull`); bez ključa poslovno pitanje vraća sažetak. Razgovor u `sessionStorage` po korisniku, briše se pri odjavi.

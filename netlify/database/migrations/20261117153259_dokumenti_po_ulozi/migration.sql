@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD COLUMN "roles" text DEFAULT '' NOT NULL;

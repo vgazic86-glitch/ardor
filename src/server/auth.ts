@@ -18,8 +18,8 @@ import * as audit from './audit'
  *             bez tuđeg prometa, zarade, izvještaja, troškova i kadrovske
  * trgovac — prodaja, dostave, zalihe bez nabavnih cijena, radno vrijeme
  */
-export type UserRole = 'admin' | 'uprava' | 'voditelj' | 'operativa' | 'trgovac'
-const ROLES: UserRole[] = ['admin', 'uprava', 'voditelj', 'operativa', 'trgovac']
+export type UserRole = 'admin' | 'uprava' | 'voditelj' | 'operativa' | 'trgovac' | 'dostava'
+const ROLES: UserRole[] = ['admin', 'uprava', 'voditelj', 'operativa', 'trgovac', 'dostava']
 /** Puni uvid u poslovanje (zarada, plaće, tuđi promet). */
 export const isFull = (role: UserRole) => role === 'admin' || role === 'uprava'
 
@@ -207,7 +207,7 @@ export async function requireUser() {
 /** Operativni poslovi: uprava, administrator i operativa (ne trgovci). */
 export async function requireOperations() {
   const u = await requireUser()
-  if (u.role === 'trgovac') throw new Error('Za ovu radnju nemate ovlaštenje.')
+  if (u.role === 'trgovac' || u.role === 'dostava') throw new Error('Za ovu radnju nemate ovlaštenje.')
   return u
 }
 
@@ -342,6 +342,7 @@ export async function saveUser(input: UserInput) {
   if (!input.name.trim()) throw new Error('Unesite ime.')
   const role: UserRole = ROLES.includes(input.role) ? input.role : 'uprava'
   if (role === 'trgovac' && !input.employeeId) throw new Error('Trgovcu odaberite zaposlenika na kojeg se upisuju prodaje.')
+  if (role === 'dostava' && !input.employeeId) throw new Error('Dostavljaču odaberite zaposlenika (dostava i montaža).')
   if (input.id === me.id && (role !== 'admin' || !input.active)) throw new Error('Ne možete sebi oduzeti administratorska prava niti se deaktivirati.')
   const [dup] = await db.select({ id: t.users.id }).from(t.users).where(eq(t.users.username, username))
   if (dup && String(dup.id) !== input.id) throw new Error(`Korisničko ime „${username}” je zauzeto.`)

@@ -15,6 +15,7 @@ import { KGS_BODY, seedDocuments } from '../../db/documents.js'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DEFAULT_POLICY, type BonusPolicy } from '../lib/bonus'
+import { canSeeDocument, MANUAL_CATEGORY, MANUALS, parseRoles } from '../lib/manuals'
 import { currentUser, requireManager } from './auth'
 import type {
   Bonus,
@@ -255,6 +256,7 @@ export async function listDocuments(): Promise<CompanyDocument[]> {
     file: fileMeta(r),
     updatedAt: (r.d.updatedAt ?? new Date()).toISOString().slice(0, 10),
     updatedBy: str(r.d.updatedBy),
+    roles: parseRoles(r.d.roles),
   }))
 }
 
@@ -329,13 +331,48 @@ export async function archiveDocument(_token: string, id: string) {
     .where(eq(t.documents.id, Number(id)))
 }
 
-export async function downloadDocumentFile(documentId: string) {
+export async function downloadDocumentFile(documentId: string, role: string) {
   const [d] = await db
     .select()
     .from(t.documents)
     .where(eq(t.documents.id, Number(documentId)))
   if (!d?.fileId) throw new Error('Dokument nema priloženu datoteku.')
+  // Priručnik i dokument s ulogama: samo uloge kojima je namijenjen (admin i uprava sve).
+  const meta = { category: d.category, roles: parseRoles(d.roles), file: { id: '', name: '', mime: '', size: 0 } }
+  if (!canSeeDocument(meta, role)) throw new Error('Ovaj dokument nije namijenjen vašoj ulozi.')
   return readFile(d.fileId)
+}
+
+/** Mjesta za priručnike po ulogama (PDF učitava administrator). Uloge se usklade pri svakom pokretanju. */
+export async function ensureManuals() {
+  // Jednom po verziji popisa (promjena uloga u MANUALS → povećaj broj).
+  if (await meta('prirucnici_v2')) return
+  for (const m of MANUALS) {
+    const values = { title: m.title, category: MANUAL_CATEGORY, summary: m.summary, roles: m.roles.join(','), sortOrder: m.sortOrder }
+    await db
+      .insert(t.documents)
+      .values({ ...values, slug: m.slug, body: '', version: '—' })
+      .onConflictDoUpdate({ target: t.documents.slug, set: { roles: values.roles, category: MANUAL_CATEGORY } })
+  }
+  // Stari tekstualni „Priručnik za prodavače” (Dokumenti → Prodaja) je za trgovce i voditelja.
+  await db.update(t.documents).set({ roles: 'trgovac,voditelj' }).where(eq(t.documents.slug, 'prirucnik-za-prodavace'))
+  await setMeta('prirucnici_v2', today())
+}
+
+/** Učitaj (ili zamijeni) PDF priručnika — administrator i uprava. */
+export async function uploadManual(input: { id: string; file: { name: string; mime: string; dataB64: string } }, actorEmployeeId: string | null) {
+  await requireManager()
+  if (input.file.mime !== 'application/pdf' && !/\.pdf$/i.test(input.file.name)) throw new Error('Priručnik mora biti PDF.')
+  const [d] = await db.select().from(t.documents).where(eq(t.documents.id, Number(input.id)))
+  if (!d || d.category !== MANUAL_CATEGORY) throw new Error('Priručnik nije pronađen.')
+  const fileId = await storeFile(input.file.name, 'application/pdf', input.file.dataB64)
+  const old = d.fileId
+  await db
+    .update(t.documents)
+    .set({ fileId, version: today(), updatedAt: new Date(), updatedBy: actorEmployeeId ? Number(actorEmployeeId) : null })
+    .where(eq(t.documents.id, d.id))
+  if (old) await db.delete(t.files).where(eq(t.files.id, old))
+  return { title: d.title }
 }
 
 /* ───────────────────────── kadrovska evidencija ───────────────────────── */

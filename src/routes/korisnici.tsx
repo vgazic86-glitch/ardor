@@ -58,6 +58,7 @@ const ROLE_HELP: Record<UserRole, string> = {
   voditelj: 'Voditelj salona: promet i plan cijelog tima, dnevni pazar, zadaci trgovcima, nabava, primke, kartice dobavljača i inventura. Ne vidi zaradu, marže, troškove, plaće ni izvještaje.',
   operativa: 'Srednji pristup: primke, narudžbe dobavljačima, kartice i izvodi dobavljača, artikli, inventura i prodaja. Ne vidi tuđe prodaje, zaradu, izvještaje, troškove ni plaće.',
   trgovac: 'Prodaja, dostave, zalihe (bez nabavnih cijena), radno vrijeme i dokumenti. Ne vidi tuđe prodaje.',
+  dostava: 'Dostavljači i montažeri: samo dostave (status s terena), radno vrijeme, zadaci i svoj priručnik. Ne vidi prodaju, cijene nabave ni promet. Obavezno povezati sa zaposlenikom.',
 }
 
 function UsersList() {
@@ -292,7 +293,7 @@ function UserDialog({
             ))}
           </select>
         </Field>
-        <Field label={role === 'trgovac' ? 'Zaposlenik (obavezno)' : 'Povezani zaposlenik'} hint="Na njega se upisuju prodaje i radno vrijeme.">
+        <Field label={role === 'trgovac' || role === 'dostava' ? 'Zaposlenik (obavezno)' : 'Povezani zaposlenik'} hint="Na njega se upisuju prodaje i radno vrijeme.">
           <select className={inputCls} value={employeeId} onChange={(e) => setEmp(e.target.value)}>
             <option value="">— nije povezan —</option>
             {employees

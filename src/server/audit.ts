@@ -250,6 +250,7 @@ const MAP: Record<string, [string, string, Detail?]> = {
   saveCustomerFn: ['Kupac', 'spremljen'],
   exportAllFn: ['Podaci', 'izvoz svih podataka'],
   weeklySendTestFn: ['Izvještaj', 'probni sedmični poslan'],
+  uploadManualFn: ['Dokument', 'priručnik učitan (PDF)'],
   setInstallmentPlanFn: ['Naplata', 'plan rata', byOrder],
   setDueDateFn: ['Naplata', 'rok plaćanja', byOrder],
   recordReminderFn: ['Naplata', 'podsjetnik kupcu', byOrder],

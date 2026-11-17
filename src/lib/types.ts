@@ -207,6 +207,8 @@ export interface CompanyDocument {
   file: FileMeta | null
   updatedAt: string
   updatedBy: string | null
+  /** Uloge koje vide dokument; prazno = svi (admin i uprava uvijek sve). */
+  roles?: string[]
 }
 
 export const EXPENSE_CATEGORIES = [

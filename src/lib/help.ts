@@ -493,7 +493,17 @@ export const HELP: HelpTopic[] = [
     title: 'Dokumenti',
     purpose: 'Interni pravilnici, upute i obrasci.',
     fields: ['Naslov, sadržaj (formatirani tekst).'],
-    details: [{ h: 'Savjet', items: ['Dokument se može odštampati ili spremiti kao PDF.'] }],
+    details: [
+      { h: 'Savjet', items: ['Dokument se može odštampati ili spremiti kao PDF.'] },
+      {
+        h: 'Priručnici po ulogama',
+        items: [
+          'Svaki zaposlenik vidi priručnik svoje uloge: trgovac (i uređenje salona), voditelj salona (i uređenje salona), operativa i skladište, dostava i montaža.',
+          'Administrator i uprava vide sve, uključujući priručnik vlasnika i voditelja marketinga.',
+          'Administrator i uprava učitavaju ili mijenjaju PDF na vrhu stranice Dokumenti → „Priručnici po ulogama” → Učitaj PDF / Zamijeni PDF.',
+        ],
+      },
+    ],
   },
   {
     id: 'korisnik',
@@ -509,6 +519,7 @@ export const HELP: HelpTopic[] = [
           'Voditelj: prodaja, skladište, zadaci za trgovce.',
           'Operativa: primke, izvodi, operativni poslovi — bez tuđeg prometa i zarade.',
           'Trgovac: svoje narudžbe, kupci i zalihe, bez nabavnih cijena.',
+          'Dostava i montaža: samo dostave (status s terena), radno vrijeme, zadaci i svoj priručnik. Obavezno povezati sa zaposlenikom.',
         ],
       },
       {

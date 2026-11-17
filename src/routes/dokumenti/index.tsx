@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { DocumentEditor } from '../../components/DocumentEditor'
+import { ManualsAdmin } from '../../components/ManualsAdmin'
 import { Button, Card, Chip, EmptyState, PageHeader } from '../../components/ui'
 import { date } from '../../lib/format'
 import { useStore } from '../../lib/store'
@@ -51,6 +52,8 @@ function DocumentsPage() {
           )
         }
       />
+
+      <ManualsAdmin />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex flex-1 flex-wrap gap-1.5">

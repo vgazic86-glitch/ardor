@@ -33,9 +33,13 @@ const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura
 /** Voditelj salona: kao operativa + promet tima i dnevni pazar; bez zarade, troškova, plaća i izvještaja. */
 const MANAGER: Area[] = [...OPERATIONS, 'zaposlenici', 'pazar']
 
+/** Dostava i montaža: samo dostave, radno vrijeme, zadaci i dokumenti (svoj priručnik). */
+const DELIVERY: Area[] = ['dostave', 'radno', 'zadaci', 'dokumenti']
+
 export function canSee(user: SessionUser | null, area: Area) {
   if (!user) return false
   if (area === 'korisnici') return user.role === 'admin'
+  if (user.role === 'dostava') return DELIVERY.includes(area)
   if (user.role === 'trgovac') return TRADER.includes(area)
   if (user.role === 'operativa') return OPERATIONS.includes(area)
   if (user.role === 'voditelj') return MANAGER.includes(area)
@@ -79,4 +83,5 @@ export const ROLE_LABEL: Record<SessionUser['role'], string> = {
   voditelj: 'Voditelj salona',
   operativa: 'Operativa',
   trgovac: 'Trgovac',
+  dostava: 'Dostava i montaža',
 }
