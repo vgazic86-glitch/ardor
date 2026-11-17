@@ -16,6 +16,7 @@ export const MANUALS: { slug: string; title: string; roles: AppRole[]; summary: 
   { slug: 'prirucnik-dostava-montaza', title: 'Priručnik za dostavu i montažu', roles: ['dostava'], summary: 'Priprema dostave, montaža kod kupca, zapisnik i naplata pri preuzimanju.', sortOrder: 14 },
   { slug: 'prirucnik-voditelj-marketinga', title: 'Priručnik za voditelja marketinga', roles: [], summary: 'Društvene mreže, kampanje i vizualni identitet.', sortOrder: 15 },
   { slug: 'prirucnik-vlasnika', title: 'Priručnik vlasnika', roles: [], summary: 'Pregled poslovanja, zarada, odluke i kontrola.', sortOrder: 16 },
+  { slug: 'nagradjivanje-stimulacija', title: 'Nagrađivanje i stimulacija radnika', roles: [], summary: 'Pravila nagrađivanja, bonusa i stimulacije radnika (samo vlasnici).', sortOrder: 17 },
 ]
 
 /** Uloge iz baze („trgovac,voditelj”) u listu. */

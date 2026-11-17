@@ -10,9 +10,9 @@ const all = MANUALS.map((m) => manual(m.slug))
 const seen = (role: string) => visibleDocuments(all, role).map((d) => d.slug).sort()
 
 describe('priručnici po ulozi', () => {
-  it('admin i uprava vide svih 7', () => {
-    expect(seen('admin')).toHaveLength(7)
-    expect(seen('uprava')).toHaveLength(7)
+  it('admin i uprava vide svih 8', () => {
+    expect(seen('admin')).toHaveLength(8)
+    expect(seen('uprava')).toHaveLength(8)
   })
   it('trgovac: svoj + uređenje salona', () => {
     expect(seen('trgovac')).toEqual(['prirucnik-trgovac', 'prirucnik-uredjenje-salona'])
