@@ -41,7 +41,7 @@ export function addDaysIso(iso: string, n: number) {
 export const dotDate = (iso: string) => iso.split('-').reverse().join('.')
 
 /** Smjene trgovaca: otvaranje ili zatvaranje salona. */
-export const SHIFT_LABEL = { otvaranje: 'Otvaranje salona', zatvaranje: 'Zatvaranje salona' } as const
+export const SHIFT_LABEL = { otvaranje: 'Prva smjena', zatvaranje: 'Druga smjena' } as const
 export type ShiftKind = keyof typeof SHIFT_LABEL
 
 /** Naslov dnevne liste za smjenu i dan (po njemu se zadatak ne pravi dvaput). */

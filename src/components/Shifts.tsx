@@ -26,7 +26,7 @@ export function ShiftsCard() {
             <CalendarDays className="size-5 text-copper-600" /> Smjene trgovaca
           </span>
         }
-        subtitle="Tko otvara, a tko zatvara salon. Dnevne liste (otvaranje ili zatvaranje) dobiju trgovci prema smjeni tog dana."
+        subtitle="Tko je na prvoj, a tko na drugoj smjeni. Dnevnu listu dobiju trgovci prema smjeni tog dana."
         action={
           data.canEdit ? (
             <div className="flex gap-2">
@@ -133,7 +133,7 @@ function EditShifts({
   return (
     <Modal
       title={`Smjene za ${label} (${dotDate(date)})`}
-      subtitle="Odaberite smjenu za svakog trgovca. Trgovac na otvaranju dobija listu za otvaranje, a na zatvaranju listu za zatvaranje."
+      subtitle="Odaberite smjenu za svakog trgovca. Trgovac na prvoj smjeni dobija listu za otvaranje salona, a na drugoj listu za zatvaranje salona."
       onClose={onClose}
       help={false}
       footer={
