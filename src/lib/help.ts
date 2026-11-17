@@ -114,6 +114,8 @@ export const HELP: HelpTopic[] = [
         items: [
           'Kako se nešto radi u aplikaciji, šta ponuditi kupcu, ima li artikla na stanju, broj telefona kolege.',
           'Asistent ne mijenja ništa u aplikaciji — kaže vam gdje to sami uradite.',
+          'Pomaže i sa širim pitanjima za posao i kupce: „napiši ljubaznu poruku kupcu da kasni dostava”, „prevedi na engleski”, „razlika masiv i iverica”, „kako održavati kožnu garnituru”, „ideja za objavu na Instagramu”.',
+          'Privatna i nevezana pitanja (recepti, zadaće, politika…) ljubazno odbija. Besplatni AI ima oko 500 pitanja dnevno za cijeli salon.',
           'Razgovor vidi samo onaj ko je prijavljen; briše se pri odjavi i zatvaranju preglednika.',
           'Asistent koristi Google Gemini. Imena kupaca i kolega šalju se šifrirano, a telefoni i e-pošta se ne šalju — pitanja o kontaktima odgovara aplikacija sama.',
           'U pitanje ne upisujte osobne podatke kupaca (puno ime, telefon, JMBG, adresu): ono što upišete ide Googleu.',
