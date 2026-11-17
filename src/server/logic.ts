@@ -1,6 +1,7 @@
 /** Serverska logika nad Netlify Database. Uvozi se samo iz serverskih funkcija. */
 import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm'
 import { goodsBlock, goodsBlockMessage, needsGoods, type StockOrder } from '../lib/stats'
+import { planInstallments } from '../lib/collection'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
@@ -65,7 +66,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
   await ensureDocumentsSeeded()
   await ensureBrandBook()
   await ensureHrSeeded()
-  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets] =
+  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets, insts, reminders] =
     await Promise.all([
       db
         .select()
@@ -96,6 +97,8 @@ export async function loadSnapshot(): Promise<Snapshot> {
         .orderBy(t.stockMovements.date, t.stockMovements.id),
       listDocuments(),
       db.select().from(t.employeeTargets),
+      db.select().from(t.installments).orderBy(t.installments.orderId, t.installments.seq),
+      db.select().from(t.paymentReminders).orderBy(t.paymentReminders.id),
     ])
   const targetsBy = new Map<number, Record<string, number>>()
   for (const r of targets) targetsBy.set(r.employeeId, { ...(targetsBy.get(r.employeeId) ?? {}), [r.month]: r.target })
@@ -119,6 +122,10 @@ export async function loadSnapshot(): Promise<Snapshot> {
   const itemsBy = group(items)
   const paysBy = group(pays)
   const delBy = new Map(dels.map((d) => [d.orderId, d]))
+  const instBy = group(insts)
+  const localDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo' })
+  // Zadnji podsjetnik po prodaji (redovi su poredani po id-u, pa kasniji pregazi raniji).
+  const reminderBy = new Map(reminders.map((r) => [r.orderId, r]))
 
   return {
     today: todayIso(),
@@ -209,6 +216,13 @@ export async function loadSnapshot(): Promise<Snapshot> {
           : null,
         note: o.note,
         issuedAt: o.issuedAt,
+        dueDate: o.dueDate,
+        installments: (instBy.get(o.id) ?? []).map((i) => ({ seq: i.seq, date: i.dueDate, amount: i.amount })),
+        lastReminder: (() => {
+          const r = reminderBy.get(o.id)
+          // Datum po vremenu Sarajeva (ne UTC), da podsjetnik oko ponoći ne „skoči” dan.
+          return r ? { at: localDay.format(r.at), by: r.userName, channel: r.channel } : null
+        })(),
       }
     }),
     receipts: recs.map((r) => ({
@@ -431,6 +445,15 @@ export interface CreateOrderInput {
     driverId: string
     assembly: boolean
   } | null
+  /** Samo za „Rate”: broj mjesečnih rata i datum prve. */
+  ratePlan?: { count: number; first: string } | null
+}
+
+/** Broj rata: 1–60. */
+export const clampCount = (n: number) => Math.min(60, Math.max(1, Math.round(Number(n) || 0)))
+export function validIso(s: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s ?? '') || Number.isNaN(Date.parse(s))) throw new Error('Neispravan datum.')
+  return s
 }
 
 export async function createOrder(input: CreateOrderInput) {
@@ -499,6 +522,12 @@ export async function createOrder(input: CreateOrderInput) {
         method: input.paymentMethod,
         employeeId: actor ?? Number(input.employeeId),
       })
+    // „Rate” (salon kreditira): plan rata za ostatak nakon avansa.
+    if (input.paymentMethod === 'Rate' && input.ratePlan && !input.pickupNow) {
+      const plan = planInstallments(round2(total - paid), clampCount(input.ratePlan.count), validIso(input.ratePlan.first))
+      if (plan.length)
+        await tx.insert(t.installments).values(plan.map((p) => ({ orderId: next, seq: p.seq, dueDate: p.date, amount: p.amount })))
+    }
     if (input.delivery && !input.pickupNow && status !== 'ponuda') {
       await tx.insert(t.deliveries).values({
         orderId: next,

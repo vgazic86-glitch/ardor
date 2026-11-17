@@ -11,6 +11,7 @@ import * as sales from './sales'
 import * as daydocs from './daydocs'
 import * as audit from './audit'
 import * as weekly from './weekly'
+import * as collection from './collection'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 
@@ -551,3 +552,19 @@ export const weeklyPreviewFn = createServerFn({ method: 'GET' })
 export const weeklySendTestFn = createServerFn({ method: 'POST' })
   .middleware([manager])
   .handler(() => weekly.sendWeekly({ scheduled: false }))
+
+/** Naplata: plan rata, rok plaćanja i podsjetnik kupcu (trgovac samo svoje prodaje — provjera u collection.ts). */
+export const setInstallmentPlanFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ orderId: string; count: number; first: string }>())
+  .handler(async ({ data, context }) => (await collection.setInstallmentPlan(context.user, data), true))
+
+export const setDueDateFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ orderId: string; dueDate: string | null }>())
+  .handler(async ({ data, context }) => (await collection.setDueDate(context.user, data), true))
+
+export const recordReminderFn = createServerFn({ method: 'POST' })
+  .middleware([authed])
+  .validator(pass<{ orderId: string; channel: string }>())
+  .handler(async ({ data, context }) => (await collection.recordReminder(context.user, data), true))

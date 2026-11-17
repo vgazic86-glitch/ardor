@@ -104,6 +104,41 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'naplata',
+    route: '/naplata',
+    title: 'Naplata',
+    purpose: 'Ko duguje, od kada kasni, rate i podsjetnici kupcima.',
+    fields: ['Rok plaćanja i plan rata upisuju se u prozoru prodaje (dio „Naplata”).'],
+    details: [
+      {
+        h: 'Rokovi',
+        items: [
+          'Ostatak za uplatu dospijeva na dan isporuke (kad roba izađe iz salona).',
+          'Ako je s kupcem dogovoren drugi rok, u prozoru prodaje kliknite „Promijeni” kod „Rok plaćanja ostatka”.',
+          'Kašnjenje se broji od roka. „Dospijeva danas” znači da je rok danas; od sutra prodaja kasni.',
+          'Uplate pokrivaju obaveze redom: prvo avans, pa rate od najstarije.',
+        ],
+      },
+      {
+        h: 'Rate (salon kreditira kupca)',
+        items: [
+          'U novoj prodaji odaberite način plaćanja „Rate”, upišite broj rata i datum prve rate.',
+          'Ostatak nakon avansa dijeli se na jednake mjesečne iznose.',
+          'Plan se vidi u prozoru prodaje: koja je rata plaćena, djelimično plaćena ili kasni. „Novi plan” pravi plan za ono što je ostalo.',
+          'Svaku uplatu rate evidentirajte u prozoru prodaje (Uplata), kao i do sada.',
+        ],
+      },
+      {
+        h: 'Podsjetnik kupcu',
+        items: [
+          '„Podsjeti” otvara gotov tekst s iznosom, rokom i sljedećom ratom. Tekst se može prepraviti.',
+          'WhatsApp, Viber, SMS, „Nazovi” ili „Kopiraj” — svaki klik bilježi da je kupac podsjećen, pa se u listi vidi datum i način zadnjeg podsjetnika.',
+          'Trgovac vidi i podsjeća samo svoje kupce; voditelj salona i uprava vide sve.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'kupci',
     route: '/kupci',
     title: 'Kupci',

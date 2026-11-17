@@ -195,6 +195,9 @@ function audit2(d: Record<string, any>) {
   if (d.method) p.push(String(d.method))
   if (d.qty !== undefined) p.push(`kol. ${d.qty}`)
   if (d.note) p.push(String(d.note).slice(0, 80))
+  if (d.count !== undefined) p.push(d.count ? `${d.count} rata od ${d.first}` : 'plan rata obrisan')
+  if (d.dueDate !== undefined) p.push(d.dueDate ? `rok ${d.dueDate}` : 'rok = dan isporuke')
+  if (d.channel) p.push(String(d.channel))
   return p.join(' · ')
 }
 
@@ -247,6 +250,9 @@ const MAP: Record<string, [string, string, Detail?]> = {
   saveCustomerFn: ['Kupac', 'spremljen'],
   exportAllFn: ['Podaci', 'izvoz svih podataka'],
   weeklySendTestFn: ['Izvještaj', 'probni sedmični poslan'],
+  setInstallmentPlanFn: ['Naplata', 'plan rata', byOrder],
+  setDueDateFn: ['Naplata', 'rok plaćanja', byOrder],
+  recordReminderFn: ['Naplata', 'podsjetnik kupcu', byOrder],
   unlockUserFn: ['Korisnik', 'otključan'],
   saveComplaintFn: ['Reklamacija', 'spremljena', async (d) => [d.id ? await resolveComplaint(d.id) : 'nova', String(d.description ?? '').slice(0, 80)].join(' · ')],
   setComplaintStatusFn: ['Reklamacija', 'promjena statusa', async (d) => [await resolveComplaint(d.id), `status ${d.status}`, d.status === 'rijesena' || d.status === 'odbijena' ? (d.resolution ?? '') : ''].filter(Boolean).join(' · ')],

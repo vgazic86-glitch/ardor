@@ -24,7 +24,7 @@ pnpm install
 pnpm migrate          # primijeni SQL migracije na DATABASE_URL (čita .env)
 pnpm dev              # razvoj s hot reloadom, http://localhost:3000 (čita .env)
 pnpm typecheck        # tsc --noEmit — mora proći bez grešaka
-pnpm test             # vitest (src/**/*.test.ts) — trenutno 44 testa
+pnpm test             # vitest (src/**/*.test.ts) — trenutno 57 testova
 pnpm build:node       # produkcijski build za Node/Render (DEPLOY_TARGET=node)
 pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao Render
 pnpm start            # isto, ali za Render (PORT i DATABASE_URL iz okruženja) — lokalno ne treba
@@ -108,6 +108,7 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 - **Zaliha** = zbir `stock_movements`. Rezervirano = otvorene prodaje. Prihod se priznaje po `issuedAt` (`reports.ts`).
 - **Promjene cijena** — `saveProduct` upisuje `price_changes`; oznaka i obavijest 7 dana.
 - **Čeka robu = nema „Spremna”/„Isporučena”** — `stats.goodsBlock`, na serveru `logic.assertGoods` (status, dostava u putu/dostavljeno, „kupac odmah preuzima”). Vrijedi za sve uloge.
+- **Naplata** (`/naplata`) — `lib/collection.ts` (rok = `dueDate` ili dan isporuke; „Rate” = naš plan rata u tablici `installments`; uplate pokrivaju avans pa rate redom), `server/collection.ts` (trgovac/operativa samo svoje prodaje), podsjetnici u `payment_reminders`. U prozoru prodaje komponenta `PaymentTerms`.
 - **Sedmični izvještaj** — `lib/weekly.ts` (sadržaj, HTML), `server/weekly.ts` (Resend, primaoci = aktivni admin/uprava s e-poštom, jednom po sedmici preko `app_meta`), ruta `api.izvjestaj-sedmicni.ts`, okidač `.github/workflows/sedmicni-izvjestaj.yml` (pon 05:00 i 06:00 UTC; server šalje od 7:00 po Sarajevu). Kartica na dnu Izvještaja: pregled i probni primjerak.
 - **Dnevnik** (`audit_log`) — prijave, neuspjele prijave (zaključavanje nakon 5), sve izmjene iz `MAP`.
 - **Prva prijava** — korisnik dobije jednokratni aktivacijski kod (vidi ga admin u Korisnicima) i sam postavi lozinku. Sesija ističe nakon 10 min neaktivnosti i pri zatvaranju preglednika.

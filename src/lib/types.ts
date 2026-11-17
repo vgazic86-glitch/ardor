@@ -138,6 +138,18 @@ export interface Order {
   note: string
   /** Datum kada je roba izašla iz salona (skinuta sa zaliha), ili null. */
   issuedAt: string | null
+  /** Rok plaćanja ostatka ako nije dan isporuke (null/izostavljeno = dan isporuke). */
+  dueDate?: string | null
+  /** Plan rata (način plaćanja „Rate”), poredano po roku. */
+  installments?: Installment[]
+  /** Zadnji podsjetnik kupcu za uplatu (`at` = datum YYYY-MM-DD po vremenu Sarajeva). */
+  lastReminder?: { at: string; by: string; channel: string } | null
+}
+
+export interface Installment {
+  seq: number
+  date: string
+  amount: number
 }
 
 export type MovementType =

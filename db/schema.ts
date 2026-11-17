@@ -94,6 +94,8 @@ export const orders = pgTable(
     paymentMethod: text('payment_method').notNull(),
     note: text().notNull().default(''),
     issuedAt: date('issued_at', { mode: 'string' }),
+    /** Rok plaćanja ostatka, ako nije dan isporuke (null = dospijeva na dan isporuke). */
+    dueDate: date('due_date', { mode: 'string' }),
     createdAt: timestamp('created_at').defaultNow(),
   },
   (t) => [
@@ -141,6 +143,36 @@ export const payments = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
   },
   (t) => [index('payments_order_idx').on(t.orderId)],
+)
+
+/** Plan rata (način plaćanja „Rate” — salon kreditira kupca). Plaćenost se računa iz uplata. */
+export const installments = pgTable(
+  'installments',
+  {
+    id: serial().primaryKey(),
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    seq: integer().notNull(),
+    dueDate: date('due_date', { mode: 'string' }).notNull(),
+    amount: money('amount').notNull(),
+  },
+  (t) => [index('installments_order_idx').on(t.orderId)],
+)
+
+/** Poslani podsjetnici kupcu za uplatu (ko, kada, kojim kanalom). */
+export const paymentReminders = pgTable(
+  'payment_reminders',
+  {
+    id: serial().primaryKey(),
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    at: timestamp().notNull(),
+    userName: text('user_name').notNull().default(''),
+    channel: text().notNull(),
+  },
+  (t) => [index('payment_reminders_order_idx').on(t.orderId)],
 )
 
 export const deliveries = pgTable('deliveries', {

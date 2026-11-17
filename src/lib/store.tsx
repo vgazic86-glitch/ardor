@@ -22,6 +22,9 @@ import {
   saveProductFn,
   saveSupplierFn,
   setDeliveryStatusFn,
+  setInstallmentPlanFn,
+  setDueDateFn,
+  recordReminderFn,
   setOrderStatusFn,
 } from '../server/api'
 import type {
@@ -82,6 +85,10 @@ interface Store extends Snapshot {
   addOrder: (o: Without<CreateOrderInput>) => Promise<{ id: string } | null>
   setOrderStatus: (id: string, status: OrderStatus) => Promise<void>
   setDeliveryStatus: (id: string, status: DeliveryStatus) => Promise<void>
+  /** Naplata: plan rata (count 0 = briše), rok plaćanja (null = dan isporuke), podsjetnik kupcu. */
+  setInstallmentPlan: (orderId: string, count: number, first: string) => Promise<boolean>
+  setDueDate: (orderId: string, dueDate: string | null) => Promise<boolean>
+  recordReminder: (orderId: string, channel: string) => Promise<void>
   addPayment: (
     id: string,
     amount: number,
@@ -251,6 +258,15 @@ export function StoreProvider({
           () => setDeliveryStatusFn({ data: { id, status, actorId } }),
           'Status dostave je promijenjen.',
         )),
+      setInstallmentPlan: async (orderId, count, first) =>
+        (await run(
+          () => setInstallmentPlanFn({ data: { orderId, count, first } }),
+          count ? 'Plan rata je spremljen.' : 'Plan rata je obrisan.',
+        )) !== null,
+      setDueDate: async (orderId, dueDate) =>
+        (await run(() => setDueDateFn({ data: { orderId, dueDate } }), 'Rok plaćanja je spremljen.')) !== null,
+      recordReminder: async (orderId, channel) =>
+        void (await run(() => recordReminderFn({ data: { orderId, channel } }))),
       addPayment: async (id, amount, method) =>
         void (await run(
           () =>

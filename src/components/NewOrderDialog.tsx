@@ -14,6 +14,7 @@ import { reservedQty } from '../lib/stats'
 import { Modal } from './Modal'
 import { ProductImage } from './ProductImage'
 import { Button, inputCls } from './ui'
+import { addMonths } from '../lib/collection'
 
 const lbl = 'flex flex-col gap-1 text-xs font-semibold text-walnut-700'
 
@@ -68,6 +69,8 @@ export function NewOrderDialog({
   const [status, setStatus] = useState<OrderStatus>(asOffer ? 'ponuda' : 'potvrđena')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Kartica')
   const [paid, setPaid] = useState('')
+  const [rateCount, setRateCount] = useState('6')
+  const [rateFirst, setRateFirst] = useState(() => addMonths(TODAY, 1))
   const [withDelivery, setWithDelivery] = useState(true)
   const [dDate, setDDate] = useState('')
   const [slot, setSlot] = useState<Delivery['slot']>('08–12')
@@ -112,6 +115,7 @@ export function NewOrderDialog({
       paid: Math.min(total, parseAmount(paid)),
       note,
       pickupNow,
+      ratePlan: paymentMethod === 'Rate' && status !== 'ponuda' && !pickupNow && Number(rateCount) > 0 && rateFirst ? { count: Number(rateCount), first: rateFirst } : null,
       delivery:
         withDelivery && !pickupNow && status !== 'ponuda'
           ? { date: dDate || TODAY, slot, driverId, assembly }
@@ -391,6 +395,29 @@ export function NewOrderDialog({
             />
           </label>
         </div>
+
+        {paymentMethod === 'Rate' && status !== 'ponuda' && !pickupNow && (
+          <div className="grid gap-4 rounded-xl border border-walnut-200 bg-linen p-4 sm:grid-cols-3">
+            <label className={lbl}>
+              Broj rata
+              <input
+                className={inputCls}
+                type="number"
+                min={1}
+                max={60}
+                value={rateCount}
+                onChange={(e) => setRateCount(e.target.value)}
+              />
+            </label>
+            <label className={lbl}>
+              Prva rata
+              <input className={inputCls} type="date" value={rateFirst} onChange={(e) => setRateFirst(e.target.value)} />
+            </label>
+            <p className="self-end text-xs text-walnut-500">
+              Ostatak nakon avansa dijeli se na jednake mjesečne rate. Plan se vidi i mijenja u prozoru prodaje, a kašnjenja na stranici Naplata.
+            </p>
+          </div>
+        )}
 
         {status !== 'ponuda' && !pickupNow && (
           <fieldset className="rounded-xl border border-walnut-200 bg-linen p-4">

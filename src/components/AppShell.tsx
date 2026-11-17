@@ -40,6 +40,7 @@ import {
   Wrench,
   Tablet,
   ScanLine,
+  HandCoins,
   Hourglass,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -51,6 +52,7 @@ import { HelpButton } from './Help'
 import { Assistant } from './Assistant'
 import { helpForPath } from '../lib/help'
 import { waitingOrders } from '../lib/stats'
+import { receivables } from '../lib/collection'
 import { Avatar } from './ui'
 import { Logo } from './Logo'
 
@@ -58,7 +60,7 @@ type NavItem = {
   to: string
   label: string
   icon: typeof LayoutDashboard
-  badge?: 'orders' | 'deliveries' | 'low' | 'tasks' | 'waiting'
+  badge?: 'orders' | 'deliveries' | 'low' | 'tasks' | 'waiting' | 'late'
   area: Area
 }
 
@@ -70,6 +72,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/zadaci', label: 'Zadaci', icon: ListChecks, badge: 'tasks', area: 'zadaci' },
       { to: '/narudzbe', label: 'Prodaja', icon: ClipboardList, badge: 'orders', area: 'narudzbe' },
       { to: '/narudzbe-kupaca', label: 'Narudžbe kupaca', icon: Hourglass, badge: 'waiting', area: 'narudzbe' },
+      { to: '/naplata', label: 'Naplata', icon: HandCoins, badge: 'late', area: 'naplata' },
       { to: '/kupci', label: 'Kupci', icon: Contact, area: 'kupci' },
       { to: '/reklamacije', label: 'Reklamacije', icon: Wrench, area: 'reklamacije' },
       { to: '/katalog', label: 'Katalog za kupca', icon: Tablet, area: 'pregled' },
@@ -112,7 +115,7 @@ const groups: { title: string; items: NavItem[] }[] = [
 export { Logo }
 
 function useBadges() {
-  const { orders, products, today, openTasks } = useStore()
+  const { orders, products, today, openTasks, restricted, me } = useStore()
   return {
     tasks: openTasks,
     orders: orders.filter((o) =>
@@ -126,6 +129,8 @@ function useBadges() {
     ).length,
     low: products.filter((p) => p.minStock > 0 && p.stock <= p.minStock).length,
     waiting: waitingOrders(orders, products).size,
+    // Naplata: prodaje koje kasne (trgovac broji samo svoje).
+    late: receivables(restricted ? orders.filter((o) => o.employeeId === me?.id) : orders, today).filter((r) => r.daysLate > 0).length,
   }
 }
 

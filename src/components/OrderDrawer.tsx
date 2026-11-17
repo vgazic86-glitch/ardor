@@ -18,6 +18,7 @@ import {
   orderStatusLabel,
 } from '../lib/format'
 import { goodsBlock, orderTotal, waitingOrders } from '../lib/stats'
+import { PaymentTerms } from './PaymentTerms'
 import { useStore } from '../lib/store'
 import { openDownload } from '../lib/files'
 import { customerDocPdfFn } from '../server/api'
@@ -326,6 +327,7 @@ export function OrderDrawer({
           </p>
         </>
       )}
+      <PaymentTerms key={order.id + '-' + (order.installments?.length ?? 0) + (order.dueDate ?? '')} order={order} />
       <CustomerMessage key={order.id + order.status} order={order} customer={c} left={left} />
     </Modal>
   )
