@@ -36,7 +36,7 @@ export async function saveCustomer(input: CustomerInput) {
 
 /* ───────────────────────── dokumenti za kupca ───────────────────────── */
 
-export type CustomerDocKind = 'ponuda' | 'predracun' | 'otpremnica'
+export type CustomerDocKind = 'ponuda' | 'predracun' | 'racun' | 'otpremnica'
 
 export async function customerDocPdf(user: SessionUser, orderId: string, kind: CustomerDocKind) {
   const [o] = await db.select().from(t.orders).where(eq(t.orders.id, Number(orderId)))
@@ -59,6 +59,11 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
   const lineSum = (i: (typeof items)[number]['i']) => i.qty * i.unitPrice * (1 - i.discountPct / 100)
   const total = items.reduce((s, x) => s + lineSum(x.i), 0)
   const base = total / 1.17
+  // Račun: ako je kupac platio cijeli iznos, to je konačni račun; ako je platio dio, račun za predujam.
+  const fullyPaid = paid >= total - 0.005
+  if (kind === 'racun' && paid <= 0) throw new Error('Račun se izdaje kad je kupac nešto platio. Prvo upišite uplatu, ili izdajte predračun.')
+  const advance = kind === 'racun' && !fullyPaid
+  const advBase = paid / 1.17
   const withPrices = kind !== 'otpremnica'
   const anyDiscount = items.some((x) => x.i.discountPct > 0)
   const columns: DocColumn[] = withPrices
@@ -78,8 +83,9 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
         { key: 'qty', w: 52, label: 'Količina', align: 'r' },
         { key: 'unit', w: 40, label: 'J.mj.', align: 'l' },
       ]
-  const title = kind === 'ponuda' ? 'PONUDA' : kind === 'predracun' ? 'PREDRAČUN' : 'OTPREMNICA'
-  const prefix = kind === 'ponuda' ? 'PON' : kind === 'predracun' ? 'PRD' : 'OTP'
+  const title =
+    kind === 'ponuda' ? 'PONUDA' : kind === 'predracun' ? 'PREDRAČUN' : kind === 'racun' ? (advance ? 'RAČUN ZA PREDUJAM' : 'RAČUN') : 'OTPREMNICA'
+  const prefix = kind === 'ponuda' ? 'PON' : kind === 'predracun' ? 'PRD' : kind === 'racun' ? (advance ? 'RPD' : 'RAC') : 'OTP'
   const number = `${prefix}-${o.number}`
   const validTo = new Date(`${o.date}T00:00:00Z`)
   validTo.setUTCDate(validTo.getUTCDate() + 15)
@@ -107,7 +113,11 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
         ? 'Zahvaljujemo na interesovanju. Za Vas smo pripremili sljedeću ponudu:'
         : kind === 'predracun'
           ? 'Predračun za naručenu robu:'
-          : 'Izdajemo sljedeću robu:',
+          : kind === 'racun'
+            ? advance
+              ? 'Primili smo predujam za naručenu robu. Stavke narudžbe su:'
+              : 'Račun za naručenu robu, plaćen u cijelosti:'
+            : 'Izdajemo sljedeću robu:',
     columns,
     rows: items.map((x, idx) => ({
       cells: {
@@ -123,10 +133,19 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
     })),
     summary: `Ukupno stavki: ${items.length}   ·   ukupna količina: ${num(items.reduce((s, x) => s + x.i.qty, 0), 0)}`,
     totals: withPrices
-      ? [
+      ? advance
+        ? [
+            ['Ukupna vrijednost narudžbe s PDV-om (KM)', total, false],
+            ['Osnovica predujma (bez PDV-a)', advBase, false],
+            ['PDV 17 % na predujam', paid - advBase, false],
+            ['Iznos predujma (KM)', paid, true],
+            ['Preostalo za uplatu (KM)', Math.max(0, total - paid), false],
+          ]
+        : [
           ['Osnovica (bez PDV-a)', base, false],
           ['PDV 17 %', total - base, false],
           ['Ukupno s PDV-om (KM)', total, true],
+          ...(kind === 'racun' ? ([['Uplaćeno (KM)', paid, false]] as [string, number, boolean][]) : []),
           ...(kind === 'predracun' && paid > 0
             ? ([
                 ['Uplaćeno (avans)', paid, false],
@@ -142,7 +161,11 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
         ? 'Ponuda vrijedi 15 dana. Za sva pitanja, izmjene ili dogovor o dostavi slobodno nas kontaktirajte.'
         : kind === 'predracun'
           ? `Uplatu možete izvršiti na žiro račun${company.bankAccount ? ` ${company.bankAccount}` : ''} uz poziv na broj ${o.number}, ili u salonu.`
-          : 'Kupac svojim potpisom potvrđuje da je robu preuzeo u ispravnom stanju i u navedenim količinama.',
+          : kind === 'racun'
+            ? advance
+              ? `Preostali iznos platite prije preuzimanja robe, na žiro račun${company.bankAccount ? ` ${company.bankAccount}` : ''} uz poziv na broj ${o.number}, ili u salonu.`
+              : 'Hvala na kupovini. Narudžba je plaćena u cijelosti.'
+            : 'Kupac svojim potpisom potvrđuje da je robu preuzeo u ispravnom stanju i u navedenim količinama.',
     signer: {
       label: kind === 'otpremnica' ? 'ROBU IZDAO/LA' : 'VAŠ PRODAVAČ',
       name: e?.name ?? '',

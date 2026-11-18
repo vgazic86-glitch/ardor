@@ -99,7 +99,7 @@ export const HELP: HelpTopic[] = [
           'Ponuda → Potvrđena → Spremna → Isporučena. Otkazana oslobađa rezervaciju.',
           'Dok prodaja čeka robu (vidi Narudžbe kupaca), ne može se označiti kao „Spremna” ni „Isporučena”, niti dostava kao „U putu” ili „Dostavljeno”. Gumb je zasivljen i piše koji artikli fale. To vrijedi za sve uloge.',
           '„Kupac odmah preuzima” radi samo za robu koja je slobodna u salonu.',
-          'Iz prodaje se štampa ponuda, predračun i otpremnica (PDF).',
+          'Iz prodaje se izrađuju ponuda, predračun, otpremnica i račun (PDF). Račun je za predujam kad je kupac platio dio iznosa, a konačni kad je platio cijeli iznos. Dokument PDF otvorite i odštampajte iz preglednika.',
         ],
       },
     ],

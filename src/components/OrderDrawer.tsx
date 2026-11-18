@@ -4,7 +4,6 @@ import {
   CalendarDays,
   MapPin,
   Phone,
-  Printer,
   Truck,
   Wrench,
 } from 'lucide-react'
@@ -61,7 +60,7 @@ export function OrderDrawer({
   } = useStore()
   const [amount, setAmount] = useState('')
   const [docBusy, setDocBusy] = useState<string | null>(null)
-  async function doc(kind: 'ponuda' | 'predracun' | 'otpremnica') {
+  async function doc(kind: 'ponuda' | 'predracun' | 'racun' | 'otpremnica') {
     setDocBusy(kind)
     try {
       const f = await customerDocPdfFn({ data: { orderId: orderId!, kind } })
@@ -123,16 +122,34 @@ export function OrderDrawer({
           <div className="ml-auto flex flex-wrap gap-1.5">
             {(order.status === 'ponuda'
               ? (['ponuda'] as const)
-              : (['predracun', 'otpremnica'] as const)
-            ).map((k) => (
-              <Button key={k} variant="outline" size="sm" disabled={!!docBusy} onClick={() => doc(k)}>
-                <FileText className="size-3.5" />
-                {docBusy === k ? 'Izrađujem…' : k === 'ponuda' ? 'Ponuda PDF' : k === 'predracun' ? 'Predračun PDF' : 'Otpremnica PDF'}
-              </Button>
-            ))}
-            <Button variant="ghost" size="sm" onClick={() => window.print()}>
-              <Printer className="size-3.5" /> Ispis
-            </Button>
+              : (['predracun', 'racun', 'otpremnica'] as const)
+            ).map((k) => {
+              // Račun se izdaje tek kad je kupac nešto platio (predujam ili cijeli iznos).
+              const noPayment = k === 'racun' && order.paid <= 0
+              return (
+                <Button
+                  key={k}
+                  variant="outline"
+                  size="sm"
+                  disabled={!!docBusy || noPayment}
+                  title={noPayment ? 'Račun se izdaje kad kupac nešto plati. Prvo upišite uplatu.' : undefined}
+                  onClick={() => doc(k)}
+                >
+                  <FileText className="size-3.5" />
+                  {docBusy === k
+                    ? 'Izrađujem…'
+                    : k === 'ponuda'
+                      ? 'Ponuda PDF'
+                      : k === 'predracun'
+                        ? 'Predračun PDF'
+                        : k === 'racun'
+                          ? left > 0
+                            ? 'Račun za predujam PDF'
+                            : 'Konačni račun PDF'
+                          : 'Otpremnica PDF'}
+                </Button>
+              )
+            })}
           </div>
         </div>
       }
