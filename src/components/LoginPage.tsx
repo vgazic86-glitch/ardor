@@ -1,7 +1,7 @@
 import { useRouter } from '@tanstack/react-router'
 import { KeyRound, LogIn, Quote, ShieldCheck } from 'lucide-react'
 import { messageFor, todayBL } from '../lib/motivation'
-import { tipFor } from '../lib/savjeti'
+import { tipsFor } from '../lib/savjeti'
 import { useState } from 'react'
 import { activateFn, loginFn } from '../server/api'
 import { BrandMark, Logo } from './Logo'
@@ -23,7 +23,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const today = todayBL()
   const message = messageFor(today)
-  const tip = tipFor(today)
+  const tips = tipsFor(today)
   const rawLabel = new Intl.DateTimeFormat('bs-BA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Sarajevo' })
     .format(new Date(`${today}T12:00:00Z`))
     .toLowerCase()
@@ -76,9 +76,11 @@ export function LoginPage() {
               </p>
               <div className="mt-8 rounded-2xl border border-linen/20 bg-white/5 p-5">
                 <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-copper-400">Savjet za dom</div>
-                <p suppressHydrationWarning className="mt-2 text-sm leading-relaxed text-walnut-100">
-                  {tip}
-                </p>
+                <ul suppressHydrationWarning className="mt-3 list-disc space-y-3 pl-5 text-lg leading-relaxed text-walnut-100 marker:text-copper-400">
+                  {tips.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
               </div>
             </div>
             <p className="mt-8 text-sm uppercase tracking-[0.25em] text-copper-400">Namještaj za svačiji džep</p>
@@ -100,9 +102,11 @@ export function LoginPage() {
           </div>
           <div className="mb-8 rounded-2xl border border-walnut-200 bg-white p-4 lg:hidden">
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-copper-700">Savjet za dom</div>
-            <p suppressHydrationWarning className="mt-1.5 text-sm leading-relaxed text-walnut-800">
-              {tip}
-            </p>
+            <ul suppressHydrationWarning className="mt-2 list-disc space-y-2.5 pl-5 text-base leading-relaxed text-walnut-800 marker:text-copper-600">
+              {tips.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
           </div>
           <h2 className="font-display text-3xl font-bold">{step === 'login' ? 'Prijava' : 'Prva prijava'}</h2>
           <p className="mt-1.5 text-sm text-walnut-600">

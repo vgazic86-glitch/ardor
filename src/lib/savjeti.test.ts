@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { SAVJETI, tipFor } from './savjeti'
+import { SAVJETI, tipsFor } from './savjeti'
 
-describe('savjet za dom', () => {
-  it('daje savjet iz liste i mijenja se iz dana u dan', () => {
-    expect(SAVJETI).toContain(tipFor('2026-11-17'))
-    expect(tipFor('2026-11-17')).not.toBe(tipFor('2026-11-18'))
+describe('savjeti za dom', () => {
+  it('daje četiri savjeta iz liste, bez ponavljanja', () => {
+    const tips = tipsFor('2026-11-17')
+    expect(tips).toHaveLength(4)
+    expect(new Set(tips).size).toBe(4)
+    tips.forEach((t) => expect(SAVJETI).toContain(t))
   })
-  it('isti dan uvijek daje isti savjet', () => {
-    expect(tipFor('2026-11-17')).toBe(tipFor('2026-11-17'))
+  it('se mijenjaju iz dana u dan', () => {
+    expect(tipsFor('2026-11-17')).not.toEqual(tipsFor('2026-11-18'))
+  })
+  it('isti dan uvijek daje iste savjete', () => {
+    expect(tipsFor('2026-11-17')).toEqual(tipsFor('2026-11-17'))
   })
 })

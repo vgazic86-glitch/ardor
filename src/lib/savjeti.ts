@@ -33,8 +33,9 @@ export const SAVJETI = [
   'Staro i novo zajedno: drveni stol iz nasljeđa uz moderne stolice prave prostor s pričom.',
 ]
 
-/** Savjet za zadani datum (YYYY-MM-DD); pomak u odnosu na poruku dana da se ne poklapaju. */
-export function tipFor(dateIso: string) {
+/** Savjeti za zadani datum (YYYY-MM-DD): četiri uzastopna iz liste, pomaknuta u odnosu na poruku dana. */
+export function tipsFor(dateIso: string, count = 4) {
   const day = Math.floor(Date.parse(`${dateIso}T12:00:00Z`) / 86_400_000)
-  return SAVJETI[(((day + 13) % SAVJETI.length) + SAVJETI.length) % SAVJETI.length]
+  const start = (day + 13) % SAVJETI.length
+  return Array.from({ length: count }, (_, k) => SAVJETI[(start + k + SAVJETI.length) % SAVJETI.length])
 }
