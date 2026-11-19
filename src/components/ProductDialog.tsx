@@ -35,6 +35,7 @@ export function ProductDialog({
     return `ART-${String((Math.max(0, ...nums) || 0) + 1).padStart(3, '0')}`
   }
   const [sku, setSku] = useState(product?.sku ?? prefill?.sku ?? nextSku())
+  const [fiscalSku, setFiscalSku] = useState(product?.fiscalSku ?? '')
   const [name, setName] = useState(product?.name ?? prefill?.name ?? '')
   const [category, setCategory] = useState<string>(
     product?.category ?? categories[0] ?? 'Ostalo',
@@ -62,6 +63,7 @@ export function ProductDialog({
     const res = await saveProduct({
       id: product?.id ?? null,
       sku,
+      fiscalSku,
       name,
       category,
       price: p,
@@ -149,6 +151,13 @@ export function ProductDialog({
             required
             value={sku}
             onChange={(e) => setSku(e.target.value)}
+          />
+        </Field>
+        <Field label="Šifra u fiskalnom programu" hint="Šifra istog artikla u knjigovodstvenom programu (za fiskalne račune). Nije obavezna.">
+          <input
+            className={inputCls}
+            value={fiscalSku}
+            onChange={(e) => setFiscalSku(e.target.value)}
           />
         </Field>
         <Field label="Kategorija" hint="Nove kategorije dodajete u Artiklima → Kategorije.">

@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "fiscal_sku" text DEFAULT '' NOT NULL;

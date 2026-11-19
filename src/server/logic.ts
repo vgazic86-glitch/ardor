@@ -166,6 +166,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       return {
         id: String(p.id),
         sku: p.sku,
+        fiscalSku: p.fiscalSku,
         name: p.name,
         category: p.category as Category,
         price: p.price,
@@ -814,6 +815,7 @@ export async function updateReceipt(input: ReceiptInput & { id: string }) {
 export interface ProductInput {
   id: string | null
   sku: string
+  fiscalSku?: string
   name: string
   category: string
   price: number
@@ -849,6 +851,7 @@ export async function saveProduct(input: ProductInput, byName = '') {
   await db.insert(t.productCategories).values({ name: category }).onConflictDoNothing()
   const values = {
     sku: input.sku.trim(),
+    fiscalSku: (input.fiscalSku ?? '').trim().slice(0, 60),
     name: input.name.trim(),
     category,
     price: round2(input.price),

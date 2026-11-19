@@ -57,6 +57,8 @@ export const suppliers = pgTable('suppliers', {
 export const products = pgTable('products', {
   id: serial().primaryKey(),
   sku: text().notNull().unique(),
+  /** Šifra istog artikla u knjigovodstvenom (fiskalnom) programu. */
+  fiscalSku: text('fiscal_sku').notNull().default(''),
   name: text().notNull(),
   category: text().notNull(),
   price: money('price').notNull(),

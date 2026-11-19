@@ -53,6 +53,8 @@ export interface Supplier {
 export interface Product {
   id: string
   sku: string
+  /** Šifra istog artikla u fiskalnom (knjigovodstvenom) programu. */
+  fiscalSku?: string
   name: string
   category: Category
   /** Maloprodajna cijena s PDV-om. */
