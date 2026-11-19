@@ -34,6 +34,10 @@ function SupplierDialog({
   const [phone, setPhone] = useState(supplier?.phone ?? '')
   const [email, setEmail] = useState(supplier?.email ?? '')
   const [lead, setLead] = useState(String(supplier?.leadTimeDays ?? 14))
+  const [address, setAddress] = useState(supplier?.address ?? '')
+  const [city, setCity] = useState(supplier?.city ?? '')
+  const [contactName, setContactName] = useState(supplier?.contactName ?? '')
+  const [contactPhone, setContactPhone] = useState(supplier?.contactPhone ?? '')
   return (
     <Modal
       title={supplier ? 'Uredi dobavljača' : 'Novi dobavljač'}
@@ -60,6 +64,10 @@ function SupplierDialog({
             phone,
             email,
             leadTimeDays: Number(lead) || 0,
+            address,
+            city,
+            contactName,
+            contactPhone,
           })
           if (r) onClose()
         }}
@@ -86,6 +94,32 @@ function SupplierDialog({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+          />
+        </Field>
+        <Field label="Adresa" className="sm:col-span-2">
+          <input
+            className={inputCls}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="ulica i broj"
+          />
+        </Field>
+        <Field label="Grad">
+          <input className={inputCls} value={city} onChange={(e) => setCity(e.target.value)} />
+        </Field>
+        <Field label="Kontakt osoba" hint="Osoba s kojom salon komunicira kod dobavljača.">
+          <input
+            className={inputCls}
+            value={contactName}
+            onChange={(e) => setContactName(e.target.value)}
+            placeholder="ime i prezime"
+          />
+        </Field>
+        <Field label="Telefon kontakt osobe">
+          <input
+            className={inputCls}
+            value={contactPhone}
+            onChange={(e) => setContactPhone(e.target.value)}
           />
         </Field>
         <Field
@@ -199,6 +233,17 @@ function SuppliersPage() {
                     >
                       <Mail className="size-3.5" /> {s.email}
                     </a>
+                  )}
+                  {(s.address || s.city) && (
+                    <div className="text-walnut-600">
+                      {[s.address, s.city].filter(Boolean).join(', ')}
+                    </div>
+                  )}
+                  {s.contactName && (
+                    <div className="text-walnut-700">
+                      Kontakt: <span className="font-semibold">{s.contactName}</span>
+                      {s.contactPhone && <span> · {s.contactPhone}</span>}
+                    </div>
                   )}
                 </div>
                 <dl className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-walnut-50 p-3 text-xs">

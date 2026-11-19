@@ -46,6 +46,12 @@ export const suppliers = pgTable('suppliers', {
   phone: text().notNull().default(''),
   email: text().notNull().default(''),
   leadTimeDays: integer('lead_time_days').notNull().default(14),
+  /** Adresa i grad dobavljača (za memorandum i naloge). */
+  address: text().notNull().default(''),
+  city: text().notNull().default(''),
+  /** Osoba s kojom salon komunicira kod dobavljača. */
+  contactName: text('contact_name').notNull().default(''),
+  contactPhone: text('contact_phone').notNull().default(''),
 })
 
 export const products = pgTable('products', {

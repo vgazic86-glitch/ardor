@@ -44,6 +44,10 @@ export interface Supplier {
   phone: string
   email: string
   leadTimeDays: number
+  address?: string
+  city?: string
+  contactName?: string
+  contactPhone?: string
 }
 
 export interface Product {

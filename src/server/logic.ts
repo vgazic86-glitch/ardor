@@ -155,6 +155,10 @@ export async function loadSnapshot(): Promise<Snapshot> {
       phone: s.phone,
       email: s.email,
       leadTimeDays: s.leadTimeDays,
+      address: s.address,
+      city: s.city,
+      contactName: s.contactName,
+      contactPhone: s.contactPhone,
     })),
     products: prods.map((p) => {
       const s = p.supplierId ? supById.get(p.supplierId) : undefined
@@ -977,6 +981,10 @@ export interface SupplierInput {
   phone: string
   email: string
   leadTimeDays: number
+  address?: string
+  city?: string
+  contactName?: string
+  contactPhone?: string
 }
 
 export async function saveSupplier(input: SupplierInput) {
@@ -986,6 +994,10 @@ export async function saveSupplier(input: SupplierInput) {
     phone: input.phone.trim(),
     email: input.email.trim(),
     leadTimeDays: Math.max(0, Math.round(input.leadTimeDays)),
+    address: (input.address ?? '').trim(),
+    city: (input.city ?? '').trim(),
+    contactName: (input.contactName ?? '').trim(),
+    contactPhone: (input.contactPhone ?? '').trim(),
   }
   if (input.id) {
     await db

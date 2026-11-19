@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Printer, QrCode } from 'lucide-react'
+import { ArrowLeft, Printer, QrCode, Tag } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useState } from 'react'
 import { BrandMark } from '../components/Logo'
@@ -9,10 +9,17 @@ import { useStore } from '../lib/store'
 
 export const Route = createFileRoute('/naljepnice')({ component: LabelsPage })
 
-/** QR naljepnice za artikle u salonu: skeniranjem se otvara kartica artikla (stanje, cijena, rok). */
+type Mode = 'cijena' | 'stanje'
+
+/**
+ * Naljepnice za artikle.
+ * - Cjenovna (za izlog i police): velika cijena s PDV-om, naziv, evidencijski broj (šifra), QR za karticu artikla.
+ * - QR za stanje: skeniranjem se otvara kartica artikla (stanje, rezervacije, rok isporuke).
+ */
 function LabelsPage() {
   const { products } = useStore()
   const categories = [...new Set(products.map((p) => p.category))]
+  const [mode, setMode] = useState<Mode>('cijena')
   const [cat, setCat] = useState<string>('sve')
   const [picked, setPicked] = useState<Set<string>>(() => new Set(products.map((p) => p.id)))
   const [copies, setCopies] = useState(1)
@@ -39,6 +46,7 @@ function LabelsPage() {
       return n
     })
   const labels = chosen.flatMap((p) => Array.from({ length: copies }, (_, i) => ({ p, k: `${p.id}-${i}` })))
+  const isPrice = mode === 'cijena'
 
   return (
     <div className="rise">
@@ -48,15 +56,27 @@ function LabelsPage() {
         </Link>
         <PageHeader
           eyebrow="Roba"
-          title="QR naljepnice"
-          description="Odštampajte naljepnice za artikle u salonu. Trgovac skenira QR mobitelom i odmah vidi stanje, rezervacije, cijenu i rok isporuke."
+          title="Naljepnice"
+          description={
+            isPrice
+              ? 'Cjenovne naljepnice za izlog i police. Cijena je velika i jasna, uz evidencijski broj i QR kod za karticu artikla. Ispisuju se na A4 (3 × 5 po listu).'
+              : 'QR naljepnice za artikle u salonu. Trgovac skenira QR mobitelom i odmah vidi stanje, rezervacije, cijenu i rok isporuke.'
+          }
           actions={
             <Button variant="copper" disabled={!labels.length} onClick={() => window.print()}>
-              <Printer className="size-4" /> Štampaj {labels.length} naljepnica
+              <Printer className="size-4" /> Štampaj {labels.length} {labels.length === 1 ? 'naljepnicu' : 'naljepnica'}
             </Button>
           }
         />
         <Card className="mb-6">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Chip active={mode === 'cijena'} onClick={() => setMode('cijena')}>
+              <Tag className="mr-1 inline size-3.5" /> Cjenovne naljepnice
+            </Chip>
+            <Chip active={mode === 'stanje'} onClick={() => setMode('stanje')}>
+              <QrCode className="mr-1 inline size-3.5" /> QR za stanje
+            </Chip>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Chip active={cat === 'sve'} onClick={() => setCat('sve')}>
               Sve kategorije
@@ -95,26 +115,49 @@ function LabelsPage() {
           </div>
         </Card>
         <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
-          <QrCode className="size-5 text-copper-600" /> Pregled za štampu (A4, 3 × 7)
+          <QrCode className="size-5 text-copper-600" /> Pregled za štampu {isPrice ? '(A4, 3 × 5)' : '(A4, 3 × 7)'}
         </h2>
       </div>
 
-      <div className="label-sheet grid grid-cols-3 gap-0 bg-white print:gap-0">
-        {labels.map(({ p, k }) => (
-          <div key={k} className="label flex items-center gap-3 border border-dashed border-walnut-200 p-3 print:border-walnut-100" style={{ height: '38mm' }}>
-            <div className="qr size-[26mm] shrink-0" dangerouslySetInnerHTML={{ __html: qr[p.id] ?? '' }} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <BrandMark className="size-4" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-walnut-500">ARDOR</span>
+      {isPrice ? (
+        <div className="price-sheet">
+          {labels.map(({ p, k }) => (
+            <div key={k} className="price-label">
+              <div className="price-top">
+                <BrandMark className="size-3.5" />
+                <span>ARDOR namještaj</span>
               </div>
-              <div className="mt-1 line-clamp-2 text-[12px] font-bold leading-tight text-walnut-900">{p.name}</div>
-              <div className="mt-0.5 text-[10px] text-walnut-500">{p.sku}</div>
-              <div className="mt-1 font-display text-[15px] font-bold text-[#F15A29]">{money(p.price)}</div>
+              <div className="price-name">{p.name}</div>
+              <div className="price-value">{money(p.price)}</div>
+              <div className="price-vat">KM, cijena s PDV-om 17 %</div>
+              <div className="price-foot">
+                <div className="price-ev">
+                  <span>Ev. br.</span>
+                  <b>{p.sku}</b>
+                </div>
+                <div className="qr" dangerouslySetInnerHTML={{ __html: qr[p.id] ?? '' }} />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="label-sheet grid grid-cols-3 gap-0 bg-white print:gap-0">
+          {labels.map(({ p, k }) => (
+            <div key={k} className="label flex items-center gap-3 border border-dashed border-walnut-200 p-3 print:border-walnut-100" style={{ height: '38mm' }}>
+              <div className="qr size-[26mm] shrink-0" dangerouslySetInnerHTML={{ __html: qr[p.id] ?? '' }} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <BrandMark className="size-4" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-walnut-500">ARDOR</span>
+                </div>
+                <div className="mt-1 line-clamp-2 text-[12px] font-bold leading-tight text-walnut-900">{p.name}</div>
+                <div className="mt-0.5 text-[10px] text-walnut-500">{p.sku}</div>
+                <div className="mt-1 font-display text-[15px] font-bold text-[#F15A29]">{money(p.price)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
