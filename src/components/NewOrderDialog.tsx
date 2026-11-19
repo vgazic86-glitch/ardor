@@ -156,6 +156,7 @@ export function NewOrderDialog({
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
             >
+              <option value="novi">+ Novi kupac (upisujem novog)</option>
               {[...customers]
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((c) => (
@@ -163,8 +164,26 @@ export function NewOrderDialog({
                     {c.name} — {c.city}
                   </option>
                 ))}
-              <option value="novi">+ Novi kupac…</option>
             </select>
+            <span className="mt-1.5 flex items-center gap-2 text-xs font-normal">
+              {customerId === 'novi' ? (
+                <button
+                  type="button"
+                  className="font-semibold text-copper-700 hover:underline"
+                  onClick={() => setCustomerId(customers[0]?.id ?? '')}
+                >
+                  ← Izaberi postojećeg kupca
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="font-semibold text-copper-700 hover:underline"
+                  onClick={() => setCustomerId('novi')}
+                >
+                  + Dodaj novog kupca
+                </button>
+              )}
+            </span>
           </label>
           <label className={lbl}>
             Prodavač
