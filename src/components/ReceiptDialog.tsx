@@ -1,32 +1,54 @@
-import { PackagePlus, Plus, Trash2 } from 'lucide-react'
+import { FileUp, PackagePlus, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { money2, netOf, parseAmount, VAT_RATE } from '../lib/format'
 import { useStore } from '../lib/store'
+import { readSupplierDocFn } from '../server/api'
 import { Modal } from './Modal'
 import { ProductDialog } from './ProductDialog'
 import { Button, Field, inputCls } from './ui'
 
 type Line = { productId: string; qty: string; unitCost: string }
 
+type Unmatched = { sifra: string; naziv: string; qty: number; unitCost: number }
+
+function toBase64(f: File) {
+  return new Promise<string>((ok, fail) => {
+    const r = new FileReader()
+    r.onload = () => ok(String(r.result).split(',')[1] ?? '')
+    r.onerror = () => fail(new Error('Datoteka se ne može pročitati.'))
+    r.readAsDataURL(f)
+  })
+}
+
 /** Prijem robe od dobavljača (primka). Količine odmah ulaze na zalihu. */
 export function ReceiptDialog({
   onClose,
   onSaved,
   initial,
+  editing,
 }: {
   onClose: () => void
   onSaved?: (number: string, id: string) => void
-  /** Npr. prijem po narudžbi dobavljaču. */
-  initial?: { supplierId: string; note: string; lines: { productId: string; qty: number; unitCost: number }[] }
+  /** Npr. prijem po narudžbi dobavljaču, ili postojeća primka pri izmjeni. */
+  initial?: {
+    supplierId: string
+    note: string
+    date?: string
+    documentNumber?: string
+    vat?: number | null
+    lines: { productId: string; qty: number; unitCost: number }[]
+  }
+  /** Ako je zadan, dijalog mijenja postojeću primku (broj ostaje isti). */
+  editing?: { id: string; number: string }
 }) {
-  const { suppliers, products, today, productById, addReceipt, busy } =
+  const { suppliers, products, today, productById, addReceipt, updateReceipt, busy } =
     useStore()
   const [supplierId, setSupplierId] = useState(initial?.supplierId ?? suppliers[0]?.id ?? '')
-  const [date, setDate] = useState(today)
-  const [doc, setDoc] = useState('')
+  const [date, setDate] = useState(initial?.date ?? today)
+  const [doc, setDoc] = useState(initial?.documentNumber ?? '')
   const [note, setNote] = useState(initial?.note ?? '')
-  const [vatAuto, setVatAuto] = useState(true)
-  const [vat, setVat] = useState('')
+  const [vatAuto, setVatAuto] = useState(initial?.vat == null)
+  const [vat, setVat] = useState(initial?.vat != null ? String(initial.vat).replace('.', ',') : '')
   const [lines, setLines] = useState<Line[]>(
     () =>
       initial?.lines.map((l) => ({
@@ -37,6 +59,10 @@ export function ReceiptDialog({
   )
   const [newProduct, setNewProduct] = useState(false)
   const [onlySupplier, setOnlySupplier] = useState(true)
+  const [docFile, setDocFile] = useState<{ name: string; mime: string; dataB64: string } | null>(null)
+  const [reading, setReading] = useState(false)
+  const [readMsg, setReadMsg] = useState('')
+  const [unmatched, setUnmatched] = useState<Unmatched[]>([])
 
   const choices = products.filter(
     (p) => !onlySupplier || !supplierId || p.supplierId === supplierId,
@@ -77,20 +103,56 @@ export function ReceiptDialog({
     ])
   }
 
+  /** Čita dokument dobavljača i popunjava primku; ništa se ne sprema dok korisnik ne klikne „Knjiži prijem”. */
+  async function onDocPicked(f: File) {
+    setReadMsg('')
+    setUnmatched([])
+    setReading(true)
+    try {
+      const mime = f.type || (f.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '')
+      const dataB64 = await toBase64(f)
+      const r = await readSupplierDocFn({ data: { name: f.name, mime, dataB64 } })
+      setDocFile({ name: f.name, mime, dataB64 })
+      if (r.supplierId) setSupplierId(r.supplierId)
+      if (r.documentNumber) setDoc(r.documentNumber)
+      if (r.date && r.date <= today) setDate(r.date)
+      const found = r.lines.filter((l) => l.productId)
+      const missing = r.lines.filter((l) => !l.productId)
+      setLines((prev) => [
+        ...prev,
+        ...found
+          .filter((l) => !prev.some((p) => p.productId === l.productId))
+          .map((l) => ({ productId: l.productId as string, qty: String(l.qty), unitCost: l.unitCost ? String(l.unitCost) : '' })),
+      ])
+      setUnmatched(missing.map((l) => ({ sifra: l.sifra, naziv: l.naziv, qty: l.qty, unitCost: l.unitCost })))
+      setReadMsg(
+        `Pročitano ${r.lines.length} stavki${missing.length ? `, od toga ${missing.length} nije u katalogu` : ''}. Provjerite količine i cijene prije knjiženja.`,
+      )
+    } catch (e) {
+      setDocFile(null)
+      setReadMsg(e instanceof Error ? e.message : 'Dokument nije pročitan.')
+    } finally {
+      setReading(false)
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    const res = await addReceipt({
+    const payload = {
       date,
       supplierId: supplierId || null,
       documentNumber: doc,
       note,
       vat: vatAuto ? null : parseAmount(vat),
+      // Bez novog dokumenta pri izmjeni ostaje postojeći prilog.
+      file: docFile,
       lines: lines.map((l) => ({
         productId: l.productId,
         qty: Number(l.qty) || 0,
         unitCost: parseAmount(l.unitCost),
       })),
-    })
+    }
+    const res = editing ? await updateReceipt({ ...payload, id: editing.id }) : await addReceipt(payload)
     if (res) {
       onSaved?.(res.number, res.id)
       onClose()
@@ -101,8 +163,12 @@ export function ReceiptDialog({
     <>
       <Modal
         wide
-        title="Prijem robe"
-        subtitle="Roba koja je stigla od dobavljača. Po spremanju količine odmah ulaze na zalihu, a nabavna cijena artikla se ažurira."
+        title={editing ? `Izmjena primke ${editing.number}` : 'Prijem robe'}
+        subtitle={
+          editing
+            ? 'Izmjena količina ili cijena mijenja zalihu. Ako je robe već izašlo više nego što bi ostalo, izmjena neće biti spremljena.'
+            : 'Roba koja je stigla od dobavljača. Po spremanju količine odmah ulaze na zalihu, a nabavna cijena artikla se ažurira.'
+        }
         onClose={onClose}
         footer={
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -148,12 +214,57 @@ export function ReceiptDialog({
               disabled={busy || !lines.length}
             >
               <PackagePlus className="size-4" />{' '}
-              {busy ? 'Spremam…' : 'Knjiži prijem'}
+              {busy ? 'Spremam…' : editing ? 'Spremi izmjene' : 'Knjiži prijem'}
             </Button>
           </div>
         }
       >
         <form id="receipt-form" onSubmit={submit} className="space-y-6">
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-copper-200 bg-copper-50/60 px-4 py-3">
+            <label
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-copper-300 bg-white px-3 py-2 text-sm font-semibold text-copper-700 hover:bg-copper-50 ${reading ? 'pointer-events-none opacity-60' : ''}`}
+            >
+              <FileUp className="size-4" /> {reading ? 'Čitam dokument…' : 'Učitaj dokument dobavljača'}
+              <input
+                type="file"
+                accept="application/pdf,image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={reading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  e.target.value = ''
+                  if (f) void onDocPicked(f)
+                }}
+              />
+            </label>
+            <div className="min-w-0 flex-1 text-xs text-walnut-700">
+              {docFile ? (
+                <span>
+                  Priložen dokument: <span className="font-semibold">{docFile.name}</span>{' '}
+                  <button type="button" className="ml-2 font-semibold text-copper-700 hover:underline" onClick={() => setDocFile(null)}>
+                    ukloni
+                  </button>
+                </span>
+              ) : (
+                'PDF ili slika računa / otpremnice. Sistem popuni stavke, a vi ih provjerite prije knjiženja.'
+              )}
+              {readMsg && <div className="mt-1 font-semibold text-walnut-900">{readMsg}</div>}
+            </div>
+          </div>
+          {unmatched.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <div className="font-semibold">Ove stavke nisu u katalogu i nisu dodane u primku:</div>
+              <ul className="mt-1 list-disc pl-5 text-xs">
+                {unmatched.map((u, i) => (
+                  <li key={i}>
+                    {u.sifra ? `${u.sifra} · ` : ''}
+                    {u.naziv || 'bez naziva'} — {u.qty} kom
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 text-xs">Prvo dodajte te artikle u katalog (Artikli → Novi artikal), pa ponovo učitajte dokument.</div>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-4">
             <Field label="Dobavljač" className="sm:col-span-2">
               <select

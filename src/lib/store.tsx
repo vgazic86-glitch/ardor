@@ -17,6 +17,7 @@ import {
   clearTransactionsFn,
   createOrderFn,
   createReceiptFn,
+  updateReceiptFn,
   deactivateEmployeeFn,
   saveEmployeeFn,
   saveProductFn,
@@ -96,6 +97,10 @@ interface Store extends Snapshot {
   ) => Promise<void>
   addReceipt: (
     r: Without<ReceiptInput>,
+  ) => Promise<{ id: string; number: string } | null>
+  /** Izmjena postojeće primke (zaliha se preračunava). */
+  updateReceipt: (
+    r: Without<ReceiptInput> & { id: string },
   ) => Promise<{ id: string; number: string } | null>
   saveProduct: (p: Without<ProductInput>) => Promise<{ id: string } | null>
   archiveProduct: (id: string) => Promise<void>
@@ -279,6 +284,11 @@ export function StoreProvider({
         run(
           () => createReceiptFn({ data: { ...r, actorId } }),
           'Primka je spremljena, roba je na zalihi.',
+        ),
+      updateReceipt: (r) =>
+        run(
+          () => updateReceiptFn({ data: { ...r, actorId } }),
+          'Primka je izmijenjena.',
         ),
       saveProduct: (p) =>
         run(

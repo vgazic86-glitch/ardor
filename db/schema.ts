@@ -205,6 +205,8 @@ export const receipts = pgTable('receipts', {
   employeeId: integer('employee_id').references(() => employees.id),
   /** PDV s računa dobavljača; null = 17 % od nabavne vrijednosti. */
   vat: money('vat'),
+  /** Dokument dobavljača (PDF ili slika) priložen uz primku. */
+  fileId: integer('file_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow(),
 })
 

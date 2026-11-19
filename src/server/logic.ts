@@ -659,12 +659,31 @@ export interface ReceiptInput {
   lines: { productId: string; qty: number; unitCost: number }[]
   /** PDV s računa dobavljača; izostavljeno/null = 17 %. */
   vat?: number | null
+  /** Dokument dobavljača (PDF ili slika) priložen uz primku. */
+  file?: { name: string; mime: string; dataB64: string } | null
+}
+
+const RECEIPT_FILE_MIMES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+const RECEIPT_FILE_MAX = 4 * 1024 * 1024
+
+/** Sprema dokument dobavljača u tablicu datoteka i vraća njegov id (ili null bez dokumenta). */
+async function saveReceiptFile(file: ReceiptInput['file']): Promise<number | null> {
+  if (!file) return null
+  if (!RECEIPT_FILE_MIMES.includes(file.mime)) throw new Error('Dokument mora biti PDF ili slika (JPG, PNG, WEBP).')
+  const data = Buffer.from(file.dataB64, 'base64')
+  if (!data.length || data.length > RECEIPT_FILE_MAX) throw new Error('Dokument može biti najviše 4 MB.')
+  const [f] = await db
+    .insert(t.files)
+    .values({ name: file.name.slice(0, 200) || 'dokument-dobavljaca', mime: file.mime, size: data.length, data })
+    .returning()
+  return f.id
 }
 
 export async function createReceipt(input: ReceiptInput) {
   const lines = input.lines.filter((l) => l.qty > 0)
   if (!lines.length) throw new Error('Prijem mora imati barem jednu stavku.')
   const date = input.date || todayIso()
+  const fileId = await saveReceiptFile(input.file)
   return db.transaction(async (tx) => {
     const [{ next }] = (
       await tx.execute(
@@ -681,6 +700,7 @@ export async function createReceipt(input: ReceiptInput) {
       note: input.note.trim(),
       employeeId: id(input.actorId),
       vat: input.vat == null || Number.isNaN(input.vat) ? null : round2(Math.max(0, input.vat)),
+      fileId,
     })
     await tx.insert(t.stockMovements).values(
       lines.map((l) => ({
@@ -702,6 +722,69 @@ export async function createReceipt(input: ReceiptInput) {
           .where(eq(t.products.id, Number(l.productId)))
     return { id: String(next), number }
   })
+}
+
+/**
+ * Izmjena postojeće primke: zamjenjuju se zaglavlje, stavke i (po želji) dokument.
+ * Broj primke ostaje isti. Zaliha se ne smije spustiti ispod nule zbog izmjene.
+ */
+export async function updateReceipt(input: ReceiptInput & { id: string }) {
+  const rid = Number(input.id)
+  const lines = input.lines.filter((l) => l.qty > 0)
+  if (!lines.length) throw new Error('Prijem mora imati barem jednu stavku.')
+  const [old] = await db.select().from(t.receipts).where(eq(t.receipts.id, rid))
+  if (!old) throw new Error('Primka ne postoji.')
+  const date = input.date || old.date
+
+  // Provjera: zaliha bez stavki ove primke + nove stavke ne smije biti negativna.
+  const oldMoves = await db.select().from(t.stockMovements).where(eq(t.stockMovements.receiptId, rid))
+  const productIds = [...new Set([...oldMoves.map((m) => m.productId), ...lines.map((l) => Number(l.productId))])]
+  const all = productIds.length
+    ? await db.select({ productId: t.stockMovements.productId, qty: t.stockMovements.qty }).from(t.stockMovements).where(inArray(t.stockMovements.productId, productIds))
+    : []
+  const sum = (rows: { productId: number; qty: number }[], pid: number) => rows.filter((r) => r.productId === pid).reduce((s, r) => s + r.qty, 0)
+  const newQty = (pid: number) => lines.filter((l) => Number(l.productId) === pid).reduce((s, l) => s + Math.round(l.qty), 0)
+  for (const pid of productIds) {
+    const stock = sum(all, pid) - sum(oldMoves, pid) + newQty(pid)
+    if (stock < 0) {
+      const [p] = await db.select({ name: t.products.name }).from(t.products).where(eq(t.products.id, pid))
+      throw new Error(`Ne mogu spremiti izmjenu: „${p?.name ?? 'artikal'}” bi na zalihi imao ${stock}. Dio robe je već izašao iz salona.`)
+    }
+  }
+
+  const newFileId = await saveReceiptFile(input.file)
+  await db.transaction(async (tx) => {
+    await tx
+      .update(t.receipts)
+      .set({
+        date,
+        supplierId: id(input.supplierId),
+        documentNumber: input.documentNumber.trim(),
+        note: input.note.trim(),
+        vat: input.vat == null || Number.isNaN(input.vat) ? null : round2(Math.max(0, input.vat)),
+        fileId: newFileId ?? old.fileId,
+      })
+      .where(eq(t.receipts.id, rid))
+    await tx.delete(t.stockMovements).where(eq(t.stockMovements.receiptId, rid))
+    await tx.insert(t.stockMovements).values(
+      lines.map((l) => ({
+        productId: Number(l.productId),
+        date,
+        type: 'primka',
+        qty: Math.round(l.qty),
+        unitCost: round2(Math.max(0, l.unitCost)),
+        receiptId: rid,
+        employeeId: id(input.actorId),
+        note: `Prijem ${old.number}${input.documentNumber ? ` (${input.documentNumber})` : ''}`,
+      })),
+    )
+    for (const l of lines)
+      if (l.unitCost > 0)
+        await tx.update(t.products).set({ purchasePrice: round2(l.unitCost) }).where(eq(t.products.id, Number(l.productId)))
+  })
+  // Zamijenjeni dokument više nije potreban.
+  if (newFileId && old.fileId) await db.delete(t.files).where(eq(t.files.id, old.fileId))
+  return { id: String(rid), number: old.number }
 }
 
 export interface ProductInput {

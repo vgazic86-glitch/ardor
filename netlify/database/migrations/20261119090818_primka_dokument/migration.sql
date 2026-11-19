@@ -1,0 +1,2 @@
+ALTER TABLE "receipts" ADD COLUMN "file_id" integer;--> statement-breakpoint
+ALTER TABLE "receipts" ADD CONSTRAINT "receipts_file_id_files_id_fkey" FOREIGN KEY ("file_id") REFERENCES "files"("id") ON DELETE SET NULL;

@@ -13,6 +13,7 @@ import * as audit from './audit'
 import * as weekly from './weekly'
 import * as collection from './collection'
 import * as inbox from './inbox'
+import * as receiptdoc from './receiptdoc'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 import { visibleDocuments } from '../lib/manuals'
@@ -140,9 +141,18 @@ export const addPaymentFn = createServerFn({ method: 'POST' }).middleware([authe
     logic.addPayment(data.id, data.amount, data.method, data.actorId),
   )
 
+export const updateReceiptFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<logic.ReceiptInput & { id: string }>())
+  .handler(({ data }) => logic.updateReceipt(data))
+
 export const createReceiptFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.ReceiptInput>())
   .handler(({ data }) => logic.createReceipt(data))
+
+/** Čita dokument dobavljača (PDF/slika) i predlaže stavke primke; ništa se ne sprema. */
+export const readSupplierDocFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ name: string; mime: string; dataB64: string }>())
+  .handler(({ data }) => receiptdoc.readSupplierDoc(data))
 
 export const saveProductFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.ProductInput>())

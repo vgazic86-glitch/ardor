@@ -52,6 +52,7 @@ function ReceiptsPage() {
   const [q, setQ] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [product, setProduct] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
 
   const list = receipts.filter((r) => {
     if (sup !== 'svi' && r.supplierId !== sup) return false
@@ -268,12 +269,22 @@ function ReceiptsPage() {
                                   ))}
                                 </tbody>
                               </table>
-                              <div className="flex flex-wrap justify-end gap-x-6 gap-y-1 border-t border-walnut-100 px-4 py-2.5 text-sm">
+                              <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-1 border-t border-walnut-100 px-4 py-2.5 text-sm">
                                 {r.note && (
                                   <span className="mr-auto text-walnut-600">
                                     Napomena: {r.note}
                                   </span>
                                 )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditing(r.id)
+                                  }}
+                                >
+                                  Izmijeni primku
+                                </Button>
                                 <span>
                                   Osnovica{' '}
                                   <b className="tabular">{money2(value(r))}</b>
@@ -310,6 +321,26 @@ function ReceiptsPage() {
           onSaved={() => setExpanded(null)}
         />
       )}
+      {editing &&
+        (() => {
+          const r = receipts.find((x) => x.id === editing)
+          if (!r) return null
+          return (
+            <ReceiptDialog
+              editing={{ id: r.id, number: r.number }}
+              initial={{
+                supplierId: r.supplierId ?? '',
+                note: r.note,
+                date: r.date,
+                documentNumber: r.documentNumber,
+                vat: r.vat,
+                lines: r.lines.map((l) => ({ productId: l.productId, qty: l.qty, unitCost: l.unitCost })),
+              }}
+              onClose={() => setEditing(null)}
+              onSaved={() => setEditing(null)}
+            />
+          )
+        })()}
       {product && (
         <ProductCard productId={product} onClose={() => setProduct(null)} />
       )}

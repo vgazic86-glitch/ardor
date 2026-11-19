@@ -337,6 +337,17 @@ export const HELP: HelpTopic[] = [
           'Nabavna cijena artikla se ažurira na zadnju.',
           'Primka se automatski knjiži na karticu dobavljača kao dug.',
           'Iznos PDV-a ide u knjigu ulaznih računa (KUF) — kontrola za knjigovođu.',
+          'Pogrešnu primku možete ispraviti: otvorite je u listi i kliknite „Izmijeni primku”. Zaliha se preračuna, a broj primke ostaje isti. Izmjena nije moguća ako bi zaliha pala ispod nule.',
+        ],
+      },
+      {
+        h: 'Dokument dobavljača (PDF ili slika)',
+        items: [
+          'Kliknite „Učitaj dokument dobavljača”. Sistem pročita račun ili otpremnicu i popuni dobavljača, broj dokumenta, datum i stavke.',
+          'Ništa se ne sprema samo od sebe: provjerite količine i cijene, pa kliknite „Knjiži prijem”.',
+          'Stavke koje nisu u katalogu ne ulaze u primku. Prvo ih dodajte kao artikle, pa ponovo učitajte dokument.',
+          'Dokument se sprema uz primku u bazi. Pregled dokumenta iz popisa primki još nije uključen.',
+          'Čitanje dokumenta šalje samo dokument dobavljača vanjskom AI servisu, bez podataka o kupcima.',
         ],
       },
     ],
