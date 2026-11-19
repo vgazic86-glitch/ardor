@@ -2,7 +2,7 @@ import { ImagePlus } from 'lucide-react'
 import { useState } from 'react'
 import { prepareImage } from '../lib/image'
 import { ProductImageEditor } from './ProductImage'
-import { CATEGORIES, type Category, type Product } from '../lib/types'
+import { CATEGORIES, type Product } from '../lib/types'
 import { money2, netOf, parseAmount, pct, VAT_RATE } from '../lib/format'
 import { useStore } from '../lib/store'
 import { Modal } from './Modal'
@@ -33,7 +33,7 @@ export function ProductDialog({
   }
   const [sku, setSku] = useState(product?.sku ?? nextSku())
   const [name, setName] = useState(product?.name ?? '')
-  const [category, setCategory] = useState<Category>(
+  const [category, setCategory] = useState<string>(
     product?.category ?? CATEGORIES[0],
   )
   const [price, setPrice] = useState(product ? String(product.price) : '')
@@ -144,16 +144,23 @@ export function ProductDialog({
             onChange={(e) => setSku(e.target.value)}
           />
         </Field>
-        <Field label="Kategorija">
-          <select
+        <Field label="Kategorija" hint="Upišite novu kategoriju ili odaberite postojeću s popisa.">
+          <input
             className={inputCls}
+            required
+            list="kategorije-artikala"
+            maxLength={60}
             value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="npr. Dječje sobe"
+          />
+          <datalist id="kategorije-artikala">
+            {[...new Set([...CATEGORIES, ...products.map((p) => p.category)])]
+              .sort((a, b) => a.localeCompare(b))
+              .map((c) => (
+                <option key={c} value={c} />
+              ))}
+          </datalist>
         </Field>
         <Field label="Naziv artikla" className="sm:col-span-2">
           <input

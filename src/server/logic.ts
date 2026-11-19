@@ -791,7 +791,7 @@ export interface ProductInput {
   id: string | null
   sku: string
   name: string
-  category: Category
+  category: string
   price: number
   purchasePrice: number
   minStock: number
@@ -823,7 +823,7 @@ export async function saveProduct(input: ProductInput, byName = '') {
   const values = {
     sku: input.sku.trim(),
     name: input.name.trim(),
-    category: input.category,
+    category: input.category.trim().slice(0, 60) || 'Ostalo',
     price: round2(input.price),
     purchasePrice: round2(input.purchasePrice),
     minStock: Math.max(0, Math.round(input.minStock)),
