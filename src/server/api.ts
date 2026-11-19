@@ -17,6 +17,7 @@ import * as receiptdoc from './receiptdoc'
 import * as categories from './categories'
 import * as receiptpdf from './receiptpdf'
 import * as transfers from './transfers'
+import * as web from './web'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 import { visibleDocuments } from '../lib/manuals'
@@ -681,3 +682,19 @@ export const receiptPdfFn = createServerFn({ method: 'POST' }).middleware([opera
 export const createTransferFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<transfers.TransferInput>())
   .handler(({ data }) => transfers.createTransfer(data))
+
+/** Web stranica (ardornamjestaj.com): upiti s weba (svi osim dostave) i artikli na webu (operativa i više). */
+export const getWebFn = createServerFn({ method: 'GET' }).middleware([authed])
+  .handler(({ context }) => web.webAdminData(context.user))
+
+export const saveWebProductFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<web.WebSaveInput>())
+  .handler(async ({ data }) => (await web.saveWebProduct(data), true))
+
+export const setWebInquiryStatusFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ id: string; status: string; note?: string; name?: string }>())
+  .handler(async ({ data, context }) => (await web.setInquiryStatus(context.user, data), true))
+
+export const webInquiryToCustomerFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ id: string; name?: string }>())
+  .handler(({ data, context }) => web.inquiryToCustomer(context.user, data.id))

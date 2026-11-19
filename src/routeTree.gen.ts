@@ -31,6 +31,7 @@ import { Route as PrimkeRouteImport } from './routes/primke'
 import { Route as RadnoVrijemeRouteImport } from './routes/radno-vrijeme'
 import { Route as ReklamacijeRouteImport } from './routes/reklamacije'
 import { Route as TroskoviRouteImport } from './routes/troskovi'
+import { Route as WebRouteImport } from './routes/web'
 import { Route as ZadaciRouteImport } from './routes/zadaci'
 import { Route as ZaliheRouteImport } from './routes/zalihe'
 import { Route as ZaposleniciRouteImport } from './routes/zaposlenici'
@@ -41,6 +42,12 @@ import { Route as DobavljaciIdRouteImport } from './routes/dobavljaci/$id'
 import { Route as DokumentiIndexRouteImport } from './routes/dokumenti/index'
 import { Route as DokumentiSlugRouteImport } from './routes/dokumenti/$slug'
 import { Route as ApiSlikeIdRouteImport } from './routes/api.slike.$id'
+import { Route as ApiWebUpitFotoIdRouteImport } from './routes/api.web-upit-foto.$id'
+import { Route as ApiWebKatalogRouteImport } from './routes/api.web.katalog'
+import { Route as ApiWebPitanjeRouteImport } from './routes/api.web.pitanje'
+import { Route as ApiWebSavjetnikRouteImport } from './routes/api.web.savjetnik'
+import { Route as ApiWebUpitRouteImport } from './routes/api.web.upit'
+import { Route as ApiWebSlikeIdRouteImport } from './routes/api.web.slike.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -152,6 +159,11 @@ const TroskoviRoute = TroskoviRouteImport.update({
   path: '/troskovi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WebRoute = WebRouteImport.update({
+  id: '/web',
+  path: '/web',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ZadaciRoute = ZadaciRouteImport.update({
   id: '/zadaci',
   path: '/zadaci',
@@ -202,6 +214,36 @@ const ApiSlikeIdRoute = ApiSlikeIdRouteImport.update({
   path: '/api/slike/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebUpitFotoIdRoute = ApiWebUpitFotoIdRouteImport.update({
+  id: '/api/web-upit-foto/$id',
+  path: '/api/web-upit-foto/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebKatalogRoute = ApiWebKatalogRouteImport.update({
+  id: '/api/web/katalog',
+  path: '/api/web/katalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebPitanjeRoute = ApiWebPitanjeRouteImport.update({
+  id: '/api/web/pitanje',
+  path: '/api/web/pitanje',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebSavjetnikRoute = ApiWebSavjetnikRouteImport.update({
+  id: '/api/web/savjetnik',
+  path: '/api/web/savjetnik',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebUpitRoute = ApiWebUpitRouteImport.update({
+  id: '/api/web/upit',
+  path: '/api/web/upit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebSlikeIdRoute = ApiWebSlikeIdRouteImport.update({
+  id: '/api/web/slike/$id',
+  path: '/api/web/slike/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -226,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/reklamacije': typeof ReklamacijeRoute
   '/troskovi': typeof TroskoviRoute
+  '/web': typeof WebRoute
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
@@ -236,6 +279,12 @@ export interface FileRoutesByFullPath {
   '/dobavljaci/': typeof DobavljaciIndexRoute
   '/dokumenti/': typeof DokumentiIndexRoute
   '/api/slike/$id': typeof ApiSlikeIdRoute
+  '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
+  '/api/web/katalog': typeof ApiWebKatalogRoute
+  '/api/web/pitanje': typeof ApiWebPitanjeRoute
+  '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
+  '/api/web/upit': typeof ApiWebUpitRoute
+  '/api/web/slike/$id': typeof ApiWebSlikeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -259,6 +308,7 @@ export interface FileRoutesByTo {
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/reklamacije': typeof ReklamacijeRoute
   '/troskovi': typeof TroskoviRoute
+  '/web': typeof WebRoute
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
@@ -269,6 +319,12 @@ export interface FileRoutesByTo {
   '/dobavljaci': typeof DobavljaciIndexRoute
   '/dokumenti': typeof DokumentiIndexRoute
   '/api/slike/$id': typeof ApiSlikeIdRoute
+  '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
+  '/api/web/katalog': typeof ApiWebKatalogRoute
+  '/api/web/pitanje': typeof ApiWebPitanjeRoute
+  '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
+  '/api/web/upit': typeof ApiWebUpitRoute
+  '/api/web/slike/$id': typeof ApiWebSlikeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -294,6 +350,7 @@ export interface FileRoutesById {
   '/radno-vrijeme': typeof RadnoVrijemeRoute
   '/reklamacije': typeof ReklamacijeRoute
   '/troskovi': typeof TroskoviRoute
+  '/web': typeof WebRoute
   '/zadaci': typeof ZadaciRoute
   '/zalihe': typeof ZaliheRoute
   '/zaposlenici': typeof ZaposleniciRoute
@@ -304,6 +361,12 @@ export interface FileRoutesById {
   '/dobavljaci/': typeof DobavljaciIndexRoute
   '/dokumenti/': typeof DokumentiIndexRoute
   '/api/slike/$id': typeof ApiSlikeIdRoute
+  '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
+  '/api/web/katalog': typeof ApiWebKatalogRoute
+  '/api/web/pitanje': typeof ApiWebPitanjeRoute
+  '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
+  '/api/web/upit': typeof ApiWebUpitRoute
+  '/api/web/slike/$id': typeof ApiWebSlikeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -330,6 +393,7 @@ export interface FileRouteTypes {
     | '/radno-vrijeme'
     | '/reklamacije'
     | '/troskovi'
+    | '/web'
     | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
@@ -340,6 +404,12 @@ export interface FileRouteTypes {
     | '/dobavljaci/'
     | '/dokumenti/'
     | '/api/slike/$id'
+    | '/api/web-upit-foto/$id'
+    | '/api/web/katalog'
+    | '/api/web/pitanje'
+    | '/api/web/savjetnik'
+    | '/api/web/upit'
+    | '/api/web/slike/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -363,6 +433,7 @@ export interface FileRouteTypes {
     | '/radno-vrijeme'
     | '/reklamacije'
     | '/troskovi'
+    | '/web'
     | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
@@ -373,6 +444,12 @@ export interface FileRouteTypes {
     | '/dobavljaci'
     | '/dokumenti'
     | '/api/slike/$id'
+    | '/api/web-upit-foto/$id'
+    | '/api/web/katalog'
+    | '/api/web/pitanje'
+    | '/api/web/savjetnik'
+    | '/api/web/upit'
+    | '/api/web/slike/$id'
   id:
     | '__root__'
     | '/'
@@ -397,6 +474,7 @@ export interface FileRouteTypes {
     | '/radno-vrijeme'
     | '/reklamacije'
     | '/troskovi'
+    | '/web'
     | '/zadaci'
     | '/zalihe'
     | '/zaposlenici'
@@ -407,6 +485,12 @@ export interface FileRouteTypes {
     | '/dobavljaci/'
     | '/dokumenti/'
     | '/api/slike/$id'
+    | '/api/web-upit-foto/$id'
+    | '/api/web/katalog'
+    | '/api/web/pitanje'
+    | '/api/web/savjetnik'
+    | '/api/web/upit'
+    | '/api/web/slike/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -432,6 +516,7 @@ export interface RootRouteChildren {
   RadnoVrijemeRoute: typeof RadnoVrijemeRoute
   ReklamacijeRoute: typeof ReklamacijeRoute
   TroskoviRoute: typeof TroskoviRoute
+  WebRoute: typeof WebRoute
   ZadaciRoute: typeof ZadaciRoute
   ZaliheRoute: typeof ZaliheRoute
   ZaposleniciRoute: typeof ZaposleniciRoute
@@ -440,6 +525,12 @@ export interface RootRouteChildren {
   DokumentiSlugRoute: typeof DokumentiSlugRoute
   DokumentiIndexRoute: typeof DokumentiIndexRoute
   ApiSlikeIdRoute: typeof ApiSlikeIdRoute
+  ApiWebUpitFotoIdRoute: typeof ApiWebUpitFotoIdRoute
+  ApiWebKatalogRoute: typeof ApiWebKatalogRoute
+  ApiWebPitanjeRoute: typeof ApiWebPitanjeRoute
+  ApiWebSavjetnikRoute: typeof ApiWebSavjetnikRoute
+  ApiWebUpitRoute: typeof ApiWebUpitRoute
+  ApiWebSlikeIdRoute: typeof ApiWebSlikeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -598,6 +689,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TroskoviRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/web': {
+      id: '/web'
+      path: '/web'
+      fullPath: '/web'
+      preLoaderRoute: typeof WebRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/zadaci': {
       id: '/zadaci'
       path: '/zadaci'
@@ -668,6 +766,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSlikeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/web-upit-foto/$id': {
+      id: '/api/web-upit-foto/$id'
+      path: '/api/web-upit-foto/$id'
+      fullPath: '/api/web-upit-foto/$id'
+      preLoaderRoute: typeof ApiWebUpitFotoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/web/katalog': {
+      id: '/api/web/katalog'
+      path: '/api/web/katalog'
+      fullPath: '/api/web/katalog'
+      preLoaderRoute: typeof ApiWebKatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/web/pitanje': {
+      id: '/api/web/pitanje'
+      path: '/api/web/pitanje'
+      fullPath: '/api/web/pitanje'
+      preLoaderRoute: typeof ApiWebPitanjeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/web/savjetnik': {
+      id: '/api/web/savjetnik'
+      path: '/api/web/savjetnik'
+      fullPath: '/api/web/savjetnik'
+      preLoaderRoute: typeof ApiWebSavjetnikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/web/upit': {
+      id: '/api/web/upit'
+      path: '/api/web/upit'
+      fullPath: '/api/web/upit'
+      preLoaderRoute: typeof ApiWebUpitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/web/slike/$id': {
+      id: '/api/web/slike/$id'
+      path: '/api/web/slike/$id'
+      fullPath: '/api/web/slike/$id'
+      preLoaderRoute: typeof ApiWebSlikeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -708,6 +848,7 @@ const rootRouteChildren: RootRouteChildren = {
   RadnoVrijemeRoute: RadnoVrijemeRoute,
   ReklamacijeRoute: ReklamacijeRoute,
   TroskoviRoute: TroskoviRoute,
+  WebRoute: WebRoute,
   ZadaciRoute: ZadaciRoute,
   ZaliheRoute: ZaliheRoute,
   ZaposleniciRoute: ZaposleniciRoute,
@@ -716,6 +857,12 @@ const rootRouteChildren: RootRouteChildren = {
   DokumentiSlugRoute: DokumentiSlugRoute,
   DokumentiIndexRoute: DokumentiIndexRoute,
   ApiSlikeIdRoute: ApiSlikeIdRoute,
+  ApiWebUpitFotoIdRoute: ApiWebUpitFotoIdRoute,
+  ApiWebKatalogRoute: ApiWebKatalogRoute,
+  ApiWebPitanjeRoute: ApiWebPitanjeRoute,
+  ApiWebSavjetnikRoute: ApiWebSavjetnikRoute,
+  ApiWebUpitRoute: ApiWebUpitRoute,
+  ApiWebSlikeIdRoute: ApiWebSlikeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

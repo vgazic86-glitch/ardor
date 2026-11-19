@@ -46,6 +46,7 @@ import {
   ScanLine,
   HandCoins,
   Hourglass,
+  Globe,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../lib/store'
@@ -80,6 +81,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/narudzbe-kupaca', label: 'Narudžbe kupaca', icon: Hourglass, badge: 'waiting', area: 'narudzbe' },
       { to: '/naplata', label: 'Naplata', icon: HandCoins, badge: 'late', area: 'naplata' },
       { to: '/kupci', label: 'Kupci', icon: Contact, area: 'kupci' },
+      { to: '/web', label: 'Web stranica', icon: Globe, area: 'web' },
       { to: '/reklamacije', label: 'Reklamacije', icon: Wrench, area: 'reklamacije' },
       { to: '/katalog', label: 'Katalog za kupca', icon: Tablet, area: 'pregled' },
       { to: '/dostave', label: 'Dostave', icon: Truck, badge: 'deliveries', area: 'dostave' },

@@ -155,6 +155,39 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'web',
+    route: '/web',
+    title: 'Web stranica',
+    purpose: 'Upiti kupaca s ardornamjestaj.com i koji artikli se prikazuju na webu.',
+    fields: [
+      'Upiti: status (Novo, U obradi, Zatvoreno), bilješka, „Dodaj u kupce”.',
+      'Artikli na webu: prostorija, stil, boja, materijal, opis, mjere, stara cijena za akciju, „Vidljiv na webu”.',
+    ],
+    details: [
+      {
+        h: 'Upiti s weba',
+        items: [
+          'Svaki obrazac s web stranice (besplatna ponuda, zakazani posjet salonu, zakazano mjerenje) stiže ovdje i u zvonce trgovcima, voditelju i upravi.',
+          'Kupca nazovite isti radni dan. Kad preuzmete upit, stavite ga „U obradi” — kolege vide da je neko već zvao.',
+          'Termin posjeta ili mjerenja potvrdite kupcu pozivom ili Viberom; upit tek tada zatvorite.',
+          '„Dodaj u kupce” pravi kupca u aplikaciji (ili ga poveže s postojećim kupcem istog telefona), da se može napraviti prodaja.',
+          'Fotografije prostorije koje je kupac poslao otvaraju se klikom.',
+          'Ako je kupac prošao AI savjetnika, vidi se i njegov prijedlog (prostorija, kvadratura, stil, budžet).',
+        ],
+      },
+      {
+        h: 'Artikli na webu',
+        items: [
+          'Na web ide samo artikal s fotografijom i kvačicom „Vidljiv na webu”. Naziv, cijena i fotografija dolaze iz Artikala.',
+          'Dostupnost se računa sama: ima li slobodne zalihe (nije rezervirana za prodaje) — „Odmah sa zalihe”, inače „Po narudžbi”. Količine se na webu ne vide, ni nabavne cijene.',
+          'Za akciju upišite staru cijenu (veću od trenutne) — web je precrta i artikal stavi na stranicu Akcije.',
+          '„Istaknut” artikal ide na početnu stranicu weba.',
+          'Promjene se na webu vide nakon ponovne izgradnje stranice (nekoliko minuta).',
+        ],
+      },
+    ],
+  },
+  {
     id: 'naplata',
     route: '/naplata',
     title: 'Naplata',

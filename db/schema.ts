@@ -690,3 +690,74 @@ export const priceChanges = pgTable(
   },
   (t) => [index('price_changes_at_idx').on(t.at)],
 )
+
+/** Javna web stranica: kako se artikal prikazuje na ardornamjestaj.com (samo vidljivi idu van). */
+export const webProducts = pgTable('web_products', {
+  productId: integer('product_id')
+    .primaryKey()
+    .references(() => products.id, { onDelete: 'cascade' }),
+  visible: boolean().notNull().default(false),
+  slug: text().notNull().unique(),
+  /** dnevni-boravak | spavaca-soba | kuhinja | trpezarija | djecja-soba | hodnik | ured | ormari-i-plakari | lezajevi-i-madraci */
+  room: text().notNull().default('dnevni-boravak'),
+  /** moderni | skandinavski | klasicni | industrijski */
+  style: text().notNull().default('moderni'),
+  /** svijetla | drvo | tamna | boja */
+  color: text().notNull().default('svijetla'),
+  /** tkanina | iverica | mdf | masiv */
+  material: text().notNull().default('tkanina'),
+  typeLabel: text('type_label').notNull().default(''),
+  description: text().notNull().default(''),
+  dimensions: text().notNull().default(''),
+  materials: text().notNull().default(''),
+  personal: text().notNull().default(''),
+  /** Boje za kružiće, npr. "#E8E2D8, #B9B2A6". */
+  swatches: text().notNull().default(''),
+  /** Stara (precrtana) cijena za akciju; null = nema akcije. */
+  oldPrice: money('old_price'),
+  featured: boolean().notNull().default(false),
+  updatedAt: timestamp('updated_at'),
+})
+
+/** Upiti s web stranice: ponuda, zakazani posjet salonu, zakazano mjerenje. */
+export const webInquiries = pgTable(
+  'web_inquiries',
+  {
+    id: serial().primaryKey(),
+    at: timestamp().notNull(),
+    /** ponuda | posjet | mjerenje */
+    kind: text().notNull(),
+    name: text().notNull(),
+    phone: text().notNull(),
+    email: text().notNull().default(''),
+    room: text().notNull().default(''),
+    dimensions: text().notNull().default(''),
+    message: text().notNull().default(''),
+    product: text().notNull().default(''),
+    /** Sažetak AI savjetnika (ako ga je kupac prošao). */
+    advice: text().notNull().default(''),
+    date: date({ mode: 'string' }),
+    slot: text().notNull().default(''),
+    address: text().notNull().default(''),
+    source: text().notNull().default(''),
+    ip: text().notNull().default(''),
+    /** novo | u_obradi | zatvoreno */
+    status: text().notNull().default('novo'),
+    handledBy: text('handled_by').notNull().default(''),
+    note: text().notNull().default(''),
+    customerId: integer('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('web_inquiries_at_idx').on(t.at)],
+)
+
+export const webInquiryPhotos = pgTable(
+  'web_inquiry_photos',
+  {
+    id: serial().primaryKey(),
+    inquiryId: integer('inquiry_id')
+      .notNull()
+      .references(() => webInquiries.id, { onDelete: 'cascade' }),
+    fileId: integer('file_id').notNull().references(() => files.id),
+  },
+  (t) => [index('web_inquiry_photos_idx').on(t.inquiryId)],
+)
