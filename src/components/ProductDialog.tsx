@@ -91,7 +91,7 @@ export function ProductDialog({
       title={product ? 'Uredi artikal' : 'Novi artikal'}
       subtitle={
         product
-          ? `${product.sku} · na stanju ${product.stock}`
+          ? `${product.sku}${product.fiscalSku ? ` · fiskalni: ${product.fiscalSku}` : ''} · na stanju ${product.stock}`
           : 'Šifra, cijene, minimalna zaliha i dobavljač.'
       }
       onClose={onClose}

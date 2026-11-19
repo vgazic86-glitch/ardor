@@ -52,7 +52,9 @@ export function ProductCard({
         title={p.name}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
-            {p.sku} · {p.category}
+            {p.sku}
+            {p.fiscalSku && <span>· fiskalni: <b className="font-semibold">{p.fiscalSku}</b></span>}
+            · {p.category}
           </span>
         }
         onClose={onClose}

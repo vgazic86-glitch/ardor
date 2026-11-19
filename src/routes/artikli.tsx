@@ -49,7 +49,7 @@ function ProductsPage() {
     (p) =>
       (cat === 'sve' || p.category === cat) &&
       (!q ||
-        `${p.sku} ${p.name} ${p.supplier}`
+        `${p.sku} ${p.fiscalSku ?? ''} ${p.name} ${p.supplier}`
           .toLowerCase()
           .includes(q.toLowerCase())),
   )
@@ -169,6 +169,7 @@ function ProductsPage() {
                           </span>
                           <span className="block text-xs text-walnut-500">
                             {p.sku}
+                            {p.fiscalSku && <> · fiskalni: <b className="font-semibold text-walnut-700">{p.fiscalSku}</b></>}
                           </span>
                         </span>
                       </button>
