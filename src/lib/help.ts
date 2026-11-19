@@ -358,7 +358,7 @@ export const HELP: HelpTopic[] = [
     title: 'Artikli',
     purpose: 'Katalog proizvoda: šifra, cijene, dobavljač, minimalna zaliha.',
     fields: [
-      'Naziv, šifra, kategorija (možete upisati novu ili odabrati postojeću), opis i dimenzije.',
+      'Naziv, šifra, kategorija (bira se s popisa; popis kategorija uređuju uprava i admin gumbom „Kategorije”), opis i dimenzije.',
       'Prodajna cijena (s PDV-om) i nabavna cijena.',
       'Dobavljač, minimalna zaliha, slika.',
     ],

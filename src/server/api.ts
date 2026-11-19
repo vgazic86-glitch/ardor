@@ -14,6 +14,7 @@ import * as weekly from './weekly'
 import * as collection from './collection'
 import * as inbox from './inbox'
 import * as receiptdoc from './receiptdoc'
+import * as categories from './categories'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 import { visibleDocuments } from '../lib/manuals'
@@ -153,6 +154,15 @@ export const createReceiptFn = createServerFn({ method: 'POST' }).middleware([op
 export const readSupplierDocFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<{ name: string; mime: string; dataB64: string }>())
   .handler(({ data }) => receiptdoc.readSupplierDoc(data))
+
+/** Kategorije artikala: dodavanje i brisanje (uprava i admin). */
+export const addCategoryFn = createServerFn({ method: 'POST' }).middleware([manager])
+  .validator(pass<{ name: string }>())
+  .handler(({ data }) => categories.addCategory(data.name))
+
+export const deleteCategoryFn = createServerFn({ method: 'POST' }).middleware([manager])
+  .validator(pass<{ name: string }>())
+  .handler(({ data }) => categories.deleteCategory(data.name))
 
 export const saveProductFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<logic.ProductInput>())

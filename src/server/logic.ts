@@ -1,5 +1,6 @@
 /** Serverska logika nad Netlify Database. Uvozi se samo iz serverskih funkcija. */
 import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm'
+import { listCategories } from './categories'
 import { goodsBlock, goodsBlockMessage, needsGoods, type StockOrder } from '../lib/stats'
 import { planInstallments } from '../lib/collection'
 import { db, type Tx } from '../../db/index.js'
@@ -142,6 +143,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       commissionRate: e.commissionRate,
       phone: e.phone,
     })),
+    categories: await listCategories(),
     suppliers: sups.map((s) => ({
       id: String(s.id),
       name: s.name,
@@ -820,10 +822,13 @@ function normalizeOptions(raw: string) {
 export async function saveProduct(input: ProductInput, byName = '') {
   if (!input.sku.trim() || !input.name.trim())
     throw new Error('Šifra i naziv su obavezni.')
+  const category = input.category.trim().slice(0, 60) || 'Ostalo'
+  // Kategorija mora biti na popisu kategorija (dodaje se ako je ne ima).
+  await db.insert(t.productCategories).values({ name: category }).onConflictDoNothing()
   const values = {
     sku: input.sku.trim(),
     name: input.name.trim(),
-    category: input.category.trim().slice(0, 60) || 'Ostalo',
+    category,
     price: round2(input.price),
     purchasePrice: round2(input.purchasePrice),
     minStock: Math.max(0, Math.round(input.minStock)),

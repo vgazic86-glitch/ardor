@@ -317,6 +317,8 @@ export interface Bonus {
 export interface Snapshot {
   today: string
   employees: Employee[]
+  /** Popis kategorija artikala (uređuje se u Artiklima). */
+  categories: string[]
   suppliers: Supplier[]
   products: Product[]
   customers: Customer[]

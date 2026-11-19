@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useState } from 'react'
+import { CategoriesDialog } from '../components/CategoriesDialog'
 import { ProductCard } from '../components/ProductCard'
 import { ProductDialog } from '../components/ProductDialog'
 import { ProductImage } from '../components/ProductImage'
@@ -39,6 +40,7 @@ function ProductsPage() {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<'sve' | Category>('sve')
   const [edit, setEdit] = useState<Product | 'new' | null>(null)
+  const [catsOpen, setCatsOpen] = useState(false)
   const [card, setCard] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
 
@@ -70,6 +72,11 @@ function ProductsPage() {
           >
             <QrCode className="size-4 text-copper-600" /> QR naljepnice
           </Link>
+          {full && (
+            <Button variant="outline" onClick={() => setCatsOpen(true)}>
+              Kategorije
+            </Button>
+          )}
           <Button onClick={() => setEdit('new')}>
             <Plus className="size-4" /> Novi artikal
           </Button>
@@ -236,6 +243,7 @@ function ProductsPage() {
         </div>
       </Card>
 
+      {catsOpen && <CategoriesDialog onClose={() => setCatsOpen(false)} />}
       {edit && (
         <ProductDialog
           product={edit === 'new' ? null : edit}

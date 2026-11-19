@@ -34,6 +34,12 @@ export const employees = pgTable('employees', {
   active: boolean().notNull().default(true),
 })
 
+/** Kategorije artikala (uređuje uprava i admin; artikal ih bira s popisa). */
+export const productCategories = pgTable('product_categories', {
+  id: serial().primaryKey(),
+  name: text().notNull().unique(),
+})
+
 export const suppliers = pgTable('suppliers', {
   id: serial().primaryKey(),
   name: text().notNull(),

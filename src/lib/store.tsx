@@ -18,6 +18,8 @@ import {
   createOrderFn,
   createReceiptFn,
   updateReceiptFn,
+  addCategoryFn,
+  deleteCategoryFn,
   deactivateEmployeeFn,
   saveEmployeeFn,
   saveProductFn,
@@ -102,6 +104,9 @@ interface Store extends Snapshot {
   updateReceipt: (
     r: Without<ReceiptInput> & { id: string },
   ) => Promise<{ id: string; number: string } | null>
+  /** Kategorije artikala (samo uprava i admin). */
+  addCategory: (name: string) => Promise<string | null>
+  deleteCategory: (name: string) => Promise<string | null>
   saveProduct: (p: Without<ProductInput>) => Promise<{ id: string } | null>
   archiveProduct: (id: string) => Promise<void>
   /** Postavlja (ili uz null briše) sliku artikla. */
@@ -290,6 +295,10 @@ export function StoreProvider({
           () => updateReceiptFn({ data: { ...r, actorId } }),
           'Primka je izmijenjena.',
         ),
+      addCategory: (name) =>
+        run(() => addCategoryFn({ data: { name } }), 'Kategorija je dodana.'),
+      deleteCategory: (name) =>
+        run(() => deleteCategoryFn({ data: { name } }), 'Kategorija je obrisana.'),
       saveProduct: (p) =>
         run(
           () => saveProductFn({ data: { ...p, actorId } }),

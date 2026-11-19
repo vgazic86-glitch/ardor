@@ -2,7 +2,7 @@ import { ImagePlus } from 'lucide-react'
 import { useState } from 'react'
 import { prepareImage } from '../lib/image'
 import { ProductImageEditor } from './ProductImage'
-import { CATEGORIES, type Product } from '../lib/types'
+import type { Product } from '../lib/types'
 import { money2, netOf, parseAmount, pct, VAT_RATE } from '../lib/format'
 import { useStore } from '../lib/store'
 import { Modal } from './Modal'
@@ -18,7 +18,7 @@ export function ProductDialog({
   onClose: () => void
   onSaved?: (id: string) => void
 }) {
-  const { suppliers, products, saveProduct, setProductImage, notify, busy } =
+  const { suppliers, products, categories, saveProduct, setProductImage, notify, busy } =
     useStore()
   const [newImage, setNewImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -34,8 +34,10 @@ export function ProductDialog({
   const [sku, setSku] = useState(product?.sku ?? nextSku())
   const [name, setName] = useState(product?.name ?? '')
   const [category, setCategory] = useState<string>(
-    product?.category ?? CATEGORIES[0],
+    product?.category ?? categories[0] ?? 'Ostalo',
   )
+  // Popis: kategorije iz Artikala; ako artikal ima kategoriju koje nema na popisu, ona se pokaže da se ne izgubi.
+  const categoryChoices = [...new Set([...categories, category])]
   const [price, setPrice] = useState(product ? String(product.price) : '')
   const [cost, setCost] = useState(product ? String(product.purchasePrice) : '')
   const [minStock, setMinStock] = useState(String(product?.minStock ?? 1))
@@ -144,23 +146,17 @@ export function ProductDialog({
             onChange={(e) => setSku(e.target.value)}
           />
         </Field>
-        <Field label="Kategorija" hint="Upišite novu kategoriju ili odaberite postojeću s popisa.">
-          <input
+        <Field label="Kategorija" hint="Nove kategorije dodajete u Artiklima → Kategorije.">
+          <select
             className={inputCls}
             required
-            list="kategorije-artikala"
-            maxLength={60}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            placeholder="npr. Dječje sobe"
-          />
-          <datalist id="kategorije-artikala">
-            {[...new Set([...CATEGORIES, ...products.map((p) => p.category)])]
-              .sort((a, b) => a.localeCompare(b))
-              .map((c) => (
-                <option key={c} value={c} />
-              ))}
-          </datalist>
+          >
+            {categoryChoices.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Naziv artikla" className="sm:col-span-2">
           <input
