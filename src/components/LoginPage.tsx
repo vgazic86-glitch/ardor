@@ -2,6 +2,7 @@ import { useRouter } from '@tanstack/react-router'
 import { KeyRound, LogIn, Quote, ShieldCheck } from 'lucide-react'
 import { messageFor, todayBL } from '../lib/motivation'
 import { tipsFor } from '../lib/savjeti'
+import { markTabStarted } from '../lib/closeLogout'
 import { useState } from 'react'
 import { activateFn, loginFn } from '../server/api'
 import { BrandMark, Logo } from './Logo'
@@ -44,6 +45,7 @@ export function LoginPage() {
         if (pw1 !== pw2) throw new Error('Lozinke se ne podudaraju.')
         await activateFn({ data: { username, code, password: pw1 } })
       }
+      markTabStarted()
       await router.invalidate()
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : 'Prijava nije uspjela.')

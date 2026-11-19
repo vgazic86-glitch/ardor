@@ -480,7 +480,10 @@ function useHeartbeat() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  useCloseLogout(true) // zatvaranje zadnjeg prozora = odjava
+  // zatvaranje zadnjeg prozora = odjava; nova kartica bez živih ostalih = prijava se poništava
+  useCloseLogout(true, () => {
+    void logoutFn().then(() => window.location.reload())
+  })
   useHeartbeat()
   const theme = useTheme()
   const [open, setOpen] = useState(false)
