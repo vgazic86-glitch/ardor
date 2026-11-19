@@ -34,6 +34,9 @@ function StocktakePage() {
     busy,
   } = useStore()
   const [counted, setCounted] = useState<Record<string, string>>({})
+  /** Inventura se radi odvojeno za salon i skladište. */
+  const [loc, setLoc] = useState<'salon' | 'skladiste'>('salon')
+  const onHand = (p: { stock: number; stockWarehouse?: number }) => (loc === 'salon' ? p.stock : (p.stockWarehouse ?? 0))
   const [cat, setCat] = useState<'sve' | Category>('sve')
   const [q, setQ] = useState('')
   const [onlyDiff, setOnlyDiff] = useState(false)
@@ -47,7 +50,7 @@ function StocktakePage() {
     const v = counted[id]
     return v === undefined || v === ''
       ? null
-      : Number(v) - productById(id).stock
+      : Number(v) - onHand(productById(id))
   }
   const withDiff = entered.filter((p) => diffOf(p.id))
   const shortage = withDiff.reduce(
@@ -76,6 +79,7 @@ function StocktakePage() {
     const res = await adjustStockMany(
       entered.map((p) => ({ productId: p.id, counted: Number(counted[p.id]) })),
       note,
+      loc,
     )
     if (res) setCounted({})
   }
@@ -88,6 +92,10 @@ function StocktakePage() {
         description="Upišite prebrojane količine. Razlike prema stanju u aplikaciji knjiže se kao korekcija po prosječnoj nabavnoj cijeni. Artikli bez upisane količine ostaju nepromijenjeni."
         actions={
           <>
+            <select className="rounded-lg border border-walnut-200 bg-white px-3 py-2 text-sm font-semibold" value={loc} onChange={(e) => { setLoc(e.target.value as 'salon' | 'skladiste'); setCounted({}) }} aria-label="Mjesto inventure">
+              <option value="salon">Inventura: Salon</option>
+              <option value="skladiste">Inventura: Skladište</option>
+            </select>
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="size-4" /> Lista za brojanje
             </Button>
@@ -96,7 +104,7 @@ function StocktakePage() {
               onClick={() =>
                 setCounted(
                   Object.fromEntries(
-                    products.map((p) => [p.id, String(Math.max(0, p.stock))]),
+                    products.map((p) => [p.id, String(Math.max(0, onHand(p)))]),
                   ),
                 )
               }
@@ -196,7 +204,7 @@ function StocktakePage() {
                         </div>
                       </td>
                       <td className="text-right font-semibold tabular">
-                        {p.stock}
+                        {onHand(p)}
                       </td>
                       <td className="text-right">
                         <input

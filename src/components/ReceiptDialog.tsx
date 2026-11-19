@@ -36,6 +36,7 @@ export function ReceiptDialog({
     date?: string
     documentNumber?: string
     vat?: number | null
+    location?: 'salon' | 'skladiste'
     lines: { productId: string; qty: number; unitCost: number }[]
   }
   /** Ako je zadan, dijalog mijenja postojeću primku (broj ostaje isti). */
@@ -59,6 +60,8 @@ export function ReceiptDialog({
   )
   const [newProduct, setNewProduct] = useState(false)
   const [onlySupplier, setOnlySupplier] = useState(true)
+  /** Mjesto zaprimanja: salon (prodaja odmah može) ili skladište. */
+  const [loc, setLoc] = useState<'salon' | 'skladiste'>(initial?.location ?? 'salon')
   const [docFile, setDocFile] = useState<{ name: string; mime: string; dataB64: string } | null>(null)
   const [reading, setReading] = useState(false)
   const [readMsg, setReadMsg] = useState('')
@@ -146,6 +149,7 @@ export function ReceiptDialog({
       documentNumber: doc,
       note,
       vat: vatAuto ? null : parseAmount(vat),
+      location: loc,
       // Bez novog dokumenta pri izmjeni ostaje postojeći prilog.
       file: docFile,
       lines: lines.map((l) => ({
@@ -295,6 +299,16 @@ export function ReceiptDialog({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
+            </Field>
+            <Field label="Mjesto prijema" hint="Salon: odmah se može prodavati. Skladište: roba se kasnije premješta u salon internom primkom.">
+              <select
+                className={inputCls}
+                value={loc}
+                onChange={(e) => setLoc(e.target.value as 'salon' | 'skladiste')}
+              >
+                <option value="salon">Salon</option>
+                <option value="skladiste">Skladište</option>
+              </select>
             </Field>
             <Field label="Broj dokumenta dobavljača">
               <input

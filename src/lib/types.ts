@@ -58,7 +58,10 @@ export interface Product {
   /** Prosječna nabavna cijena iz ulaza (ponderisana). */
   avgCost: number
   /** Fizičko stanje u salonu/skladištu (zbir svih kretanja). */
+  /** Zaliha u salonu (prodaja se skida odavde). */
   stock: number
+  /** Zaliha u skladištu (ne ulazi u prodaju dok se ne premjesti u salon). */
+  stockWarehouse?: number
   minStock: number
   supplierId: string | null
   supplier: string
@@ -153,7 +156,14 @@ export interface Installment {
 }
 
 export type MovementType =
-  'pocetno' | 'primka' | 'izlaz' | 'povrat' | 'korekcija'
+  'pocetno' | 'primka' | 'izlaz' | 'povrat' | 'korekcija' | 'premjestaj'
+
+/** Gdje je roba: salon (prodaja) ili skladište. */
+export type StockLocation = 'salon' | 'skladiste'
+export const LOCATION_LABEL: Record<StockLocation, string> = {
+  salon: 'Salon',
+  skladiste: 'Skladište',
+}
 
 export interface StockMovement {
   id: string
@@ -167,6 +177,20 @@ export interface StockMovement {
   orderId: string | null
   employeeId: string | null
   note: string
+  location?: StockLocation
+  transferId?: string | null
+}
+
+/** Interna primka: premještaj robe između skladišta i salona. */
+export interface Transfer {
+  id: string
+  number: string
+  date: string
+  from: StockLocation
+  to: StockLocation
+  employeeId: string | null
+  note: string
+  lines: { productId: string; qty: number }[]
 }
 
 export interface ReceiptLine {
@@ -186,6 +210,8 @@ export interface Receipt {
   lines: ReceiptLine[]
   /** PDV s računa dobavljača; null/undefined = 17 % od nabavne vrijednosti. */
   vat?: number | null
+  /** Mjesto na koje je roba zaprimljena (salon ili skladište). */
+  location?: StockLocation
 }
 
 export interface FileMeta {
@@ -325,6 +351,8 @@ export interface Snapshot {
   orders: Order[]
   receipts: Receipt[]
   movements: StockMovement[]
+  /** Interne primke (premještaj skladište ↔ salon). */
+  transfers: Transfer[]
   documents: CompanyDocument[]
   /** Promjene maloprodajnih cijena u zadnjih 30 dana, najnovije prve. */
   priceChanges: PriceChange[]

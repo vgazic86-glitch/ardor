@@ -1,6 +1,7 @@
 /** Serverska logika nad Netlify Database. Uvozi se samo iz serverskih funkcija. */
 import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm'
 import { listCategories } from './categories'
+import { listTransfers } from './transfers'
 import { goodsBlock, goodsBlockMessage, needsGoods, type StockOrder } from '../lib/stats'
 import { planInstallments } from '../lib/collection'
 import { db, type Tx } from '../../db/index.js'
@@ -22,6 +23,7 @@ import type {
   Role,
   Slot,
   Snapshot,
+  StockLocation,
 } from '../lib/types'
 
 export function todayIso() {
@@ -107,10 +109,12 @@ export async function loadSnapshot(): Promise<Snapshot> {
   for (const r of targets) targetsBy.set(r.employeeId, { ...(targetsBy.get(r.employeeId) ?? {}), [r.month]: r.target })
 
   const stock = new Map<number, number>()
+  const stockWh = new Map<number, number>()
   const inQty = new Map<number, number>()
   const inVal = new Map<number, number>()
   for (const m of moves) {
-    stock.set(m.productId, (stock.get(m.productId) ?? 0) + m.qty)
+    const bucket = m.location === 'skladiste' ? stockWh : stock
+    bucket.set(m.productId, (bucket.get(m.productId) ?? 0) + m.qty)
     if (m.qty > 0 && (m.type === 'pocetno' || m.type === 'primka')) {
       inQty.set(m.productId, (inQty.get(m.productId) ?? 0) + m.qty)
       inVal.set(m.productId, (inVal.get(m.productId) ?? 0) + m.qty * m.unitCost)
@@ -144,6 +148,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       phone: e.phone,
     })),
     categories: await listCategories(),
+    transfers: await listTransfers(),
     suppliers: sups.map((s) => ({
       id: String(s.id),
       name: s.name,
@@ -163,6 +168,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
         purchasePrice: p.purchasePrice,
         avgCost: q ? round2((inVal.get(p.id) ?? 0) / q) : p.purchasePrice,
         stock: stock.get(p.id) ?? 0,
+        stockWarehouse: stockWh.get(p.id) ?? 0,
         minStock: p.minStock,
         supplierId: str(p.supplierId),
         supplier: s?.name ?? '—',
@@ -238,6 +244,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       note: r.note,
       employeeId: str(r.employeeId),
       vat: r.vat,
+      location: (moves.find((m) => m.receiptId === r.id)?.location === 'skladiste' ? 'skladiste' : 'salon') as StockLocation,
       lines: moves
         .filter((m) => m.receiptId === r.id)
         .map((m) => ({
@@ -257,6 +264,8 @@ export async function loadSnapshot(): Promise<Snapshot> {
       orderId: str(m.orderId),
       employeeId: str(m.employeeId),
       note: m.note,
+      location: (m.location === 'skladiste' ? 'skladiste' : 'salon') as StockLocation,
+      transferId: str(m.transferId),
     })),
     documents: docs,
     priceChanges: await recentPriceChanges(),
@@ -317,7 +326,7 @@ async function assertGoods(tx: Tx, orderId: number, status: OrderStatus) {
   const stockRows = await tx
     .select({ productId: t.stockMovements.productId, stock: sql<number>`coalesce(sum(${t.stockMovements.qty}), 0)::int` })
     .from(t.stockMovements)
-    .where(inArray(t.stockMovements.productId, productIds))
+    .where(and(inArray(t.stockMovements.productId, productIds), eq(t.stockMovements.location, 'salon')))
     .groupBy(t.stockMovements.productId)
   const orders: StockOrder[] = open.map((o) => ({
     id: String(o.id),
@@ -663,6 +672,8 @@ export interface ReceiptInput {
   vat?: number | null
   /** Dokument dobavljača (PDF ili slika) priložen uz primku. */
   file?: { name: string; mime: string; dataB64: string } | null
+  /** Mjesto zaprimanja robe (salon ili skladište); izostavljeno = salon. */
+  location?: StockLocation
 }
 
 const RECEIPT_FILE_MIMES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
@@ -712,6 +723,7 @@ export async function createReceipt(input: ReceiptInput) {
         qty: Math.round(l.qty),
         unitCost: round2(Math.max(0, l.unitCost)),
         receiptId: next,
+        location: input.location ?? 'salon',
         employeeId: id(input.actorId),
         note: `Prijem ${number}${input.documentNumber ? ` (${input.documentNumber})` : ''}`,
       })),
@@ -738,19 +750,24 @@ export async function updateReceipt(input: ReceiptInput & { id: string }) {
   if (!old) throw new Error('Primka ne postoji.')
   const date = input.date || old.date
 
-  // Provjera: zaliha bez stavki ove primke + nove stavke ne smije biti negativna.
+  // Provjera: zaliha na mjestu gdje je primka bila, bez njezinih stavki i uz nove stavke, ne smije biti negativna.
   const oldMoves = await db.select().from(t.stockMovements).where(eq(t.stockMovements.receiptId, rid))
+  const oldLoc: StockLocation = oldMoves[0]?.location === 'skladiste' ? 'skladiste' : 'salon'
+  const newLoc: StockLocation = input.location ?? oldLoc
   const productIds = [...new Set([...oldMoves.map((m) => m.productId), ...lines.map((l) => Number(l.productId))])]
   const all = productIds.length
-    ? await db.select({ productId: t.stockMovements.productId, qty: t.stockMovements.qty }).from(t.stockMovements).where(inArray(t.stockMovements.productId, productIds))
+    ? await db
+        .select({ productId: t.stockMovements.productId, qty: t.stockMovements.qty })
+        .from(t.stockMovements)
+        .where(and(inArray(t.stockMovements.productId, productIds), eq(t.stockMovements.location, oldLoc)))
     : []
   const sum = (rows: { productId: number; qty: number }[], pid: number) => rows.filter((r) => r.productId === pid).reduce((s, r) => s + r.qty, 0)
   const newQty = (pid: number) => lines.filter((l) => Number(l.productId) === pid).reduce((s, l) => s + Math.round(l.qty), 0)
   for (const pid of productIds) {
-    const stock = sum(all, pid) - sum(oldMoves, pid) + newQty(pid)
+    const stock = sum(all, pid) - sum(oldMoves, pid) + (newLoc === oldLoc ? newQty(pid) : 0)
     if (stock < 0) {
       const [p] = await db.select({ name: t.products.name }).from(t.products).where(eq(t.products.id, pid))
-      throw new Error(`Ne mogu spremiti izmjenu: „${p?.name ?? 'artikal'}” bi na zalihi imao ${stock}. Dio robe je već izašao iz salona.`)
+      throw new Error(`Ne mogu spremiti izmjenu: „${p?.name ?? 'artikal'}” bi na zalihi (${oldLoc === 'skladiste' ? 'skladište' : 'salon'}) imao ${stock}. Dio robe je već izašao.`)
     }
   }
 
@@ -776,6 +793,7 @@ export async function updateReceipt(input: ReceiptInput & { id: string }) {
         qty: Math.round(l.qty),
         unitCost: round2(Math.max(0, l.unitCost)),
         receiptId: rid,
+        location: newLoc,
         employeeId: id(input.actorId),
         note: `Prijem ${old.number}${input.documentNumber ? ` (${input.documentNumber})` : ''}`,
       })),
@@ -880,6 +898,7 @@ export async function adjustStock(
   counted: number,
   note: string,
   actorId: string | null,
+  location: StockLocation = 'salon',
 ) {
   const pid = Number(productId)
   await db.transaction(async (tx) => {
@@ -888,7 +907,7 @@ export async function adjustStock(
         qty: sql<number>`coalesce(sum(${t.stockMovements.qty}), 0)::int`,
       })
       .from(t.stockMovements)
-      .where(eq(t.stockMovements.productId, pid))
+      .where(and(eq(t.stockMovements.productId, pid), eq(t.stockMovements.location, location)))
     const diff = Math.round(counted) - qty
     if (!diff) return
     const costs = await avgCosts(tx, [pid])
@@ -900,6 +919,7 @@ export async function adjustStock(
       unitCost: costs.get(pid) ?? 0,
       employeeId: id(actorId),
       note: note.trim() || 'Inventura',
+      location,
     })
   })
 }
@@ -909,6 +929,7 @@ export async function adjustStockMany(
   lines: { productId: string; counted: number }[],
   note: string,
   actorId: string | null,
+  location: StockLocation = 'salon',
 ) {
   const today = todayIso()
   let changed = 0
@@ -921,7 +942,7 @@ export async function adjustStockMany(
         qty: sql<number>`coalesce(sum(${t.stockMovements.qty}), 0)::int`,
       })
       .from(t.stockMovements)
-      .where(inArray(t.stockMovements.productId, ids))
+      .where(and(inArray(t.stockMovements.productId, ids), eq(t.stockMovements.location, location)))
       .groupBy(t.stockMovements.productId)
     const current = new Map(rows.map((r) => [r.productId, r.qty]))
     const costs = await avgCosts(tx, ids)
@@ -940,6 +961,7 @@ export async function adjustStockMany(
         unitCost: costs.get(x.pid) ?? 0,
         employeeId: id(actorId),
         note: note.trim() || `Inventura ${today}`,
+        location,
       }))
     changed = values.length
     if (values.length) await tx.insert(t.stockMovements).values(values)

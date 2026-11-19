@@ -16,6 +16,7 @@ import * as inbox from './inbox'
 import * as receiptdoc from './receiptdoc'
 import * as categories from './categories'
 import * as receiptpdf from './receiptpdf'
+import * as transfers from './transfers'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 import { visibleDocuments } from '../lib/manuals'
@@ -180,10 +181,11 @@ export const adjustStockFn = createServerFn({ method: 'POST' }).middleware([oper
       counted: number
       note: string
       actorId: string | null
+      location?: 'salon' | 'skladiste'
     }>(),
   )
   .handler(({ data }) =>
-    logic.adjustStock(data.productId, data.counted, data.note, data.actorId),
+    logic.adjustStock(data.productId, data.counted, data.note, data.actorId, data.location ?? 'salon'),
   )
 
 export const adjustStockManyFn = createServerFn({ method: 'POST' }).middleware([operations])
@@ -192,10 +194,11 @@ export const adjustStockManyFn = createServerFn({ method: 'POST' }).middleware([
       lines: { productId: string; counted: number }[]
       note: string
       actorId: string | null
+      location?: 'salon' | 'skladiste'
     }>(),
   )
   .handler(({ data }) =>
-    logic.adjustStockMany(data.lines, data.note, data.actorId),
+    logic.adjustStockMany(data.lines, data.note, data.actorId, data.location ?? 'salon'),
   )
 
 export const saveSupplierFn = createServerFn({ method: 'POST' }).middleware([operations])
@@ -673,3 +676,8 @@ export const uploadManualFn = createServerFn({ method: 'POST' })
 export const receiptPdfFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<{ id: string }>())
   .handler(({ data }) => receiptpdf.receiptPdf(data.id))
+
+/** Interna primka: premještaj robe između skladišta i salona. */
+export const createTransferFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<transfers.TransferInput>())
+  .handler(({ data }) => transfers.createTransfer(data))

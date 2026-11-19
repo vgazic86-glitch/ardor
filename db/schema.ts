@@ -236,6 +236,12 @@ export const stockMovements = pgTable(
     }),
     employeeId: integer('employee_id').references(() => employees.id),
     note: text().notNull().default(''),
+    /** Gdje je roba: salon (prodaja se skida odavde) ili skladište. */
+    location: text().notNull().default('salon'),
+    /** Interna primka (premještaj skladište ↔ salon), ako je kretanje dio nje. */
+    transferId: integer('transfer_id').references((): AnyPgColumn => transfers.id, {
+      onDelete: 'cascade',
+    }),
     createdAt: timestamp('created_at').defaultNow(),
   },
   (t) => [
@@ -243,6 +249,18 @@ export const stockMovements = pgTable(
     index('stock_movements_order_idx').on(t.orderId),
   ],
 )
+
+/** Interne primke: premještaj robe između skladišta i salona (zapis toka robe). */
+export const transfers = pgTable('transfers', {
+  id: serial().primaryKey(),
+  number: text().notNull().unique(),
+  date: date({ mode: 'string' }).notNull(),
+  fromLocation: text('from_location').notNull(),
+  toLocation: text('to_location').notNull(),
+  employeeId: integer('employee_id').references(() => employees.id),
+  note: text().notNull().default(''),
+  createdAt: timestamp('created_at').defaultNow(),
+})
 
 export const appMeta = pgTable('app_meta', {
   key: text().primaryKey(),

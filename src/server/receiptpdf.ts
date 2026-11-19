@@ -43,6 +43,7 @@ export async function receiptPdf(id: string) {
     meta: [
       `Datum prijema: ${dateBa(r.date)}`,
       `Broj dokumenta dobavljača: ${r.documentNumber || '—'}`,
+      `Mjesto prijema: ${moves[0]?.location === 'skladiste' ? 'Skladište' : 'Salon'}`,
       `Zaprimio: ${e?.name ?? '—'}`,
     ],
     boxes: [

@@ -217,7 +217,8 @@ function StockPage() {
               <thead>
                 <tr>
                   <th>Artikal</th>
-                  <th className="text-right">Na stanju</th>
+                  <th className="text-right">Na stanju (salon)</th>
+                  <th className="text-right">U skladištu</th>
                   <th className="text-right">Rezervisano</th>
                   <th className="text-right">Slobodno</th>
                   {restricted ? (
@@ -258,6 +259,9 @@ function StockPage() {
                       </td>
                       <td className="text-right font-semibold tabular">
                         {p.stock}
+                      </td>
+                      <td className="text-right tabular text-walnut-600">
+                        {p.stockWarehouse ?? 0}
                       </td>
                       <td className="text-right tabular text-walnut-700">
                         {r || '—'}

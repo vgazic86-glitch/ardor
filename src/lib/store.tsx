@@ -12,6 +12,7 @@ import {
   addPaymentFn,
   adjustStockFn,
   adjustStockManyFn,
+  createTransferFn,
   archiveProductFn,
   setProductImageFn,
   clearTransactionsFn,
@@ -118,11 +119,21 @@ interface Store extends Snapshot {
     productId: string,
     counted: number,
     note: string,
+    location?: 'salon' | 'skladiste',
   ) => Promise<void>
   adjustStockMany: (
     lines: { productId: string; counted: number }[],
     note: string,
+    location?: 'salon' | 'skladiste',
   ) => Promise<{ changed: number } | null>
+  /** Interna primka: premještaj robe između skladišta i salona. */
+  createTransfer: (t: {
+    date: string
+    from: 'salon' | 'skladiste'
+    to: 'salon' | 'skladiste'
+    note: string
+    lines: { productId: string; qty: number }[]
+  }) => Promise<{ id: string; number: string } | null>
   saveSupplier: (s: SupplierInput) => Promise<{ id: string } | null>
   saveEmployee: (e: EmployeeInput) => Promise<{ id: string } | null>
   deactivateEmployee: (id: string) => Promise<void>
@@ -314,15 +325,20 @@ export function StoreProvider({
           () => archiveProductFn({ data: { id } }),
           'Artikal je arhiviran.',
         )),
-      adjustStock: async (productId, counted, note) =>
+      adjustStock: async (productId, counted, note, location) =>
         void (await run(
-          () => adjustStockFn({ data: { productId, counted, note, actorId } }),
+          () => adjustStockFn({ data: { productId, counted, note, actorId, location } }),
           'Stanje je ispravljeno.',
         )),
-      adjustStockMany: (lines, note) =>
+      adjustStockMany: (lines, note, location) =>
         run(
-          () => adjustStockManyFn({ data: { lines, note, actorId } }),
+          () => adjustStockManyFn({ data: { lines, note, actorId, location } }),
           'Inventura je knjižena.',
+        ),
+      createTransfer: (t) =>
+        run(
+          () => createTransferFn({ data: { ...t, actorId } }),
+          'Interna primka je spremljena, roba je premještena.',
         ),
       saveSupplier: (s) =>
         run(() => saveSupplierFn({ data: s }), 'Dobavljač je spremljen.'),

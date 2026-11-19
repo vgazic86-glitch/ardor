@@ -83,6 +83,7 @@ export const movementLabel: Record<MovementType, string> = {
   izlaz: 'Izlaz kupcu',
   povrat: 'Povrat',
   korekcija: 'Korekcija / inventura',
+  premjestaj: 'Interna primka (premještaj)',
 }
 
 export const movementTone: Record<MovementType, string> = {
@@ -91,6 +92,7 @@ export const movementTone: Record<MovementType, string> = {
   izlaz: 'bg-sky-50 text-sky-800 ring-sky-200',
   povrat: 'bg-amber-50 text-amber-800 ring-amber-200',
   korekcija: 'bg-violet-50 text-violet-800 ring-violet-200',
+  premjestaj: 'bg-violet-50 text-violet-800 ring-violet-200',
 }
 
 /** Parsira iznos s decimalnim zarezom ili tačkom. */

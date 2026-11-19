@@ -12,6 +12,7 @@ import {
 import { Fragment, useState } from 'react'
 import { ProductCard } from '../components/ProductCard'
 import { ReceiptDialog } from '../components/ReceiptDialog'
+import { TransferDialog } from '../components/TransferDialog'
 import { openDownload } from '../lib/files'
 import { receiptPdfFn } from '../server/api'
 import {
@@ -56,6 +57,7 @@ function ReceiptsPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [product, setProduct] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
 
   const list = receipts.filter((r) => {
     if (sup !== 'svi' && r.supplierId !== sup) return false
@@ -78,9 +80,14 @@ function ReceiptsPage() {
         title="Prijem robe"
         description="Svaka primka bilježi dobavljača, njegov broj dokumenta, količine i nabavne cijene. Iz primki se računa prosječna nabavna cijena i vrijednost zaliha."
         actions={
-          <Button onClick={() => navigate({ search: { nova: true } })}>
-            <PackagePlus className="size-4" /> Nova primka
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setTransferOpen(true)}>
+              Interna primka (premještaj)
+            </Button>
+            <Button onClick={() => navigate({ search: { nova: true } })}>
+              <PackagePlus className="size-4" /> Nova primka
+            </Button>
+          </>
         }
       />
 
@@ -339,6 +346,7 @@ function ReceiptsPage() {
           onSaved={() => setExpanded(null)}
         />
       )}
+      {transferOpen && <TransferDialog onClose={() => setTransferOpen(false)} />}
       {editing &&
         (() => {
           const r = receipts.find((x) => x.id === editing)
@@ -352,6 +360,7 @@ function ReceiptsPage() {
                 date: r.date,
                 documentNumber: r.documentNumber,
                 vat: r.vat,
+                location: r.location,
                 lines: r.lines.map((l) => ({ productId: l.productId, qty: l.qty, unitCost: l.unitCost })),
               }}
               onClose={() => setEditing(null)}

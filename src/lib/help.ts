@@ -335,6 +335,9 @@ export const HELP: HelpTopic[] = [
         items: [
           'Po spremanju količine odmah ulaze na zalihu.',
           'Nabavna cijena artikla se ažurira na zadnju.',
+          'Mjesto prijema: salon (odmah se može prodavati) ili skladište. Prodaja se uvijek skida iz salona, pa robu iz skladišta prvo premjestite u salon.',
+          'Interna primka (premještaj skladište → salon i obrnuto) bilježi tok robe. Gumb je na stranici Primke. Svaki premještaj ostaje u dnevniku.',
+          'Inventura se radi odvojeno za salon i skladište (birate na vrhu stranice Inventura).',
           'Primka se automatski knjiži na karticu dobavljača kao dug.',
           'Iznos PDV-a ide u knjigu ulaznih računa (KUF) — kontrola za knjigovođu.',
           'Pogrešnu primku možete ispraviti: otvorite je u listi i kliknite „Izmijeni primku”. Zaliha se preračuna, a broj primke ostaje isti. Izmjena nije moguća ako bi zaliha pala ispod nule.',

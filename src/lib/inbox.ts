@@ -26,6 +26,7 @@ export const SALON_ENTITIES = new Set([
   'Plan prometa',
   'Dokument',
   'Smjene',
+  'Interna primka',
 ])
 
 export const isSalonEvent = (entity: string) => SALON_ENTITIES.has(entity)
