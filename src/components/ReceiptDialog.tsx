@@ -63,6 +63,8 @@ export function ReceiptDialog({
   const [reading, setReading] = useState(false)
   const [readMsg, setReadMsg] = useState('')
   const [unmatched, setUnmatched] = useState<Unmatched[]>([])
+  /** Stavka iz dokumenta za koju se odmah otvara dodavanje artikla u šifrarnik. */
+  const [newFor, setNewFor] = useState<{ index: number; sifra: string; naziv: string; qty: number; unitCost: number } | null>(null)
 
   const choices = products.filter(
     (p) => !onlySupplier || !supplierId || p.supplierId === supplierId,
@@ -253,16 +255,21 @@ export function ReceiptDialog({
           </div>
           {unmatched.length > 0 && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <div className="font-semibold">Ove stavke nisu u katalogu i nisu dodane u primku:</div>
-              <ul className="mt-1 list-disc pl-5 text-xs">
+              <div className="font-semibold">Ove stavke nisu u šifrarniku. Dodajte ih odmah, pa će ući u primku:</div>
+              <ul className="mt-2 space-y-2">
                 {unmatched.map((u, i) => (
-                  <li key={i}>
-                    {u.sifra ? `${u.sifra} · ` : ''}
-                    {u.naziv || 'bez naziva'} — {u.qty} kom
+                  <li key={i} className="flex flex-wrap items-center gap-3 rounded-lg bg-white/70 px-3 py-2">
+                    <span className="min-w-0 flex-1 text-sm">
+                      <span className="font-semibold">{u.naziv || 'bez naziva'}</span>
+                      {u.sifra && <span className="ml-2 text-xs text-walnut-500">šifra {u.sifra}</span>}
+                      <span className="ml-2 text-xs">{u.qty} kom{u.unitCost ? ` · ${money2(u.unitCost)} bez PDV-a` : ''}</span>
+                    </span>
+                    <Button size="sm" variant="copper" onClick={() => setNewFor({ index: i, sifra: u.sifra, naziv: u.naziv, qty: u.qty, unitCost: u.unitCost })}>
+                      <Plus className="size-3.5" /> Dodaj u šifrarnik
+                    </Button>
                   </li>
                 ))}
               </ul>
-              <div className="mt-2 text-xs">Prvo dodajte te artikle u katalog (Artikli → Novi artikal), pa ponovo učitajte dokument.</div>
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-4">
@@ -427,8 +434,8 @@ export function ReceiptDialog({
               >
                 <Plus className="size-4" /> Dodaj artikal
               </Button>
-              <Button variant="ghost" onClick={() => setNewProduct(true)}>
-                <Plus className="size-4" /> Novi artikal u šifrarniku
+              <Button variant="outline" onClick={() => setNewProduct(true)}>
+                <Plus className="size-4" /> Novi artikal (odmah u šifrarnik)
               </Button>
             </div>
           </fieldset>
@@ -447,9 +454,23 @@ export function ReceiptDialog({
         <ProductDialog
           product={null}
           onClose={() => setNewProduct(false)}
-          onSaved={(id) =>
+          onSaved={(id) => {
             setLines((l) => [...l, { productId: id, qty: '1', unitCost: '' }])
-          }
+            setNewProduct(false)
+          }}
+        />
+      )}
+      {newFor && (
+        <ProductDialog
+          product={null}
+          prefill={{ sku: newFor.sifra, name: newFor.naziv, cost: newFor.unitCost, supplierId: supplierId || null }}
+          onClose={() => setNewFor(null)}
+          onSaved={(id) => {
+            // Stavka iz dokumenta sada ulazi u primku s količinom s računa.
+            setLines((l) => [...l, { productId: id, qty: String(newFor.qty), unitCost: newFor.unitCost ? String(newFor.unitCost) : '' }])
+            setUnmatched((list) => list.filter((_, j) => j !== newFor.index))
+            setNewFor(null)
+          }}
         />
       )}
     </>

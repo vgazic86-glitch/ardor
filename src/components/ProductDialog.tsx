@@ -13,10 +13,13 @@ export function ProductDialog({
   product,
   onClose,
   onSaved,
+  prefill,
 }: {
   product: Product | null
   onClose: () => void
   onSaved?: (id: string) => void
+  /** Podaci iz primke (dokument dobavljača) za novi artikal. */
+  prefill?: { sku?: string; name?: string; cost?: number; supplierId?: string | null }
 }) {
   const { suppliers, products, categories, saveProduct, setProductImage, notify, busy } =
     useStore()
@@ -31,18 +34,20 @@ export function ProductDialog({
       .filter(Number.isFinite)
     return `ART-${String((Math.max(0, ...nums) || 0) + 1).padStart(3, '0')}`
   }
-  const [sku, setSku] = useState(product?.sku ?? nextSku())
-  const [name, setName] = useState(product?.name ?? '')
+  const [sku, setSku] = useState(product?.sku ?? prefill?.sku ?? nextSku())
+  const [name, setName] = useState(product?.name ?? prefill?.name ?? '')
   const [category, setCategory] = useState<string>(
     product?.category ?? categories[0] ?? 'Ostalo',
   )
   // Popis: kategorije iz Artikala; ako artikal ima kategoriju koje nema na popisu, ona se pokaže da se ne izgubi.
   const categoryChoices = [...new Set([...categories, category])]
   const [price, setPrice] = useState(product ? String(product.price) : '')
-  const [cost, setCost] = useState(product ? String(product.purchasePrice) : '')
+  const [cost, setCost] = useState(
+    product ? String(product.purchasePrice) : prefill?.cost ? String(prefill.cost) : '',
+  )
   const [minStock, setMinStock] = useState(String(product?.minStock ?? 1))
   const [supplierId, setSupplierId] = useState(
-    product?.supplierId ?? suppliers[0]?.id ?? '',
+    product?.supplierId ?? prefill?.supplierId ?? suppliers[0]?.id ?? '',
   )
   const [opening, setOpening] = useState('0')
   const [options, setOptions] = useState(product?.options ?? '')

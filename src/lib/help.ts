@@ -345,7 +345,7 @@ export const HELP: HelpTopic[] = [
         items: [
           'Kliknite „Učitaj dokument dobavljača”. Sistem pročita račun ili otpremnicu i popuni dobavljača, broj dokumenta, datum i stavke.',
           'Ništa se ne sprema samo od sebe: provjerite količine i cijene, pa kliknite „Knjiži prijem”.',
-          'Stavke koje nisu u katalogu ne ulaze u primku. Prvo ih dodajte kao artikle, pa ponovo učitajte dokument.',
+          'Stavke koje nisu u šifrarniku možete odmah dodati u šifrarnik (gumb „Dodaj u šifrarnik”). Šifra, naziv i nabavna cijena se predpopune; unesete prodajnu cijenu i stavka ulazi u primku.',
           'Dokument se sprema uz primku u bazi. Pregled dokumenta iz popisa primki još nije uključen.',
           'Čitanje dokumenta šalje samo dokument dobavljača vanjskom AI servisu, bez podataka o kupcima.',
         ],
