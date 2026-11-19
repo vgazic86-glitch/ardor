@@ -155,7 +155,8 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
         ]
       : undefined,
     totalsNote: withPrices ? 'Cijene su u KM i uključuju PDV 17 %.' : undefined,
-    note: [o.note, kind !== 'otpremnica' ? deliveryLine : ''].filter(Boolean).join('\n'),
+    // Napomena iz prodaje je interna (za kolege i dostavu) i nikad se ne ispisuje na dokumentima za kupca.
+    note: kind !== 'otpremnica' ? deliveryLine : '',
     closing:
       kind === 'ponuda'
         ? 'Ponuda vrijedi 15 dana. Za sva pitanja, izmjene ili dogovor o dostavi slobodno nas kontaktirajte.'
