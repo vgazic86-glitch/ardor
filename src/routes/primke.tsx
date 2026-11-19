@@ -12,6 +12,8 @@ import {
 import { Fragment, useState } from 'react'
 import { ProductCard } from '../components/ProductCard'
 import { ReceiptDialog } from '../components/ReceiptDialog'
+import { openDownload } from '../lib/files'
+import { receiptPdfFn } from '../server/api'
 import {
   Avatar,
   Button,
@@ -44,6 +46,7 @@ function ReceiptsPage() {
     supplierById,
     employeeById,
     productById,
+    notify,
   } = useStore()
   const { nova } = Route.useSearch()
   const navigate = useNavigate({ from: '/primke' })
@@ -275,6 +278,21 @@ function ReceiptsPage() {
                                     Napomena: {r.note}
                                   </span>
                                 )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    try {
+                                      const f = await receiptPdfFn({ data: { id: r.id } })
+                                      openDownload({ name: f.name, mime: 'application/pdf', dataB64: f.data })
+                                    } catch (err) {
+                                      notify(err instanceof Error ? err.message : 'Primjerak nije izrađen.')
+                                    }
+                                  }}
+                                >
+                                  Ispis primjerka (PDF)
+                                </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"

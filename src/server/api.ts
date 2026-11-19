@@ -15,6 +15,7 @@ import * as collection from './collection'
 import * as inbox from './inbox'
 import * as receiptdoc from './receiptdoc'
 import * as categories from './categories'
+import * as receiptpdf from './receiptpdf'
 import type { CompanyInfo, FinanceSettings, PurchaseStatus, TaskStatus } from '../lib/types'
 import type { BonusPolicy } from '../lib/bonus'
 import { visibleDocuments } from '../lib/manuals'
@@ -667,3 +668,8 @@ export const uploadManualFn = createServerFn({ method: 'POST' })
   .middleware([manager])
   .validator(pass<{ id: string; file: { name: string; mime: string; dataB64: string } }>())
   .handler(({ data, context }) => hr.uploadManual(data, context.user.employeeId))
+
+/** Primjerak primke (PDF) za pregled i ispis: nabavna i prodajna cijena, marža. */
+export const receiptPdfFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ id: string }>())
+  .handler(({ data }) => receiptpdf.receiptPdf(data.id))
