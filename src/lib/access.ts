@@ -26,12 +26,13 @@ export type Area =
   | 'web'
   | 'izvoz'
   | 'radionica'
+  | 'materijal'
 
 /** Trgovac: samo ono što treba za prodaju i rad s kupcima. */
 const TRADER: Area[] = ['pregled', 'zadaci', 'narudzbe', 'naplata', 'kupci', 'web', 'reklamacije', 'dostave', 'zalihe', 'radno', 'dokumenti', 'radionica']
 
 /** Operativa (srednji pristup): roba, nabava, primke, kartice dobavljača — bez tuđeg prometa i zarade. */
-const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura', 'dobavljaci', 'izvoz']
+const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura', 'dobavljaci', 'izvoz', 'materijal']
 
 /** Voditelj salona: kao operativa + promet tima i dnevni pazar; bez zarade, troškova, plaća i izvještaja. */
 const MANAGER: Area[] = [...OPERATIONS, 'zaposlenici', 'pazar']
@@ -77,6 +78,7 @@ export function areaOf(path: string): Area | null {
     web: 'web',
     izvoz: 'izvoz',
     'radni-nalozi': 'radionica',
+    radionica: 'materijal',
     naljepnice: 'artikli',
     kuf: 'izvjestaji',
   }

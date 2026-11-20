@@ -198,6 +198,32 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'radionica',
+    route: '/radionica',
+    title: 'Radionički materijal',
+    purpose: 'Zaliha repromaterijala radionice (ploče, ABS traka, okovi…) u m, m², kg ili komadima.',
+    fields: [
+      'Materijal: naziv, jedinica mjere, kategorija, dobavljač, nabavna cijena, minimalna zaliha.',
+      'Prijem: datum, dobavljač, broj računa, stavke (količina i cijena bez PDV-a).',
+      'Inventura: izbrojano stvarno stanje.',
+    ],
+    details: [
+      {
+        h: 'Kako radi',
+        items: [
+          'Repromaterijal je odvojen od prodajnog kataloga — ne vidi se u Artiklima, Zalihama ni na webu. Šifra se dodijeli sama (MAT-0001 …).',
+          'Količine mogu imati decimale: 4,25 m², 12,5 m ABS trake. Upisujte ih sa zarezom.',
+          '„Prijem materijala” povećava zalihu i postavlja zadnju nabavnu cijenu. Prosječna nabavna cijena računa se iz svih prijema.',
+          'Utrošak: na Radnim nalozima → Troškovi → „Materijal i okovi” → „Iz zalihe radionice” izaberite materijal i upišite količinu. Trošak se obračuna po prosječnoj nabavnoj cijeni, a materijal se skine sa zalihe. Brisanje tog troška vraća materijal na zalihu.',
+          'Materijal kupljen baš za jedan nalog (bez zalihe) upisuje se ručno: „ručni unos”, količina i cijena.',
+          'Inventura: upišite izbrojano stanje — aplikacija upiše korekciju za razliku (vidi se pod Kretanja).',
+          'Materijal ispod minimalne zalihe označen je na vrhu stranice i u popisu (filter „Ispod minimuma”).',
+          'Vide i vode ga operativa, voditelj i uprava. Račun dobavljača za materijal i dalje se knjiži kao i do sada (ulazni računi).',
+        ],
+      },
+    ],
+  },
+  {
     id: 'izvoz',
     route: '/izvoz',
     title: 'Izvoz',

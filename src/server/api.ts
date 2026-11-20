@@ -748,3 +748,19 @@ export const deleteWorkCostFn = createServerFn({ method: 'POST' }).middleware([a
 export const setHourlyRateFn = createServerFn({ method: 'POST' }).middleware([manager])
   .validator(pass<{ rate: number }>())
   .handler(async ({ data, context }) => (await import('./radionica')).setHourlyRate(context.user, data.rate))
+
+/** Radionica: repromaterijal (šifarnik, prijem, inventura). Operativa, voditelj, uprava. */
+export const listMaterialsFn = createServerFn({ method: 'GET' }).middleware([authed])
+  .handler(async ({ context }) => (await import('./materijal')).listMaterials(context.user))
+
+export const saveMaterialFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<import('./materijal').MaterialInput>())
+  .handler(async ({ data, context }) => (await import('./materijal')).saveMaterial(context.user, data))
+
+export const receiveMaterialsFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<import('./materijal').MaterialReceiptInput>())
+  .handler(async ({ data, context }) => (await import('./materijal')).receiveMaterials(context.user, data))
+
+export const countMaterialFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ materialId: string; counted: number; note: string; name?: string }>())
+  .handler(async ({ data, context }) => (await import('./materijal')).countMaterial(context.user, data))

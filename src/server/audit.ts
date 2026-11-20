@@ -206,6 +206,9 @@ function audit2(d: Record<string, any>) {
 /** Koje serverske radnje se upisuju u dnevnik: [cjelina, radnja, opis]. Čitanja se ne upisuju. */
 const MAP: Record<string, [string, string, Detail?]> = {
   createOrderFn: ['Narudžba', 'nova'],
+  saveMaterialFn: ['Radionica', 'materijal', (d) => `${d.name ?? ''}${d.id ? '' : ' · novi'}`],
+  receiveMaterialsFn: ['Radionica', 'prijem materijala', (d) => `${Array.isArray(d.lines) ? d.lines.length : 0} stavki${d.documentNumber ? ' · račun ' + d.documentNumber : ''}`],
+  countMaterialFn: ['Radionica', 'inventura materijala', (d) => `${d.name ?? 'materijal ' + (d.materialId ?? '')} → ${d.counted ?? ''}`],
   addWorkCostFn: ['Radni nalog', 'trošak', (d) => `${d.number ?? 'nalog ' + (d.workOrderId ?? '')} · ${d.kind ?? ''} · ${d.qty ?? ''} × ${d.unitPrice ?? ''} KM${d.description ? ' · ' + String(d.description).slice(0, 60) : ''}`],
   deleteWorkCostFn: ['Radni nalog', 'trošak obrisan', (d) => `${d.number ?? ''}${d.amount ? ' · ' + d.amount + ' KM' : ''}`],
   setHourlyRateFn: ['Radni nalog', 'satnica radionice', (d) => `${d.rate ?? ''} KM/h`],

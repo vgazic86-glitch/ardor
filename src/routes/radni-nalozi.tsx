@@ -5,6 +5,7 @@ import { OrderDrawer } from '../components/OrderDrawer'
 import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader, Select, Stat } from '../components/ui'
 import { canSee } from '../lib/access'
 import { date, money, money2, orderStatusLabel, parseAmount } from '../lib/format'
+import { fmtQty, parseQty, valueOf } from '../lib/materijal'
 import { COST_KIND_LABEL, costAmount, isLate, WORK_STATUSES, WORK_STATUS_LABEL, type CostKind, type WorkStatus } from '../lib/pomjeri'
 import { useRemote } from '../lib/remote'
 import { useStore } from '../lib/store'
@@ -228,12 +229,14 @@ function RateBar({ rate, done, busy, run }: { rate: number; done: WorkOrderRow[]
 }
 
 function Costs({ w, data, busy, run }: { w: WorkOrderRow; data: Data; busy: boolean; run: Run }) {
-  const empty = { kind: 'partner' as CostKind, description: '', supplierId: '', documentNumber: '', qty: '1', unitPrice: '', employeeId: '', date: data.today }
+  const empty = { kind: 'partner' as CostKind, description: '', supplierId: '', documentNumber: '', qty: '1', unitPrice: '', employeeId: '', materialId: '', date: data.today }
   const [f, setF] = useState(empty)
   const set = <K extends keyof typeof f>(k: K, val: (typeof f)[K]) => setF((s) => ({ ...s, [k]: val }))
   const isWork = f.kind === 'rad'
   const rateText = String(data.rate).replace('.', ',')
-  const amount = costAmount(parseAmount(f.qty), parseAmount(f.unitPrice))
+  // Materijal iz zalihe radionice: cijena = prosječna nabavna, količina s decimalama (m, m², kom…).
+  const mat = f.kind === 'materijal' && f.materialId ? data.materials.find((m) => m.id === f.materialId) : undefined
+  const amount = mat ? valueOf(parseQty(f.qty), mat.avgCost) : costAmount(parseAmount(f.qty), parseAmount(f.unitPrice))
   const add = async () => {
     const ok = await run(
       () =>
@@ -245,15 +248,16 @@ function Costs({ w, data, busy, run }: { w: WorkOrderRow; data: Data; busy: bool
             description: f.description,
             supplierId: f.kind === 'partner' && f.supplierId ? f.supplierId : null,
             documentNumber: f.documentNumber,
-            qty: parseAmount(f.qty),
-            unitPrice: parseAmount(f.unitPrice),
+            qty: mat ? parseQty(f.qty) : parseAmount(f.qty),
+            unitPrice: mat ? mat.avgCost : parseAmount(f.unitPrice),
+            materialId: mat ? mat.id : null,
             date: f.date,
             employeeId: isWork && f.employeeId ? f.employeeId : null,
           },
         }),
       'Trošak je upisan.',
     )
-    if (ok) setF({ ...empty, kind: f.kind, unitPrice: isWork ? rateText : '' })
+    if (ok) setF({ ...empty, kind: f.kind, materialId: f.materialId, unitPrice: isWork ? rateText : '' })
   }
   const t = w.totals!
   const placeholder = isWork
@@ -342,6 +346,16 @@ function Costs({ w, data, busy, run }: { w: WorkOrderRow; data: Data; busy: bool
             <Select label="Partner (dobavljač)" value={f.supplierId} onChange={(x) => set('supplierId', x)} options={[{ value: '', label: '— odaberite —' }, ...data.suppliers.map((s) => ({ value: s.id, label: s.name }))]} />
           </div>
         )}
+        {f.kind === 'materijal' && data.materials.length > 0 && (
+          <div className="sm:col-span-2">
+            <Select
+              label="Iz zalihe radionice"
+              value={f.materialId}
+              onChange={(x) => set('materialId', x)}
+              options={[{ value: '', label: '— ručni unos (kupljeno za ovaj nalog) —' }, ...data.materials.map((m) => ({ value: m.id, label: `${m.name} · stanje ${fmtQty(m.stock)} ${m.unit}` }))]}
+            />
+          </div>
+        )}
         {isWork && (
           <div className="sm:col-span-2">
             <Select label="Ko je radio" value={f.employeeId} onChange={(x) => set('employeeId', x)} options={[{ value: '', label: '— po želji —' }, ...data.employees.map((e) => ({ value: e.id, label: e.name }))]} />
@@ -358,12 +372,18 @@ function Costs({ w, data, busy, run }: { w: WorkOrderRow; data: Data; busy: bool
             <input className={inputCls} value={f.documentNumber} onChange={(e) => set('documentNumber', e.target.value)} />
           </Field>
         )}
-        <Field label={isWork ? 'Sati' : 'Količina'}>
+        <Field label={isWork ? 'Sati' : mat ? `Količina (${mat.unit})` : 'Količina'}>
           <input className={inputCls} inputMode="decimal" value={f.qty} onChange={(e) => set('qty', e.target.value)} />
         </Field>
-        <Field label={isWork ? 'Satnica (KM/h)' : 'Cijena bez PDV-a'}>
-          <input className={inputCls} inputMode="decimal" value={f.unitPrice} onChange={(e) => set('unitPrice', e.target.value)} />
-        </Field>
+        {mat ? (
+          <Field label={`Prosj. cijena/${mat.unit}`} hint={`na zalihi ${fmtQty(mat.stock)} ${mat.unit}`}>
+            <input className={`${inputCls} bg-walnut-50`} readOnly value={money2(mat.avgCost)} />
+          </Field>
+        ) : (
+          <Field label={isWork ? 'Satnica (KM/h)' : 'Cijena bez PDV-a'}>
+            <input className={inputCls} inputMode="decimal" value={f.unitPrice} onChange={(e) => set('unitPrice', e.target.value)} />
+          </Field>
+        )}
         <div className="flex items-end justify-between gap-2 sm:col-span-4">
           <span className="pb-2 text-sm">
             Iznos: <b>{money2(amount)}</b>

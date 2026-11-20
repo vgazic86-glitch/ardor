@@ -4,6 +4,8 @@ import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { isFull, type SessionUser } from './auth'
 import { meta, setMeta } from './hr'
+import { materialOptions, materialSnapshot } from './materijal'
+import { fmtQty, valueOf } from '../lib/materijal'
 import { notifyEmployee, notifyManagers } from './inbox'
 import { todayIso } from './logic'
 import {
@@ -81,6 +83,7 @@ export async function listWorkOrders(user: SessionUser): Promise<{
   rate: number
   suppliers: { id: string; name: string }[]
   employees: { id: string; name: string }[]
+  materials: Awaited<ReturnType<typeof materialOptions>>
 }> {
   const rows = await db
     .select({ w: t.workOrders, i: t.orderItems, o: t.orders, c: t.customers, e: t.employees, d: t.deliveries })
@@ -115,6 +118,7 @@ export async function listWorkOrders(user: SessionUser): Promise<{
     seesCosts: sees,
     seesMargin: full,
     rate: sees ? await hourlyRate() : 0,
+    materials: sees ? await materialOptions() : [],
     suppliers: sees ? (await db.select({ id: t.suppliers.id, name: t.suppliers.name }).from(t.suppliers).orderBy(asc(t.suppliers.name))).map((x) => ({ id: String(x.id), name: x.name })) : [],
     employees: sees ? (await db.select({ id: t.employees.id, name: t.employees.name }).from(t.employees).where(eq(t.employees.active, true)).orderBy(asc(t.employees.name))).map((x) => ({ id: String(x.id), name: x.name })) : [],
     rows: rows
@@ -205,8 +209,40 @@ export interface WorkCostInput {
   unitPrice: number
   date: string
   employeeId: string | null
+  /** Materijal iz zalihe radionice: skida se sa zalihe po prosječnoj nabavnoj cijeni. */
+  materialId?: string | null
   /** Za dnevnik izmjena. */
   number?: string
+}
+
+/** Utrošak materijala iz radionice na nalog: trošak po prosječnoj nabavnoj cijeni + izlaz sa zalihe (u jednoj transakciji). */
+async function addMaterialCost(user: SessionUser, workOrderId: number, input: WorkCostInput) {
+  const qty = Math.round(Number(input.qty) * 1000) / 1000
+  if (!(qty > 0)) throw new Error('Upišite utrošenu količinu.')
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(input.date ?? '') ? input.date : todayIso()
+  return db.transaction(async (tx) => {
+    const { m, avg } = await materialSnapshot(Number(input.materialId), tx)
+    const amount = valueOf(qty, avg)
+    if (!(amount > 0)) throw new Error(`Materijal „${m.name}” nema nabavnu cijenu — upišite prijem ili cijenu u šifarniku.`)
+    const now = new Date()
+    const extra = String(input.description ?? '').trim()
+    const [cost] = await tx
+      .insert(t.workOrderCosts)
+      .values({
+        workOrderId,
+        kind: 'materijal',
+        description: `${m.name} — ${fmtQty(qty)} ${m.unit} (iz radionice)${extra ? ` · ${extra}` : ''}`.slice(0, 300),
+        qty: Math.round(qty * 100) / 100,
+        unitPrice: Math.round(avg * 100) / 100,
+        amount,
+        date,
+        createdBy: user.name,
+        createdAt: now,
+      })
+      .returning()
+    await tx.insert(t.materialMoves).values({ materialId: m.id, date, type: 'izlaz', qty: -qty, unitCost: avg, workCostId: cost.id, note: extra.slice(0, 300), createdBy: user.name, createdAt: now })
+    return { amount }
+  })
 }
 
 /** Novi trošak naloga (iznosi bez PDV-a). */
@@ -215,6 +251,7 @@ export async function addWorkCost(user: SessionUser, input: WorkCostInput) {
   if (!['partner', 'materijal', 'rad', 'ostalo'].includes(input.kind)) throw new Error('Nepoznata vrsta troška.')
   const [w] = await db.select({ id: t.workOrders.id }).from(t.workOrders).where(eq(t.workOrders.id, Number(input.workOrderId)))
   if (!w) throw new Error('Radni nalog ne postoji.')
+  if (input.kind === 'materijal' && input.materialId) return addMaterialCost(user, w.id, input)
   const qty = Math.round(Number(input.qty) * 100) / 100
   const unitPrice = Math.round(Number(input.unitPrice) * 100) / 100
   if (!(qty > 0)) throw new Error(input.kind === 'rad' ? 'Upišite broj sati.' : 'Upišite količinu.')

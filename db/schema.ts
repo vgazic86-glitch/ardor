@@ -908,3 +908,47 @@ export const workOrderCosts = pgTable(
   },
   (t) => [index('work_order_costs_wo_idx').on(t.workOrderId)],
 )
+
+/* ───────────────────────── radionica: repromaterijal (zaliha s decimalama) ───────────────────────── */
+
+/** Repromaterijal radionice (iverica, ABS traka, okovi…) — odvojen od prodajnog kataloga. */
+export const materials = pgTable('materials', {
+  id: serial().primaryKey(),
+  code: text().notNull().unique(),
+  name: text().notNull(),
+  /** kom | m | m² | kg | l | pak */
+  unit: text().notNull().default('kom'),
+  category: text().notNull().default(''),
+  supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  /** Zadnja nabavna cijena po jedinici, bez PDV-a. */
+  price: money('price').notNull().default(0),
+  minQty: numeric('min_qty', { precision: 12, scale: 3, mode: 'number' }).notNull().default(0),
+  active: boolean().notNull().default(true),
+  note: text().notNull().default(''),
+  createdAt: timestamp('created_at').notNull(),
+})
+
+/** Kretanja materijala: ulaz (prijem), izlaz (utrošak na radni nalog), korekcija (inventura). Zaliha = zbir. */
+export const materialMoves = pgTable(
+  'material_moves',
+  {
+    id: serial().primaryKey(),
+    materialId: integer('material_id')
+      .notNull()
+      .references(() => materials.id),
+    date: date({ mode: 'string' }).notNull(),
+    /** ulaz | izlaz | korekcija */
+    type: text().notNull(),
+    qty: numeric({ precision: 12, scale: 3, mode: 'number' }).notNull(),
+    /** Cijena po jedinici bez PDV-a (ulaz: s računa; izlaz: prosječna nabavna). */
+    unitCost: numeric('unit_cost', { precision: 12, scale: 4, mode: 'number' }).notNull().default(0),
+    supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+    documentNumber: text('document_number').notNull().default(''),
+    /** Utrošak na radni nalog: trošak naloga koji je nastao iz ovog izlaza (brisanje troška briše izlaz). */
+    workCostId: integer('work_cost_id').references(() => workOrderCosts.id, { onDelete: 'cascade' }),
+    note: text().notNull().default(''),
+    createdBy: text('created_by').notNull().default(''),
+    createdAt: timestamp('created_at').notNull(),
+  },
+  (t) => [index('material_moves_material_idx').on(t.materialId)],
+)
