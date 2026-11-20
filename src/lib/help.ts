@@ -213,7 +213,9 @@ export const HELP: HelpTopic[] = [
         items: [
           'Repromaterijal je odvojen od prodajnog kataloga — ne vidi se u Artiklima, Zalihama ni na webu. Šifra se dodijeli sama (MAT-0001 …).',
           'Količine mogu imati decimale: 4,25 m², 12,5 m ABS trake. Upisujte ih sa zarezom.',
-          '„Prijem materijala” povećava zalihu i postavlja zadnju nabavnu cijenu. Prosječna nabavna cijena računa se iz svih prijema.',
+          '„Prijem materijala” je jedini korak: u stavci upišite naziv. Postojeći materijal se nudi dok tipkate; ako ga nema, izaberite jedinicu i kategoriju — novi materijal se sam doda u šifarnik pri spremanju prijema.',
+          'Prijem povećava zalihu i postavlja zadnju nabavnu cijenu. Prosječna nabavna cijena računa se iz svih prijema.',
+          '„Novi materijal” (bez prijema) služi samo kad želite materijal unaprijed upisati, npr. s minimalnom zalihom. Minimum i ostale podatke možete urediti i kasnije (olovka u popisu).',
           'Utrošak: na Radnim nalozima → Troškovi → „Materijal i okovi” → „Iz zalihe radionice” izaberite materijal i upišite količinu. Trošak se obračuna po prosječnoj nabavnoj cijeni, a materijal se skine sa zalihe. Brisanje tog troška vraća materijal na zalihu.',
           'Materijal kupljen baš za jedan nalog (bez zalihe) upisuje se ručno: „ručni unos”, količina i cijena.',
           'Inventura: upišite izbrojano stanje — aplikacija upiše korekciju za razliku (vidi se pod Kretanja).',

@@ -38,7 +38,7 @@ function WorkshopPage() {
             <Button variant="outline" onClick={() => setEdit('new')}>
               <Plus className="size-4" /> Novi materijal
             </Button>
-            <Button variant="copper" disabled={!active.length} onClick={() => setReceipt(true)}>
+            <Button variant="copper" onClick={() => setReceipt(true)}>
               <PackagePlus className="size-4" /> Prijem materijala
             </Button>
           </>
@@ -84,7 +84,7 @@ function Materials({ list, onEdit, onCount }: { list: MaterialRow[]; onEdit: (m:
     return (
       <Card>
         <EmptyState icon={Layers} title="Još nema materijala">
-          Kliknite „Novi materijal” i upišite npr. „Iverica bijela 18 mm” (jedinica m² ili ploča), „ABS traka 22 mm” (m), „Šarka Blum” (kom).
+          Kliknite „Prijem materijala” i u stavci upišite naziv — novi materijal se sam doda u šifarnik. Npr. „Iverica bijela 18 mm” (jedinica m² ili ploča), „ABS traka 22 mm” (m), „Šarka Blum” (kom).
         </EmptyState>
       </Card>
     )
@@ -276,27 +276,54 @@ function MaterialDialog({ m, data, busy, run, onClose }: { m: MaterialRow | null
   )
 }
 
+interface ReceiptLine {
+  key: number
+  name: string
+  unit: string
+  category: string
+  qty: string
+  unitCost: string
+}
+
+/**
+ * Prijem materijala: u stavci se upisuje naziv — postojeći materijal se nudi dok tipkate,
+ * a novi (naziv kojeg nema) dobije jedinicu i kategoriju i napravi se pri spremanju prijema.
+ */
 function ReceiptDialog({ data, busy, run, onClose }: { data: Data; busy: boolean; run: Run; onClose: () => void }) {
-  const active = data.materials.filter((m) => m.active)
+  const byName = new Map(data.materials.map((m) => [m.name.toLowerCase(), m]))
   const [head, setHead] = useState({ date: data.today, supplierId: '', documentNumber: '', note: '' })
-  const [lines, setLines] = useState([{ key: 1, materialId: active[0]?.id ?? '', qty: '', unitCost: active[0] ? String(active[0].price).replace('.', ',') : '' }])
-  const byId = new Map(active.map((m) => [m.id, m]))
-  const upd = (key: number, patch: Partial<(typeof lines)[number]>) => setLines((l) => l.map((x) => (x.key === key ? { ...x, ...patch } : x)))
+  const blank = (key: number): ReceiptLine => ({ key, name: '', unit: 'kom', category: '', qty: '', unitCost: '' })
+  const [lines, setLines] = useState<ReceiptLine[]>([blank(1)])
+  const upd = (key: number, patch: Partial<ReceiptLine>) => setLines((l) => l.map((x) => (x.key === key ? { ...x, ...patch } : x)))
+  const pick = (key: number, name: string) => {
+    const m = byName.get(name.trim().toLowerCase())
+    // Postojeći materijal: predloži zadnju nabavnu cijenu.
+    upd(key, m ? { name, unit: m.unit, unitCost: lines.find((l) => l.key === key)?.unitCost || String(m.price).replace('.', ',') } : { name })
+  }
   const total = lines.reduce((s, l) => s + valueOf(parseQty(l.qty), parseQty(l.unitCost)), 0)
+  const fresh = lines.filter((l) => l.name.trim() && !byName.has(l.name.trim().toLowerCase())).length
+  const cats = [...new Set([...MATERIAL_CATEGORIES, ...data.materials.map((x) => x.category).filter(Boolean)])]
   const save = async () => {
     const ok = await run(
       () =>
         receiveMaterialsFn({
-          data: { ...head, supplierId: head.supplierId || null, lines: lines.map((l) => ({ materialId: l.materialId, qty: parseQty(l.qty), unitCost: parseQty(l.unitCost) })) },
+          data: {
+            ...head,
+            supplierId: head.supplierId || null,
+            lines: lines.map((l) => {
+              const m = byName.get(l.name.trim().toLowerCase())
+              return { materialId: m ? m.id : null, name: l.name, unit: l.unit, category: l.category, qty: parseQty(l.qty), unitCost: parseQty(l.unitCost) }
+            }),
+          },
         }),
-      'Prijem materijala je upisan.',
+      fresh ? `Prijem je upisan, novi materijal dodan u šifarnik (${fresh}).` : 'Prijem materijala je upisan.',
     )
     if (ok) onClose()
   }
   return (
     <Modal
       title="Prijem materijala u radionicu"
-      subtitle="Količine i cijene bez PDV-a s računa dobavljača."
+      subtitle="Upišite naziv materijala: postojeći se nudi dok tipkate, a novi se sam doda u šifarnik. Količine i cijene bez PDV-a s računa dobavljača."
       help="radionica"
       wide
       onClose={onClose}
@@ -304,6 +331,7 @@ function ReceiptDialog({ data, busy, run, onClose }: { data: Data; busy: boolean
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm">
             Ukupno bez PDV-a: <b>{money2(total)}</b>
+            {fresh > 0 && <span className="text-walnut-500"> · novih materijala: {fresh}</span>}
           </span>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onClose}>
@@ -328,32 +356,26 @@ function ReceiptDialog({ data, busy, run, onClose }: { data: Data; busy: boolean
           <input className={inputCls} value={head.note} onChange={(e) => setHead((h) => ({ ...h, note: e.target.value }))} />
         </Field>
       </div>
+      <datalist id="prijem-materijali">
+        {data.materials.map((m) => (
+          <option key={m.id} value={m.name}>
+            {`${m.code} · stanje ${fmtQty(m.stock)} ${m.unit}`}
+          </option>
+        ))}
+      </datalist>
       <div className="mt-4 space-y-2">
         {lines.map((l) => {
-          const m = byId.get(l.materialId)
+          const m = byName.get(l.name.trim().toLowerCase())
+          const isNew = !!l.name.trim() && !m
           return (
             <div key={l.key} className="grid grid-cols-6 items-end gap-2 rounded-lg border border-walnut-200 bg-linen p-2">
-              <label className="col-span-6 flex flex-col gap-1 text-xs font-semibold text-walnut-700 sm:col-span-3">
-                Materijal
-                <select
-                  className={inputCls}
-                  value={l.materialId}
-                  onChange={(e) => {
-                    const nm = byId.get(e.target.value)
-                    upd(l.key, { materialId: e.target.value, unitCost: nm ? String(nm.price).replace('.', ',') : '' })
-                  }}
-                >
-                  {active.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.code} · {x.name} (stanje {fmtQty(x.stock)} {x.unit})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Field label={`Količina (${m?.unit ?? ''})`} className="col-span-2 sm:col-span-1">
+              <Field label="Materijal" className="col-span-6 sm:col-span-3">
+                <input className={inputCls} list="prijem-materijali" value={l.name} onChange={(e) => pick(l.key, e.target.value)} placeholder="npr. Iverica Egger bijela 18 mm" aria-label="Naziv materijala u prijemu" />
+              </Field>
+              <Field label={`Količina${m ? ` (${m.unit})` : ''}`} className="col-span-2 sm:col-span-1">
                 <input className={inputCls} inputMode="decimal" value={l.qty} onChange={(e) => upd(l.key, { qty: e.target.value })} aria-label="Količina u prijemu" />
               </Field>
-              <Field label={`Cijena/${m?.unit ?? ''}`} className="col-span-2 sm:col-span-1">
+              <Field label={`Cijena/${m?.unit ?? l.unit}`} className="col-span-2 sm:col-span-1">
                 <input className={inputCls} inputMode="decimal" value={l.unitCost} onChange={(e) => upd(l.key, { unitCost: e.target.value })} aria-label="Cijena u prijemu" />
               </Field>
               <div className="col-span-2 flex items-center justify-end gap-2 pb-2 text-sm font-semibold sm:col-span-1">
@@ -364,11 +386,34 @@ function ReceiptDialog({ data, busy, run, onClose }: { data: Data; busy: boolean
                   </button>
                 )}
               </div>
+              {m && (
+                <p className="col-span-6 text-xs text-walnut-500">
+                  {m.code} · na stanju {fmtQty(m.stock)} {m.unit} · zadnja cijena {money2(m.price)}/{m.unit}
+                </p>
+              )}
+              {isNew && (
+                <div className="col-span-6 grid grid-cols-6 items-end gap-2 rounded-lg bg-copper-50 px-2 py-2">
+                  <span className="col-span-6 text-xs font-semibold text-copper-800 sm:col-span-2">
+                    <Badge tone="copper">Novi materijal</Badge> dodaje se u šifarnik pri spremanju
+                  </span>
+                  <div className="col-span-3 sm:col-span-1">
+                    <Select label="Jedinica" value={l.unit} onChange={(x) => upd(l.key, { unit: x })} options={MATERIAL_UNITS.map((u) => ({ value: u, label: u }))} />
+                  </div>
+                  <Field label="Kategorija" className="col-span-3 sm:col-span-3">
+                    <input className={inputCls} list="prijem-kategorije" value={l.category} onChange={(e) => upd(l.key, { category: e.target.value })} placeholder="npr. Okovi, ABS traka, Ploče" />
+                  </Field>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
-      <Button variant="ghost" className="mt-2" onClick={() => setLines((x) => [...x, { key: Math.max(...x.map((y) => y.key)) + 1, materialId: active[0]?.id ?? '', qty: '', unitCost: active[0] ? String(active[0].price).replace('.', ',') : '' }])}>
+      <datalist id="prijem-kategorije">
+        {cats.map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
+      <Button variant="ghost" className="mt-2" onClick={() => setLines((x) => [...x, blank(Math.max(...x.map((y) => y.key)) + 1)])}>
         <Plus className="size-4" /> Dodaj stavku
       </Button>
     </Modal>

@@ -159,32 +159,74 @@ export async function saveMaterial(user: SessionUser, input: MaterialInput) {
   return { id: String(row.id), name, code: row.code }
 }
 
+export interface MaterialReceiptLine {
+  /** Postojeći materijal; prazno = novi materijal iz naziva (pravi se pri spremanju prijema). */
+  materialId: string | null
+  name?: string
+  unit?: string
+  category?: string
+  qty: number
+  unitCost: number
+}
+
 export interface MaterialReceiptInput {
   date: string
   supplierId: string | null
   documentNumber: string
   note: string
-  lines: { materialId: string; qty: number; unitCost: number }[]
+  lines: MaterialReceiptLine[]
 }
 
-/** Prijem materijala u radionicu (ulaz) — cijena s računa postaje i zadnja nabavna. */
+/**
+ * Prijem materijala u radionicu (ulaz) — cijena s računa postaje i zadnja nabavna.
+ * Stavka može biti i novi materijal (naziv + jedinica): napravi se u šifarniku u istom koraku.
+ * Ako materijal s istim nazivom već postoji, koristi se postojeći (nema duplikata).
+ */
 export async function receiveMaterials(user: SessionUser, input: MaterialReceiptInput) {
   requireMaterialAccess(user)
   const lines = (input.lines ?? [])
-    .map((l) => ({ materialId: Number(l.materialId), qty: Math.round(Number(l.qty) * 1000) / 1000, unitCost: Math.round(Number(l.unitCost) * 10000) / 10000 }))
-    .filter((l) => l.materialId && l.qty)
-  if (!lines.length) throw new Error('Dodajte barem jednu stavku s količinom.')
+    .map((l) => ({
+      materialId: l.materialId ? Number(l.materialId) : null,
+      name: String(l.name ?? '').trim().replace(/\s+/g, ' ').slice(0, 160),
+      unit: (MATERIAL_UNITS as readonly string[]).includes(l.unit ?? '') ? (l.unit as string) : 'kom',
+      category: String(l.category ?? '').trim().slice(0, 60),
+      qty: Math.round(Number(l.qty) * 1000) / 1000,
+      unitCost: Math.round(Number(l.unitCost) * 10000) / 10000,
+    }))
+    .filter((l) => (l.materialId || l.name) && l.qty)
+  if (!lines.length) throw new Error('Dodajte barem jednu stavku: naziv materijala i količinu.')
   for (const l of lines) {
-    if (!(l.qty > 0)) throw new Error('Količina u prijemu mora biti veća od 0.')
+    if (!(l.qty > 0)) throw new Error(`Količina za „${l.name || 'materijal'}” mora biti veća od 0.`)
     if (!(l.unitCost >= 0)) throw new Error('Neispravna cijena.')
   }
   const date = /^\d{4}-\d{2}-\d{2}$/.test(input.date ?? '') ? input.date : todayIso()
   const supplierId = input.supplierId ? Number(input.supplierId) : null
+  let created = 0
   await db.transaction(async (tx) => {
     const now = new Date()
+    const all = await tx.select({ id: t.materials.id, code: t.materials.code, name: t.materials.name }).from(t.materials)
+    const byName = new Map(all.map((m) => [m.name.toLowerCase(), m.id]))
+    const codes = all.map((m) => m.code)
+    for (const l of lines) {
+      if (l.materialId) continue
+      const found = byName.get(l.name.toLowerCase())
+      if (found) {
+        l.materialId = found
+        continue
+      }
+      const code = nextMaterialCode(codes)
+      codes.push(code)
+      const [row] = await tx
+        .insert(t.materials)
+        .values({ code, name: l.name, unit: l.unit, category: l.category, supplierId, price: Math.round(l.unitCost * 100) / 100, createdAt: now })
+        .returning()
+      byName.set(l.name.toLowerCase(), row.id)
+      l.materialId = row.id
+      created++
+    }
     await tx.insert(t.materialMoves).values(
       lines.map((l) => ({
-        materialId: l.materialId,
+        materialId: l.materialId!,
         date,
         type: 'ulaz',
         qty: l.qty,
@@ -199,10 +241,10 @@ export async function receiveMaterials(user: SessionUser, input: MaterialReceipt
     for (const l of lines)
       await tx
         .update(t.materials)
-        .set({ price: Math.round(l.unitCost * 100) / 100, ...(supplierId ? { supplierId } : {}) })
-        .where(eq(t.materials.id, l.materialId))
+        .set({ price: Math.round(l.unitCost * 100) / 100, active: true, ...(supplierId ? { supplierId } : {}) })
+        .where(eq(t.materials.id, l.materialId!))
   })
-  return { lines: lines.length }
+  return { lines: lines.length, created }
 }
 
 /** Inventura: upisano stvarno stanje → korekcija za razliku. */
