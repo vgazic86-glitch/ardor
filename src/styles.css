@@ -1,5 +1,13 @@
 @import 'tailwindcss' source('../');
 
+/* Mobitel: mreža bez izričitih kolona ima jednu kolonu koja se smije suziti do ekrana
+   (inače je široka tablica ili dugi tekst gura cijelu stranicu u širinu). grid-cols-* to pregazi. */
+@layer base {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @theme {
   /* Knjiga grafičkih standarda: Ubuntu (Light, Regular, Medium, Bold), bez kurziva */
   --font-sans: 'Ubuntu', ui-sans-serif, system-ui, sans-serif;

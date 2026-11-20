@@ -24,7 +24,7 @@ pnpm install
 pnpm migrate          # primijeni SQL migracije na DATABASE_URL (čita .env)
 pnpm dev              # razvoj s hot reloadom, http://localhost:3000 (čita .env)
 pnpm typecheck        # tsc --noEmit — mora proći bez grešaka
-pnpm test             # vitest (src/**/*.test.ts) — trenutno 138 testova
+pnpm test             # vitest (src/**/*.test.ts) — trenutno 139 testova
 pnpm build:node       # produkcijski build za Node/Render (DEPLOY_TARGET=node)
 pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao Render
 pnpm start            # isto, ali za Render (PORT i DATABASE_URL iz okruženja) — lokalno ne treba

@@ -240,16 +240,16 @@ function OrdersPage() {
         </div>
 
         <div className="-mx-5 mt-4 overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full text-sm sm:min-w-[820px]">
             <thead>
               <tr className="border-b border-walnut-200 text-left text-xs uppercase tracking-wider text-walnut-500">
                 <th className="px-5 py-2 font-semibold">Narudžba</th>
                 <th className="py-2 font-semibold">Kupac</th>
-                <th className="py-2 font-semibold">Prodavač</th>
-                <th className="py-2 font-semibold">Dostava</th>
-                <th className="py-2 font-semibold">Status</th>
-                <th className="py-2 text-right font-semibold">Iznos</th>
-                <th className="px-5 py-2 text-right font-semibold">Plaćeno</th>
+                <th className="hidden py-2 font-semibold sm:table-cell">Prodavač</th>
+                <th className="hidden py-2 font-semibold sm:table-cell">Dostava</th>
+                <th className="hidden py-2 font-semibold sm:table-cell">Status</th>
+                <th className="px-5 py-2 text-right font-semibold sm:px-0">Iznos</th>
+                <th className="hidden px-5 py-2 text-right font-semibold sm:table-cell">Plaćeno</th>
               </tr>
             </thead>
             <tbody>
@@ -277,21 +277,26 @@ function OrdersPage() {
                     <td className="py-3">
                       <div className="font-medium">{c.name}</div>
                       <div className="text-xs text-walnut-500">{c.city}</div>
+                      {/* Mobitel: status ispod kupca (kolone Status, Prodavač, Dostava i Plaćeno su skrivene) */}
+                      <div className="mt-1 flex flex-wrap gap-1 sm:hidden">
+                        <OrderBadge status={o.status} />
+                        {waiting.has(o.id) && <Badge tone="warn">čeka robu</Badge>}
+                      </div>
                     </td>
-                    <td className="py-3">
+                    <td className="hidden py-3 sm:table-cell">
                       <div className="flex items-center gap-2">
                         <Avatar employee={e} size="sm" />
                         <span className="text-xs">{e.name.split(' ')[0]}</span>
                       </div>
                     </td>
-                    <td className="py-3 text-xs text-walnut-700">
+                    <td className="hidden py-3 text-xs text-walnut-700 sm:table-cell">
                       {o.delivery ? (
                         date(o.delivery.date)
                       ) : (
                         <span className="text-walnut-500">—</span>
                       )}
                     </td>
-                    <td className="py-3">
+                    <td className="hidden py-3 sm:table-cell">
                       <OrderBadge status={o.status} />
                       {waiting.has(o.id) && <Badge tone="warn" className="ml-1">čeka robu</Badge>}
                       {o.issuedAt && (
@@ -300,10 +305,10 @@ function OrdersPage() {
                         </div>
                       )}
                     </td>
-                    <td className="py-3 text-right font-semibold tabular">
+                    <td className="px-5 py-3 text-right font-semibold tabular sm:px-0">
                       {money(total)}
                     </td>
-                    <td className="px-5 py-3 text-right tabular">
+                    <td className="hidden px-5 py-3 text-right tabular sm:table-cell">
                       {o.paid >= total - 0.5 && o.paid > 0 ? (
                         <span className="text-xs font-semibold text-moss-600">
                           Plaćeno

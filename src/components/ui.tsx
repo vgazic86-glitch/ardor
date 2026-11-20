@@ -62,13 +62,13 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-walnut-200/70 bg-linen shadow-card ${flush ? 'overflow-hidden' : 'p-5'} ${className}`}
+      className={`min-w-0 rounded-2xl border border-walnut-200/70 bg-linen shadow-card ${flush ? 'overflow-hidden' : 'p-5'} ${className}`}
     >
       {title && (
         <div
-          className={`flex items-start justify-between gap-3 ${flush ? 'px-5 pt-5 pb-4' : 'mb-4'}`}
+          className={`flex flex-wrap items-start justify-between gap-x-3 gap-y-2 ${flush ? 'px-5 pt-5 pb-4' : 'mb-4'}`}
         >
-          <div>
+          <div className="min-w-[11rem] flex-1">
             <h2 className="font-display text-lg font-semibold leading-tight">
               {title}
             </h2>
@@ -243,7 +243,7 @@ export function Button({
     <button
       type="button"
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 ${sz} ${styles} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 ${sz} ${styles} ${className}`}
     >
       {children}
     </button>

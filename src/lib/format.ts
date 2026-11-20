@@ -66,11 +66,12 @@ export const monthShort = (m: number) => months[m]
 export const monthLong = (m: number) => monthsLong[m]
 
 export function date(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number)
+  // Prima i puni ISO zapis s vremenom (npr. 2026-11-20T10:15:00Z) — gleda se samo datum.
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
   return `${d}. ${months[m - 1]} ${y}.`
 }
 export function dateShort(iso: string) {
-  const [, m, d] = iso.split('-').map(Number)
+  const [, m, d] = iso.slice(0, 10).split('-').map(Number)
   return `${d}. ${months[m - 1]}`
 }
 export function weekday(iso: string) {

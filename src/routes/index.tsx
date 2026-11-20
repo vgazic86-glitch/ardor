@@ -348,13 +348,13 @@ function Overview() {
           }
         >
           <div className="overflow-x-auto -mx-5">
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full text-sm sm:min-w-[560px]">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-walnut-500">
                   <th className="px-5 pb-2 font-semibold">Broj</th>
                   <th className="pb-2 font-semibold">Kupac</th>
-                  <th className="pb-2 font-semibold">Prodavač</th>
-                  <th className="pb-2 font-semibold">Status</th>
+                  <th className="hidden pb-2 font-semibold sm:table-cell">Prodavač</th>
+                  <th className="hidden pb-2 font-semibold sm:table-cell">Status</th>
                   <th className="px-5 pb-2 text-right font-semibold">Iznos</th>
                 </tr>
               </thead>
@@ -369,11 +369,14 @@ function Overview() {
                     </td>
                     <td className="py-2.5">
                       {customerById(o.customerId).name}
+                      <div className="mt-1 sm:hidden">
+                        <OrderBadge status={o.status} />
+                      </div>
                     </td>
-                    <td className="py-2.5">
+                    <td className="hidden py-2.5 sm:table-cell">
                       <Avatar employee={employeeById(o.employeeId)} size="sm" />
                     </td>
-                    <td className="py-2.5">
+                    <td className="hidden py-2.5 sm:table-cell">
                       <OrderBadge status={o.status} />
                     </td>
                     <td className="px-5 py-2.5 text-right font-semibold tabular">
