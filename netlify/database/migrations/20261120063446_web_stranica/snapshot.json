@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "a88a4bef-1083-4f20-b32c-db7f9ab7fa56",
+  "id": "8034c3bc-eb30-4a15-aa14-3cea826ef2db",
   "prevIds": [
-    "6bf64b1e-0def-4f53-ae31-5153a8684a7a"
+    "8d17f96e-c79e-4f36-8393-8d617786f1b0"
   ],
   "ddl": [
     {
@@ -2556,6 +2556,19 @@
       "generated": null,
       "identity": null,
       "name": "sku",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "products"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "fiscal_sku",
       "entityType": "columns",
       "schema": "public",
       "table": "products"
