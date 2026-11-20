@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Clock, Minus, Plus, Search, ShoppingBag, Trash2, X } 
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Logo } from '../components/Logo'
+import { Pager, usePaged } from '../components/Pager'
 import { ProductImage } from '../components/ProductImage'
 import { money } from '../lib/format'
 import { useRemote } from '../lib/remote'
@@ -44,7 +45,13 @@ function CatalogPage() {
   const count = chosen.reduce((s, [, n]) => s + n, 0)
   const total = chosen.reduce((s, [id, n]) => s + n * (byId.get(id)?.price ?? 0), 0)
   const add = (id: string, d: number) => setList((l) => ({ ...l, [id]: Math.max(0, (l[id] ?? 0) + d) }))
-  const cats = CATEGORIES.filter((c) => all.some((p) => p.category === c))
+  // Kategorije iz stvarnih artikala (poznate prvo, po redu iz CATEGORIES), bez praznih.
+  const known = new Set<string>(CATEGORIES)
+  const cats = [
+    ...CATEGORIES.filter((c) => all.some((p) => p.category === c)),
+    ...[...new Set(all.map((p) => p.category))].filter((c) => c && !known.has(c)).sort((a, b) => a.localeCompare(b, 'bs')),
+  ]
+  const paged = usePaged(items, `${q}|${cat}|${sort}|${onlyAvailable}`)
 
   const makeOffer = () =>
     navigate({ to: '/narudzbe', search: { nova: true, artikli: chosen.map(([id, n]) => `${id}:${n}`).join(',') } })
@@ -96,8 +103,9 @@ function CatalogPage() {
         ) : !items.length ? (
           <p className="py-20 text-center text-lg text-walnut-500">Nema artikala za odabrani filter.</p>
         ) : (
+          <>
           <div className="grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
-            {items.map((p) => (
+            {paged.rows.map((p) => (
               <button key={p.id} onClick={() => setOpen(p)} className="group flex flex-col overflow-hidden rounded-3xl border border-walnut-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                 <ProductImage product={p} size="lg" className="!rounded-none !border-0" />
                 <div className="flex flex-1 flex-col p-4">
@@ -112,6 +120,15 @@ function CatalogPage() {
               </button>
             ))}
           </div>
+          <Pager
+            {...paged}
+            setPage={(n) => {
+              paged.setPage(n)
+              document.querySelector('main')?.scrollTo({ top: 0 })
+            }}
+            className="mt-6 rounded-2xl border bg-white"
+          />
+          </>
         )}
       </main>
 

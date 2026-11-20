@@ -1,6 +1,7 @@
 import { ImagePlus } from 'lucide-react'
 import { useState } from 'react'
 import { prepareImage } from '../lib/image'
+import { nextInternalSku } from '../lib/sku'
 import { ProductImageEditor } from './ProductImage'
 import type { Product } from '../lib/types'
 import { money2, netOf, parseAmount, pct, VAT_RATE } from '../lib/format'
@@ -28,12 +29,8 @@ export function ProductDialog({
   const live = product
     ? (products.find((p) => p.id === product.id) ?? product)
     : null
-  const nextSku = () => {
-    const nums = products
-      .map((p) => Number(p.sku.replace(/\D/g, '')))
-      .filter(Number.isFinite)
-    return `ART-${String((Math.max(0, ...nums) || 0) + 1).padStart(3, '0')}`
-  }
+  // Interna šifra redom; novi artikal popunjava prvu rupu (vidi lib/sku.ts).
+  const nextSku = () => nextInternalSku(products.map((p) => p.sku))
   const [sku, setSku] = useState(product?.sku ?? prefill?.sku ?? nextSku())
   const [fiscalSku, setFiscalSku] = useState(product?.fiscalSku ?? '')
   const [name, setName] = useState(product?.name ?? prefill?.name ?? '')

@@ -395,6 +395,8 @@ export const HELP: HelpTopic[] = [
     purpose: 'Katalog proizvoda: šifra, cijene, dobavljač, minimalna zaliha.',
     fields: [
       'Naziv, šifra, kategorija (bira se s popisa; popis kategorija uređuju uprava i admin gumbom „Kategorije”), opis i dimenzije.',
+      'Interna šifra ide redom (ART-0001, ART-0002 …). Novi artikal dobije prvi slobodan broj: kad se artikal arhivira, njegov broj se oslobodi i popuni ga sljedeći novi artikal.',
+      'Šifra u fiskalnom programu je posebno polje: pokazuje koji je to artikal u knjigovodstvu i ne mijenja se s internom šifrom. Pretraga traži i po njoj.',
       'Prodajna cijena (s PDV-om) i nabavna cijena.',
       'Dobavljač, minimalna zaliha, slika.',
     ],
@@ -403,6 +405,7 @@ export const HELP: HelpTopic[] = [
         h: 'Savjeti',
         items: [
           'Minimalna zaliha pokreće upozorenje na Pregledu i Zalihama.',
+          'Popisi artikala (Artikli, Zalihe, Inventura, Katalog, Naljepnice) prikazuju po 50 artikala; stranice se biraju brojevima ispod popisa. Lista za brojanje u Inventuri ispisuje sve filtrirane artikle.',
           'QR naljepnice za artikle štampate na stranici Naljepnice.',
           'Nabavnu cijenu vide samo korisnici s pristupom troškovima.',
           'Varijante (štof, boja, noge, orijentacija) upisujete u polje „Varijante”, jedna grupa po redu, npr. „Štof: siva, bež”. Kupac ih bira pri narudžbi, a ispisuju se na ponudi, otpremnici i nalogu za dostavu.',

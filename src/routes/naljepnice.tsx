@@ -3,6 +3,7 @@ import { ArrowLeft, Printer, QrCode, Tag } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useState } from 'react'
 import { BrandMark } from '../components/Logo'
+import { Pager, usePaged } from '../components/Pager'
 import { Button, Card, Chip, PageHeader } from '../components/ui'
 import { money } from '../lib/format'
 import { useStore } from '../lib/store'
@@ -21,10 +22,17 @@ function LabelsPage() {
   const categories = [...new Set(products.map((p) => p.category))]
   const [mode, setMode] = useState<Mode>('cijena')
   const [cat, setCat] = useState<string>('sve')
-  const [picked, setPicked] = useState<Set<string>>(() => new Set(products.map((p) => p.id)))
+  // Na početku ništa nije označeno (artikala je mnogo); označite ono što treba ispisati.
+  const [picked, setPicked] = useState<Set<string>>(() => new Set())
+  const [q, setQ] = useState('')
   const [copies, setCopies] = useState(1)
   const [qr, setQr] = useState<Record<string, string>>({})
-  const visible = products.filter((p) => cat === 'sve' || p.category === cat)
+  const visible = products.filter(
+    (p) =>
+      (cat === 'sve' || p.category === cat) &&
+      (!q || `${p.sku} ${p.fiscalSku ?? ''} ${p.name}`.toLowerCase().includes(q.toLowerCase())),
+  )
+  const paged = usePaged(visible, `${q}|${cat}`)
   const chosen = useMemo(() => products.filter((p) => picked.has(p.id)), [products, picked])
 
   useEffect(() => {
@@ -83,9 +91,16 @@ function LabelsPage() {
             </Chip>
             {categories.map((c) => (
               <Chip key={c} active={cat === c} onClick={() => setCat(c)}>
-                {c}
+                {c || 'Bez kategorije'}
               </Chip>
             ))}
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Šifra ili naziv…"
+              className="rounded-lg border border-walnut-200 bg-white px-3 py-1.5 text-sm"
+              aria-label="Traži artikal"
+            />
             <span className="ml-auto flex items-center gap-2 text-sm">
               Kopija po artiklu
               <select className="rounded-lg border border-walnut-200 bg-white px-2 py-1" value={copies} onChange={(e) => setCopies(Number(e.target.value))}>
@@ -104,7 +119,7 @@ function LabelsPage() {
             </button>
           </div>
           <div className="mt-3 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
-            {visible.map((p) => (
+            {paged.rows.map((p) => (
               <label key={p.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-walnut-50">
                 <input type="checkbox" className="size-4 accent-copper-500" checked={picked.has(p.id)} onChange={() => toggle(p.id)} />
                 <span className="truncate">
@@ -113,6 +128,7 @@ function LabelsPage() {
               </label>
             ))}
           </div>
+          <Pager {...paged} className="-mx-5 -mb-5 mt-3" />
         </Card>
         <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
           <QrCode className="size-5 text-copper-600" /> Pregled za štampu {isPrice ? '(A4, 3 × 5)' : '(A4, 3 × 7)'}

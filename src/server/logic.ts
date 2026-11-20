@@ -4,6 +4,7 @@ import { listCategories } from './categories'
 import { listTransfers } from './transfers'
 import { goodsBlock, goodsBlockMessage, needsGoods, type StockOrder } from '../lib/stats'
 import { planInstallments } from '../lib/collection'
+import { archivedSku, nextInternalSku } from '../lib/sku'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
@@ -844,6 +845,11 @@ function normalizeOptions(raw: string) {
 }
 
 export async function saveProduct(input: ProductInput, byName = '') {
+  // Novi artikal bez šifre dobije prvu slobodnu internu šifru (ART-0001 …).
+  if (!input.id && !input.sku.trim()) {
+    const all = await db.select({ sku: t.products.sku }).from(t.products)
+    input = { ...input, sku: nextInternalSku(all.map((r) => r.sku)) }
+  }
   if (!input.sku.trim() || !input.name.trim())
     throw new Error('Šifra i naziv su obavezni.')
   const category = input.category.trim().slice(0, 60) || 'Ostalo'
@@ -892,10 +898,11 @@ export async function saveProduct(input: ProductInput, byName = '') {
   })
 }
 
+/** Arhiviranje = „brisanje” iz šifrarnika: interna šifra se oslobađa za novi artikal, fiskalna ostaje. */
 export async function archiveProduct(productId: string) {
   await db
     .update(t.products)
-    .set({ active: false })
+    .set({ active: false, sku: archivedSku(productId) })
     .where(eq(t.products.id, Number(productId)))
 }
 

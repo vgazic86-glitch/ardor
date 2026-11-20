@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { CategoriesDialog } from '../components/CategoriesDialog'
+import { Pager, usePaged } from '../components/Pager'
 import { ProductCard } from '../components/ProductCard'
 import { ProductDialog } from '../components/ProductDialog'
 import { ProductImage } from '../components/ProductImage'
@@ -53,6 +54,7 @@ function ProductsPage() {
           .toLowerCase()
           .includes(q.toLowerCase())),
   )
+  const paged = usePaged(rows, `${q}|${cat}`)
   const avgMargin = products.length
     ? products.reduce((s, p) => s + marginOf(p), 0) / products.length
     : 0
@@ -123,7 +125,7 @@ function ProductsPage() {
           <div className="flex flex-1 flex-wrap gap-1.5">
             {(['sve', ...categories] as const).map((c) => (
               <Chip key={c} active={cat === c} onClick={() => setCat(c)}>
-                {c === 'sve' ? 'Sve' : c}
+                {c === 'sve' ? 'Sve' : c || 'Bez kategorije'}
               </Chip>
             ))}
           </div>
@@ -153,7 +155,7 @@ function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((p) => {
+              {paged.rows.map((p) => {
                 const m = marginOf(p)
                 return (
                   <tr key={p.id}>
@@ -174,7 +176,7 @@ function ProductsPage() {
                         </span>
                       </button>
                     </td>
-                    <td className="text-walnut-700">{p.category}</td>
+                    <td className="text-walnut-700">{p.category || '—'}</td>
                     <td className="text-right font-semibold tabular">
                       {money(p.price)}
                     </td>
@@ -242,6 +244,7 @@ function ProductsPage() {
             </EmptyState>
           )}
         </div>
+        <Pager {...paged} />
       </Card>
 
       {catsOpen && <CategoriesDialog onClose={() => setCatsOpen(false)} />}

@@ -7,7 +7,8 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Pager, usePaged } from '../components/Pager'
 import {
   Button,
   Card,
@@ -70,6 +71,16 @@ function StocktakePage() {
     return true
   })
 
+  // Na ekranu po 50; lista za brojanje (ispis) uvijek sadrži sve filtrirane artikle.
+  const paged = usePaged(rows, `${q}|${cat}|${onlyDiff}|${loc}`)
+  const [printing, setPrinting] = useState(false)
+  useEffect(() => {
+    if (!printing) return
+    window.print()
+    setPrinting(false)
+  }, [printing])
+  const shown = printing ? rows : paged.rows
+
   const history = [...movements]
     .filter((m) => m.type === 'korekcija')
     .reverse()
@@ -96,7 +107,7 @@ function StocktakePage() {
               <option value="salon">Inventura: Salon</option>
               <option value="skladiste">Inventura: Skladište</option>
             </select>
-            <Button variant="outline" onClick={() => window.print()}>
+            <Button variant="outline" onClick={() => setPrinting(true)}>
               <Printer className="size-4" /> Lista za brojanje
             </Button>
             <Button
@@ -171,7 +182,7 @@ function StocktakePage() {
             <div className="flex flex-wrap gap-1.5">
               {(['sve', ...categories] as const).map((c) => (
                 <Chip key={c} active={cat === c} onClick={() => setCat(c)}>
-                  {c === 'sve' ? 'Sve' : c}
+                  {c === 'sve' ? 'Sve' : c || 'Bez kategorije'}
                 </Chip>
               ))}
             </div>
@@ -188,7 +199,7 @@ function StocktakePage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((p) => {
+                {shown.map((p) => {
                   const d = diffOf(p.id)
                   return (
                     <tr
@@ -237,6 +248,7 @@ function StocktakePage() {
               </tbody>
             </table>
           </div>
+          <Pager {...paged} />
         </Card>
 
         <div className="no-print space-y-6">

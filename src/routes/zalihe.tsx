@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { ProductCard } from '../components/ProductCard'
 import { ProductImage } from '../components/ProductImage'
+import { Pager, usePaged } from '../components/Pager'
 import {
   Badge,
   Button,
@@ -98,6 +99,7 @@ function StockPage() {
     return true
   })
 
+  const paged = usePaged(rows, `${q}|${cat}|${view}`)
   const bySupplier = suppliers
     .map((s) => ({ s, items: low.filter((p) => p.supplierId === s.id) }))
     .filter((x) => x.items.length)
@@ -207,7 +209,7 @@ function StockPage() {
             <div className="flex flex-wrap gap-1.5">
               {(['sve', ...categories] as const).map((c) => (
                 <Chip key={c} active={cat === c} onClick={() => setCat(c)}>
-                  {c === 'sve' ? 'Sve kategorije' : c}
+                  {c === 'sve' ? 'Sve kategorije' : c || 'Bez kategorije'}
                 </Chip>
               ))}
             </div>
@@ -233,7 +235,7 @@ function StockPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((p) => {
+                {paged.rows.map((p) => {
                   const r = reserved.get(p.id) ?? 0
                   const free = p.stock - r
                   const st = stateOf(p, free)
@@ -297,6 +299,7 @@ function StockPage() {
               </EmptyState>
             )}
           </div>
+          <Pager {...paged} />
         </Card>
 
         <div className="space-y-6">
