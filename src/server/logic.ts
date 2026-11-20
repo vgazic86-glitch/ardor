@@ -75,7 +75,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
   await ensureBrandBook()
   await ensureManuals()
   await ensureHrSeeded()
-  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets, insts, reminders, works] =
+  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets, insts, reminders, works, workCosts] =
     await Promise.all([
       db
         .select()
@@ -109,6 +109,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       db.select().from(t.installments).orderBy(t.installments.orderId, t.installments.seq),
       db.select().from(t.paymentReminders).orderBy(t.paymentReminders.id),
       db.select().from(t.workOrders),
+      db.select({ wo: t.workOrderCosts.workOrderId, kind: t.workOrderCosts.kind, amount: t.workOrderCosts.amount }).from(t.workOrderCosts),
     ])
   const targetsBy = new Map<number, Record<string, number>>()
   for (const r of targets) targetsBy.set(r.employeeId, { ...(targetsBy.get(r.employeeId) ?? {}), [r.month]: r.target })
@@ -138,7 +139,9 @@ export async function loadSnapshot(): Promise<Snapshot> {
   const localDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo' })
   // Zadnji podsjetnik po prodaji (redovi su poredani po id-u, pa kasniji pregazi raniji).
   const reminderBy = new Map(reminders.map((r) => [r.orderId, r]))
-  const workBy = new Map(works.map((w) => [w.orderItemId, { id: String(w.id), number: w.number, status: w.status as WorkStatus, dueDate: w.dueDate }]))
+  const extCost = new Map<number, number>()
+  for (const c of workCosts) if (c.kind !== 'rad') extCost.set(c.wo, round2((extCost.get(c.wo) ?? 0) + c.amount))
+  const workBy = new Map(works.map((w) => [w.orderItemId, { id: String(w.id), number: w.number, status: w.status as WorkStatus, dueDate: w.dueDate, cost: extCost.get(w.id) ?? 0 }]))
 
   return {
     today: todayIso(),
@@ -1252,6 +1255,8 @@ export function forTrader(s: Snapshot, employeeId: string | null, keepCosts = fa
     orders: s.orders.map((o) => ({
       ...o,
       employeeId: o.employeeId === employeeId ? o.employeeId : OTHER,
+      // Troškovi radnog naloga (nabavna vrijednost po mjeri) samo za uloge koje vide nabavne cijene.
+      items: keepCosts ? o.items : o.items.map((i) => (i.work ? { ...i, work: { ...i.work, cost: 0 } } : i)),
       payments: o.payments.map((p) => ({ ...p, employeeId: keepEmployee(p.employeeId) })),
     })),
     movements: s.movements.map((m) => ({ ...m, unitCost: keepCosts ? m.unitCost : 0, employeeId: keepCosts ? m.employeeId : own(m.employeeId) })),

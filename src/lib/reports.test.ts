@@ -148,3 +148,17 @@ describe('reports', () => {
     expect(money2(1234.5)).toBe('1.234,50 KM')
   })
 })
+
+describe('namještaj po mjeri u zaradi', () => {
+  it('vanjski troškovi naloga ulaze u nabavnu vrijednost', async () => {
+    const { realized } = await import('./reports')
+    const order = {
+      id: '9', number: 'X', date: '2026-11-20', customerId: '1', employeeId: '1', status: 'isporučena', paymentMethod: 'Gotovina', paid: 0, payments: [], delivery: null, note: '', issuedAt: '2026-11-20',
+      items: [{ id: '5', productId: 'pm', qty: 1, unitPrice: 5850, discountPct: 0, customName: 'Kuhinja', work: { id: '1', number: 'RN', status: 'gotovo', dueDate: null, cost: 1700 } }],
+    } as never
+    const [row] = realized([order], [], { from: '2026-11-01', to: '2026-11-30' })
+    expect(row.net).toBeCloseTo(5000)
+    expect(row.cogs).toBe(1700)
+    expect(row.margin).toBeCloseTo(3300)
+  })
+})

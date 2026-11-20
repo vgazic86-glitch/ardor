@@ -736,3 +736,15 @@ export const listWorkOrdersFn = createServerFn({ method: 'GET' }).middleware([au
 export const updateWorkOrderFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<import('./radionica').WorkOrderUpdate & { number?: string }>())
   .handler(async ({ data, context }) => (await import('./radionica')).updateWorkOrder(context.user, data))
+
+export const addWorkCostFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<import('./radionica').WorkCostInput>())
+  .handler(async ({ data, context }) => (await import('./radionica')).addWorkCost(context.user, data))
+
+export const deleteWorkCostFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ id: string; number?: string; amount?: number }>())
+  .handler(async ({ data, context }) => (await (await import('./radionica')).deleteWorkCost(context.user, data.id), true))
+
+export const setHourlyRateFn = createServerFn({ method: 'POST' }).middleware([manager])
+  .validator(pass<{ rate: number }>())
+  .handler(async ({ data, context }) => (await import('./radionica')).setHourlyRate(context.user, data.rate))

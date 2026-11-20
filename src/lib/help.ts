@@ -182,7 +182,17 @@ export const HELP: HelpTopic[] = [
           'Kad iverica ode na krojenje kod partnera, kliknite „Krojenje kod partnera”; kad krene sklapanje, „Sklapanje u radionici”. Prodaja se tada sama prebaci u „U izradi”.',
           'Kad je komad gotov, kliknite „Gotovo”. Upišite rok izrade i bilješku (npr. kad stiže iverica) — trgovac to vidi i može obavijestiti kupca.',
           'Trgovac vidi naloge svojih prodaja, ali status mijenja radionica (i voditelj, operativa, uprava, dostava i montaža).',
-          'Troškovi naloga (krojenje kod partnera, okovi, sati rada) i zarada po kuhinji dolaze u sljedećoj fazi.',
+        ],
+      },
+      {
+        h: 'Troškovi i zarada po komadu',
+        items: [
+          'Na nalogu kliknite „Troškovi” i upišite troškove bez PDV-a: krojenje kod partnera (partner, broj računa, iznos), materijal i okovi, sati rada (satnica se predloži sama) i ostalo (prijevoz, usluge).',
+          'Troškove vide i upisuju operativa, voditelj i uprava. Trgovac i dostava ih ne vide.',
+          'Zaradu po komadu (prodajna cijena bez PDV-a minus svi troškovi, i postotak) vide samo admin i uprava. Uprava na vrhu stranice mijenja satnicu radionice i vidi zbir zarade na gotovim nalozima.',
+          'Vanjski troškovi (partner, materijal, ostalo) automatski ulaze u nabavnu vrijednost prodaje u Troškovima i zaradi i u Izvještajima, kad roba izađe kupcu.',
+          'Sati vlastitih radnika ulaze samo u zaradu po komadu — u mjesečnoj zaradi su već kroz plaće, pa se ne računaju dvaput.',
+          'Račun partnera za krojenje i dalje se knjiži kao i do sada (ulazni računi, kartica dobavljača); ovdje se upisuje samo da se zna koliko je koštao ovaj komad.',
         ],
       },
     ],

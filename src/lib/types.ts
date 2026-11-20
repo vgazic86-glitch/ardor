@@ -125,7 +125,14 @@ export interface OrderItem {
   customKind?: import('./pomjeri').CustomKind
   customImage?: import('../server/images').ProductImageUpload | null
   /** Radni nalog radionice za ovu stavku (po mjeri, nakon potvrde prodaje). */
-  work?: { id: string; number: string; status: import('./pomjeri').WorkStatus; dueDate: string | null } | null
+  work?: {
+    id: string
+    number: string
+    status: import('./pomjeri').WorkStatus
+    dueDate: string | null
+    /** Vanjski troškovi naloga bez PDV-a (partner, materijal, ostalo) — nabavna vrijednost stavke. Samo uloge koje vide nabavne cijene. */
+    cost?: number
+  } | null
 }
 
 export interface Delivery {

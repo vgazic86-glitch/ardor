@@ -71,7 +71,9 @@ export function realized(
     .map((o) => {
       const gross = orderTotal(o)
       const net = netOf(gross)
-      const c = Math.max(0, cogs.get(o.id) ?? 0)
+      // Namještaj po mjeri: nabavna vrijednost = vanjski troškovi radnog naloga (vlastiti rad je već u plaćama).
+      const custom = o.items.reduce((s, i) => s + (i.work?.cost ?? 0), 0)
+      const c = Math.max(0, cogs.get(o.id) ?? 0) + custom
       return {
         order: o,
         gross,
@@ -165,7 +167,7 @@ export function marginBy(
         qty: 0,
       }
       const net = netOf(i.qty * i.unitPrice * (1 - i.discountPct / 100))
-      const c = i.qty * (cost.get(`${s.order.id}:${i.productId}`) ?? p.avgCost)
+      const c = i.customName ? (i.work?.cost ?? 0) : i.qty * (cost.get(`${s.order.id}:${i.productId}`) ?? p.avgCost)
       g.net += net
       g.cogs += c
       g.margin += net - c

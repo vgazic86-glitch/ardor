@@ -27,3 +27,24 @@ describe('po mjeri', () => {
     expect(itemName({}, 'Stol')).toBe('Stol')
   })
 })
+
+describe('troškovi naloga', () => {
+  it('zbir vanjskih troškova i rada', async () => {
+    const { costTotals, costAmount, workMargin } = await import('./pomjeri')
+    expect(costAmount(7.5, 15)).toBe(112.5)
+    expect(costAmount(3, 10.005)).toBe(30.03)
+    expect(costAmount(20, 12.525)).toBe(250.6)
+    const t = costTotals([
+      { kind: 'partner', amount: 1200 },
+      { kind: 'materijal', amount: 450.5 },
+      { kind: 'rad', amount: 300 },
+      { kind: 'ostalo', amount: 49.5 },
+    ])
+    expect(t).toEqual({ external: 1700, labor: 300, total: 2000 })
+    const m = workMargin(5850, t)
+    expect(m.net).toBe(5000)
+    expect(m.profit).toBe(3000)
+    expect(m.pct).toBeCloseTo(0.6)
+    expect(workMargin(0, t).pct).toBe(0)
+  })
+})

@@ -47,3 +47,50 @@ export const isLate = (w: { status: WorkStatus; dueDate: string | null }, today:
 
 /** Naziv stavke za prikaz: vlastiti naziv po mjeri ili naziv artikla. */
 export const itemName = (i: { customName?: string }, productName: string) => (i.customName?.trim() ? i.customName.trim() : productName)
+
+/* ───────────── faza 2: troškovi naloga i zarada po komadu ───────────── */
+
+export type CostKind = 'partner' | 'materijal' | 'rad' | 'ostalo'
+
+export const COST_KIND_LABEL: Record<CostKind, string> = {
+  partner: 'Krojenje kod partnera',
+  materijal: 'Materijal i okovi',
+  rad: 'Sati rada',
+  ostalo: 'Ostalo (prijevoz, usluge…)',
+}
+
+/** Zadana satnica radionice (KM/h, bez PDV-a) dok je uprava ne promijeni. */
+export const DEFAULT_HOURLY_RATE = 15
+
+const r2 = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100
+
+/** Iznos stavke troška = količina (ili sati) × cijena; obje se prvo zaokruže na 2 decimale (kao u bazi). */
+export const costAmount = (qty: number, unitPrice: number) => r2(r2(qty || 0) * r2(unitPrice || 0))
+
+export interface CostTotals {
+  /** Vanjski troškovi: partner + materijal + ostalo — ulaze u nabavnu vrijednost prodaje (Troškovi i zarada). */
+  external: number
+  /** Vlastiti rad (sati × satnica) — samo za kalkulaciju po komadu; plaće su već trošak u mjesecu. */
+  labor: number
+  total: number
+}
+
+export function costTotals(rows: { kind: string; amount: number }[]): CostTotals {
+  let external = 0
+  let labor = 0
+  for (const r of rows) {
+    if (r.kind === 'rad') labor += r.amount
+    else external += r.amount
+  }
+  return { external: r2(external), labor: r2(labor), total: r2(external + labor) }
+}
+
+/**
+ * Zarada po komadu: prodajna cijena bez PDV-a (iznos stavke s PDV-om / 1,17) minus troškovi.
+ * Vraća i maržu (udio zarade u neto cijeni).
+ */
+export function workMargin(grossLine: number, totals: CostTotals, vatRate = 0.17) {
+  const net = r2(grossLine / (1 + vatRate))
+  const profit = r2(net - totals.total)
+  return { net, profit, pct: net > 0 ? profit / net : 0 }
+}

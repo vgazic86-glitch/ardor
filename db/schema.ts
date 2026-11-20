@@ -882,3 +882,29 @@ export const workOrders = pgTable(
   },
   (t) => [index('work_orders_order_idx').on(t.orderId)],
 )
+
+/** Troškovi radnog naloga: krojenje kod partnera, materijal, sati rada, ostalo (iznosi bez PDV-a). */
+export const workOrderCosts = pgTable(
+  'work_order_costs',
+  {
+    id: serial().primaryKey(),
+    workOrderId: integer('work_order_id')
+      .notNull()
+      .references(() => workOrders.id, { onDelete: 'cascade' }),
+    /** partner | materijal | rad | ostalo */
+    kind: text().notNull(),
+    description: text().notNull().default(''),
+    supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+    documentNumber: text('document_number').notNull().default(''),
+    /** Količina ili sati (2 decimale). */
+    qty: numeric({ precision: 10, scale: 2, mode: 'number' }).notNull().default(1),
+    unitPrice: money('unit_price').notNull().default(0),
+    amount: money('amount').notNull(),
+    date: date({ mode: 'string' }).notNull(),
+    /** Ko je radio (za sate rada). */
+    employeeId: integer('employee_id').references(() => employees.id, { onDelete: 'set null' }),
+    createdBy: text('created_by').notNull().default(''),
+    createdAt: timestamp('created_at').notNull(),
+  },
+  (t) => [index('work_order_costs_wo_idx').on(t.workOrderId)],
+)

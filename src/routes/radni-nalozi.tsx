@@ -1,15 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { CalendarDays, Hammer, Search } from 'lucide-react'
+import { CalendarDays, ChevronDown, ChevronUp, Hammer, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { OrderDrawer } from '../components/OrderDrawer'
-import { Badge, Card, Chip, EmptyState, Field, inputCls, PageHeader, Stat } from '../components/ui'
+import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader, Select, Stat } from '../components/ui'
 import { canSee } from '../lib/access'
-import { date, orderStatusLabel } from '../lib/format'
-import { isLate, WORK_STATUSES, WORK_STATUS_LABEL, type WorkStatus } from '../lib/pomjeri'
+import { date, money, money2, orderStatusLabel, parseAmount } from '../lib/format'
+import { COST_KIND_LABEL, costAmount, isLate, WORK_STATUSES, WORK_STATUS_LABEL, type CostKind, type WorkStatus } from '../lib/pomjeri'
 import { useRemote } from '../lib/remote'
 import { useStore } from '../lib/store'
 import type { OrderStatus } from '../lib/types'
-import { listWorkOrdersFn, updateWorkOrderFn } from '../server/api'
+import { addWorkCostFn, deleteWorkCostFn, listWorkOrdersFn, setHourlyRateFn, updateWorkOrderFn } from '../server/api'
 import type { WorkOrderRow } from '../server/radionica'
 
 export const Route = createFileRoute('/radni-nalozi')({ component: WorkOrdersPage })
@@ -17,6 +17,7 @@ export const Route = createFileRoute('/radni-nalozi')({ component: WorkOrdersPag
 const tone: Record<WorkStatus, string> = { novi: 'neutral', krojenje: 'info', sklapanje: 'violet', gotovo: 'good' }
 
 type Run = <R>(fn: () => Promise<R>, ok?: string) => Promise<R | null>
+type Data = Awaited<ReturnType<typeof listWorkOrdersFn>>
 
 function WorkOrdersPage() {
   const r = useRemote(() => listWorkOrdersFn(), [])
@@ -51,6 +52,7 @@ function WorkOrdersPage() {
         <Stat label="Sklapanje u radionici" value={String(open.filter((w) => w.status === 'sklapanje').length)} />
         <Stat tone={open.some((w) => isLate(w, today)) ? 'warn' : 'good'} label="Kasne" value={String(open.filter((w) => isLate(w, today)).length)} hint="prošao rok" />
       </div>
+      {r.data?.seesMargin && <RateBar rate={r.data.rate} done={live.filter((w) => w.status === 'gotovo')} busy={r.busy} run={r.run} />}
       {r.error && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{r.error}</p>}
       <Card flush>
         <div className="flex flex-wrap items-center gap-2 border-b border-walnut-200/70 px-5 py-3">
@@ -77,7 +79,7 @@ function WorkOrdersPage() {
         ) : (
           <ul className="divide-y divide-walnut-100">
             {shown.map((w) => (
-              <WorkRow key={w.id} w={w} today={today} canEdit={!!r.data?.canEdit} busy={r.busy} run={r.run} onOpenOrder={canOpenOrder ? () => setOpenOrder(w.orderId) : undefined} />
+              <WorkRow key={w.id} w={w} data={r.data!} today={today} canEdit={!!r.data?.canEdit} busy={r.busy} run={r.run} onOpenOrder={canOpenOrder ? () => setOpenOrder(w.orderId) : undefined} />
             ))}
           </ul>
         )}
@@ -87,8 +89,9 @@ function WorkOrdersPage() {
   )
 }
 
-function WorkRow({ w, today, canEdit, busy, run, onOpenOrder }: { w: WorkOrderRow; today: string; canEdit: boolean; busy: boolean; run: Run; onOpenOrder?: () => void }) {
+function WorkRow({ w, data, today, canEdit, busy, run, onOpenOrder }: { w: WorkOrderRow; data: Data; today: string; canEdit: boolean; busy: boolean; run: Run; onOpenOrder?: () => void }) {
   const [note, setNote] = useState(w.note)
+  const [showCosts, setShowCosts] = useState(false)
   const late = isLate(w, today)
   const cancelled = w.orderStatus === 'otkazana'
   const save = (patch: { status?: WorkStatus; dueDate?: string | null; note?: string }, ok: string) =>
@@ -136,6 +139,22 @@ function WorkRow({ w, today, canEdit, busy, run, onOpenOrder }: { w: WorkOrderRo
             Zadnja izmjena: {w.updatedBy}, {date(w.updatedAt.slice(0, 10))}
           </div>
         )}
+        {w.totals && (
+          <button
+            type="button"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-walnut-50 px-2.5 py-1 text-xs font-semibold text-walnut-800 ring-1 ring-walnut-200 hover:bg-white"
+            onClick={() => setShowCosts((v) => !v)}
+            aria-expanded={showCosts}
+          >
+            {showCosts ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+            Troškovi: {money2(w.totals.total)}
+            {w.margin && (
+              <span className={w.margin.profit >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                · zarada {money(w.margin.profit)} ({Math.round(w.margin.pct * 100)} %)
+              </span>
+            )}
+          </button>
+        )}
       </div>
       <div className="flex flex-col gap-2">
         {canEdit && !cancelled ? (
@@ -173,6 +192,190 @@ function WorkRow({ w, today, canEdit, busy, run, onOpenOrder }: { w: WorkOrderRo
           </div>
         )}
       </div>
+      {showCosts && w.totals && (
+        <div className="lg:col-span-3">
+          <Costs w={w} data={data} busy={busy} run={run} />
+        </div>
+      )}
     </li>
+  )
+}
+
+/** Satnica radionice i zbir zarade na gotovim nalozima (samo admin i uprava). */
+function RateBar({ rate, done, busy, run }: { rate: number; done: WorkOrderRow[]; busy: boolean; run: Run }) {
+  const [v, setV] = useState(String(rate).replace('.', ','))
+  const profit = done.reduce((s, w) => s + (w.margin?.profit ?? 0), 0)
+  const net = done.reduce((s, w) => s + (w.margin?.net ?? 0), 0)
+  return (
+    <Card className="mb-4">
+      <div className="flex flex-wrap items-end gap-4">
+        <Field label="Satnica radionice (KM/h, bez PDV-a)" hint="Predlaže se kod upisa sati rada.">
+          <div className="flex gap-2">
+            <input className={`${inputCls} w-28`} inputMode="decimal" value={v} onChange={(e) => setV(e.target.value)} />
+            <Button variant="outline" disabled={busy || parseAmount(v) === rate} onClick={() => run(() => setHourlyRateFn({ data: { rate: parseAmount(v) } }), 'Satnica je spremljena.')}>
+              Spremi
+            </Button>
+          </div>
+        </Field>
+        <div className="text-sm text-walnut-700">
+          Gotovi nalozi ({done.length}): prodaja bez PDV-a <b>{money(net)}</b>, zarada <b className={profit >= 0 ? 'text-emerald-700' : 'text-rose-700'}>{money(profit)}</b>
+          {net > 0 && <> ({Math.round((profit / net) * 100)} %)</>}
+          <div className="text-xs text-walnut-500">Zarada po komadu = prodajna cijena bez PDV-a − svi troškovi naloga (uključujući sate rada).</div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function Costs({ w, data, busy, run }: { w: WorkOrderRow; data: Data; busy: boolean; run: Run }) {
+  const empty = { kind: 'partner' as CostKind, description: '', supplierId: '', documentNumber: '', qty: '1', unitPrice: '', employeeId: '', date: data.today }
+  const [f, setF] = useState(empty)
+  const set = <K extends keyof typeof f>(k: K, val: (typeof f)[K]) => setF((s) => ({ ...s, [k]: val }))
+  const isWork = f.kind === 'rad'
+  const rateText = String(data.rate).replace('.', ',')
+  const amount = costAmount(parseAmount(f.qty), parseAmount(f.unitPrice))
+  const add = async () => {
+    const ok = await run(
+      () =>
+        addWorkCostFn({
+          data: {
+            workOrderId: w.id,
+            number: w.number,
+            kind: f.kind,
+            description: f.description,
+            supplierId: f.kind === 'partner' && f.supplierId ? f.supplierId : null,
+            documentNumber: f.documentNumber,
+            qty: parseAmount(f.qty),
+            unitPrice: parseAmount(f.unitPrice),
+            date: f.date,
+            employeeId: isWork && f.employeeId ? f.employeeId : null,
+          },
+        }),
+      'Trošak je upisan.',
+    )
+    if (ok) setF({ ...empty, kind: f.kind, unitPrice: isWork ? rateText : '' })
+  }
+  const t = w.totals!
+  const placeholder = isWork
+    ? 'npr. sklapanje korpusa i fronti'
+    : f.kind === 'partner'
+      ? 'npr. krojenje i kantiranje, 14 elemenata'
+      : f.kind === 'materijal'
+        ? 'npr. šarke Blum 20 kom, ručke, vodilice'
+        : 'npr. prijevoz iverice od partnera'
+  return (
+    <div className="rounded-xl border border-walnut-200 bg-linen p-4">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="font-display text-base font-semibold">Troškovi naloga {w.number} (bez PDV-a)</h3>
+        <div className="text-xs text-walnut-600">
+          Vanjski troškovi <b>{money2(t.external)}</b> · vlastiti rad <b>{money2(t.labor)}</b> · ukupno <b>{money2(t.total)}</b>
+          {w.margin && (
+            <>
+              {' '}
+              · prodaja bez PDV-a <b>{money2(w.margin.net)}</b> · zarada{' '}
+              <b className={w.margin.profit >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                {money2(w.margin.profit)} ({Math.round(w.margin.pct * 100)} %)
+              </b>
+            </>
+          )}
+        </div>
+      </div>
+      {w.costs && w.costs.length > 0 ? (
+        <div className="mb-3 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="text-left text-xs text-walnut-500">
+                <th className="pb-1 font-semibold">Datum</th>
+                <th className="pb-1 font-semibold">Vrsta</th>
+                <th className="pb-1 font-semibold">Opis</th>
+                <th className="pb-1 text-right font-semibold">Kol./sati</th>
+                <th className="pb-1 text-right font-semibold">Cijena</th>
+                <th className="pb-1 text-right font-semibold">Iznos</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-walnut-100">
+              {w.costs.map((c) => (
+                <tr key={c.id}>
+                  <td className="py-1.5 pr-2">{date(c.date)}</td>
+                  <td className="py-1.5 pr-2">{COST_KIND_LABEL[c.kind]}</td>
+                  <td className="py-1.5 pr-2">
+                    {[c.supplier, c.description, c.documentNumber && `račun ${c.documentNumber}`, c.employee].filter(Boolean).join(' · ')}
+                    <div className="text-[11px] text-walnut-400">upisao/la {c.createdBy}</div>
+                  </td>
+                  <td className="py-1.5 pr-2 text-right tabular">{String(c.qty).replace('.', ',')}</td>
+                  <td className="py-1.5 pr-2 text-right tabular">{money2(c.unitPrice)}</td>
+                  <td className="py-1.5 pr-2 text-right font-semibold tabular">{money2(c.amount)}</td>
+                  <td className="py-1.5 text-right">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      aria-label={`Obriši trošak ${c.description || COST_KIND_LABEL[c.kind]}`}
+                      disabled={busy}
+                      onClick={() => {
+                        if (window.confirm(`Obrisati trošak ${money2(c.amount)} (${COST_KIND_LABEL[c.kind]})?`))
+                          run(() => deleteWorkCostFn({ data: { id: c.id, number: w.number, amount: c.amount } }), 'Trošak je obrisan.')
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="mb-3 text-sm text-walnut-600">Još nema troškova. Upišite račun partnera za krojenje, okove i materijal, sate rada i ostalo.</p>
+      )}
+      <div className="grid gap-2 rounded-lg border border-walnut-200 bg-white p-3 sm:grid-cols-6">
+        <div className="sm:col-span-2">
+          <Select
+            label="Vrsta troška"
+            value={f.kind}
+            onChange={(k) => setF((s) => ({ ...s, kind: k as CostKind, unitPrice: k === 'rad' ? rateText : s.kind === 'rad' ? '' : s.unitPrice }))}
+            options={(Object.keys(COST_KIND_LABEL) as CostKind[]).map((k) => ({ value: k, label: COST_KIND_LABEL[k] }))}
+          />
+        </div>
+        {f.kind === 'partner' && (
+          <div className="sm:col-span-2">
+            <Select label="Partner (dobavljač)" value={f.supplierId} onChange={(x) => set('supplierId', x)} options={[{ value: '', label: '— odaberite —' }, ...data.suppliers.map((s) => ({ value: s.id, label: s.name }))]} />
+          </div>
+        )}
+        {isWork && (
+          <div className="sm:col-span-2">
+            <Select label="Ko je radio" value={f.employeeId} onChange={(x) => set('employeeId', x)} options={[{ value: '', label: '— po želji —' }, ...data.employees.map((e) => ({ value: e.id, label: e.name }))]} />
+          </div>
+        )}
+        <Field label="Datum" className="sm:col-span-2">
+          <input type="date" className={inputCls} value={f.date} onChange={(e) => set('date', e.target.value)} />
+        </Field>
+        <Field label="Opis" className={f.kind === 'partner' || isWork ? 'sm:col-span-4' : 'sm:col-span-6'}>
+          <input className={inputCls} value={f.description} onChange={(e) => set('description', e.target.value)} placeholder={placeholder} />
+        </Field>
+        {f.kind === 'partner' && (
+          <Field label="Broj računa partnera" className="sm:col-span-2">
+            <input className={inputCls} value={f.documentNumber} onChange={(e) => set('documentNumber', e.target.value)} />
+          </Field>
+        )}
+        <Field label={isWork ? 'Sati' : 'Količina'}>
+          <input className={inputCls} inputMode="decimal" value={f.qty} onChange={(e) => set('qty', e.target.value)} />
+        </Field>
+        <Field label={isWork ? 'Satnica (KM/h)' : 'Cijena bez PDV-a'}>
+          <input className={inputCls} inputMode="decimal" value={f.unitPrice} onChange={(e) => set('unitPrice', e.target.value)} />
+        </Field>
+        <div className="flex items-end justify-between gap-2 sm:col-span-4">
+          <span className="pb-2 text-sm">
+            Iznos: <b>{money2(amount)}</b>
+          </span>
+          <Button variant="copper" disabled={busy || !(amount > 0)} onClick={add}>
+            <Plus className="size-4" /> Dodaj trošak
+          </Button>
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-walnut-500">
+        Vanjski troškovi (partner, materijal, ostalo) ulaze u nabavnu vrijednost prodaje u Troškovima i zaradi i Izvještajima. Sati vlastitih radnika služe za zaradu po komadu — u mjesečnoj zaradi su već kroz plaće.
+      </p>
+    </div>
   )
 }
