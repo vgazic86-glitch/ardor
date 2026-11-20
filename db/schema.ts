@@ -77,6 +77,8 @@ export const products = pgTable('products', {
   active: boolean().notNull().default(true),
   /** Varijante koje kupac bira (npr. „Štof: siva, bež” — jedna grupa po redu). */
   options: text().notNull().default(''),
+  /** Opći artikal za namještaj po mjeri (kuhinja, plakar…): bez zalihe, izrađuje se po radnom nalogu. */
+  madeToOrder: boolean('made_to_order').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
@@ -139,6 +141,11 @@ export const orderItems = pgTable(
       .default(0),
     /** Odabrana varijanta (npr. „Štof: siva · Noge: hrast”). */
     variant: text().notNull().default(''),
+    /** Namještaj po mjeri: naziv za kupca (npr. „Kuhinja po mjeri — Petrović”), opis i slika iz Palette CAD-a. */
+    customName: text('custom_name').notNull().default(''),
+    description: text().notNull().default(''),
+    imageId: integer('image_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
+    thumbId: integer('thumb_id').references((): AnyPgColumn => files.id, { onDelete: 'set null' }),
   },
   (t) => [index('order_items_order_idx').on(t.orderId)],
 )
@@ -847,4 +854,31 @@ export const exportInvoices = pgTable(
     createdAt: timestamp('created_at').notNull(),
   },
   (t) => [index('export_invoices_date_idx').on(t.date)],
+)
+
+/* ───────────────────────── radionica: radni nalozi za namještaj po mjeri ───────────────────────── */
+
+export const workOrders = pgTable(
+  'work_orders',
+  {
+    id: serial().primaryKey(),
+    /** RN-2026-0001 */
+    number: text().notNull().unique(),
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    orderItemId: integer('order_item_id')
+      .notNull()
+      .unique()
+      .references(() => orderItems.id, { onDelete: 'cascade' }),
+    /** novi | krojenje | sklapanje | gotovo */
+    status: text().notNull().default('novi'),
+    dueDate: date('due_date', { mode: 'string' }),
+    note: text().notNull().default(''),
+    updatedBy: text('updated_by').notNull().default(''),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+    doneAt: timestamp('done_at'),
+  },
+  (t) => [index('work_orders_order_idx').on(t.orderId)],
 )

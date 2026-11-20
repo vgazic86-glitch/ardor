@@ -25,9 +25,10 @@ export type Area =
   | 'naplata'
   | 'web'
   | 'izvoz'
+  | 'radionica'
 
 /** Trgovac: samo ono što treba za prodaju i rad s kupcima. */
-const TRADER: Area[] = ['pregled', 'zadaci', 'narudzbe', 'naplata', 'kupci', 'web', 'reklamacije', 'dostave', 'zalihe', 'radno', 'dokumenti']
+const TRADER: Area[] = ['pregled', 'zadaci', 'narudzbe', 'naplata', 'kupci', 'web', 'reklamacije', 'dostave', 'zalihe', 'radno', 'dokumenti', 'radionica']
 
 /** Operativa (srednji pristup): roba, nabava, primke, kartice dobavljača — bez tuđeg prometa i zarade. */
 const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura', 'dobavljaci', 'izvoz']
@@ -36,7 +37,7 @@ const OPERATIONS: Area[] = [...TRADER, 'nabava', 'primke', 'artikli', 'inventura
 const MANAGER: Area[] = [...OPERATIONS, 'zaposlenici', 'pazar']
 
 /** Dostava i montaža: samo dostave, radno vrijeme, zadaci i dokumenti (svoj priručnik). */
-const DELIVERY: Area[] = ['dostave', 'radno', 'zadaci', 'dokumenti']
+const DELIVERY: Area[] = ['dostave', 'radno', 'zadaci', 'dokumenti', 'radionica']
 
 export function canSee(user: SessionUser | null, area: Area) {
   if (!user) return false
@@ -75,6 +76,7 @@ export function areaOf(path: string): Area | null {
     naplata: 'naplata',
     web: 'web',
     izvoz: 'izvoz',
+    'radni-nalozi': 'radionica',
     naljepnice: 'artikli',
     kuf: 'izvjestaji',
   }

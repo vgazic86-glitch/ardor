@@ -94,6 +94,7 @@ export async function readProductImage(id: number) {
         or(
           sql`exists (select 1 from ${t.products} where ${or(eq(t.products.imageId, id), eq(t.products.thumbId, id))})`,
           sql`exists (select 1 from ${t.complaintPhotos} where ${or(eq(t.complaintPhotos.imageId, id), eq(t.complaintPhotos.thumbId, id))})`,
+          sql`exists (select 1 from ${t.orderItems} where ${or(eq(t.orderItems.imageId, id), eq(t.orderItems.thumbId, id))})`,
         ),
       ),
     )

@@ -26,7 +26,7 @@ export const Route = createFileRoute('/inventura')({ component: StocktakePage })
 
 function StocktakePage() {
   const {
-    products,
+    products: allProducts,
     movements,
     today,
     productById,
@@ -34,6 +34,7 @@ function StocktakePage() {
     adjustStockMany,
     busy,
   } = useStore()
+  const products = allProducts.filter((p) => !p.madeToOrder)
   const [counted, setCounted] = useState<Record<string, string>>({})
   /** Inventura se radi odvojeno za salon i skladište. */
   const [loc, setLoc] = useState<'salon' | 'skladiste'>('salon')

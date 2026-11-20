@@ -1,5 +1,5 @@
 /** Kupci (uređivanje) i dokumenti za kupca: ponuda, predračun, otpremnica. Izvoz svih podataka. */
-import { asc, eq, sql } from 'drizzle-orm'
+import { asc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import type { SessionUser } from './auth'
@@ -55,6 +55,12 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
   const pays = await db.select().from(t.payments).where(eq(t.payments.orderId, o.id))
   const paid = pays.reduce((s, p) => s + p.amount, 0)
   const company = await getCompany()
+  // Slike stavki po mjeri (prikaz iz Palette CAD-a) idu na sve dokumente osim otpremnice.
+  const imgIds = kind === 'otpremnica' ? [] : items.map((x) => x.i.imageId).filter((v): v is number => v != null)
+  const imgs = new Map<number, { data: Uint8Array; mime: string }>()
+  if (imgIds.length)
+    for (const f of await db.select({ id: t.files.id, mime: t.files.mime, data: t.files.data }).from(t.files).where(inArray(t.files.id, imgIds)))
+      imgs.set(f.id, { data: new Uint8Array(f.data as Uint8Array), mime: f.mime })
 
   const lineSum = (i: (typeof items)[number]['i']) => i.qty * i.unitPrice * (1 - i.discountPct / 100)
   const total = items.reduce((s, x) => s + lineSum(x.i), 0)
@@ -120,10 +126,11 @@ export async function customerDocPdf(user: SessionUser, orderId: string, kind: C
             : 'Izdajemo sljedeću robu:',
     columns,
     rows: items.map((x, idx) => ({
+      ...(x.i.customName ? { detail: x.i.description || undefined, image: imgs.get(x.i.imageId ?? 0) } : {}),
       cells: {
         rb: `${idx + 1}.`,
-        code: x.sku,
-        name: x.i.variant ? `${x.name} (${x.i.variant})` : x.name,
+        code: x.i.customName ? 'po mjeri' : x.sku,
+        name: x.i.customName ? x.i.customName : x.i.variant ? `${x.name} (${x.i.variant})` : x.name,
         qty: num(x.i.qty, 0),
         unit: 'kom',
         price: num(x.i.unitPrice),

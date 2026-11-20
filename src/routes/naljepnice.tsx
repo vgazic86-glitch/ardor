@@ -18,7 +18,8 @@ type Mode = 'cijena' | 'stanje'
  * - QR za stanje: skeniranjem se otvara kartica artikla (stanje, rezervacije, rok isporuke).
  */
 function LabelsPage() {
-  const { products } = useStore()
+  const { products: allProducts } = useStore()
+  const products = allProducts.filter((p) => !p.madeToOrder)
   const categories = [...new Set(products.map((p) => p.category))]
   const [mode, setMode] = useState<Mode>('cijena')
   const [cat, setCat] = useState<string>('sve')

@@ -1,6 +1,10 @@
 import { Plus, Trash2,
   Hourglass,
+  Hammer,
+  ImagePlus,
 } from 'lucide-react'
+import { prepareImage } from '../lib/image'
+import { CUSTOM_KINDS, type CustomKind } from '../lib/pomjeri'
 import { useState } from 'react'
 import {
   itemsTotal,
@@ -45,6 +49,8 @@ export function NewOrderDialog({
     restricted,
   } = useStore()
   const maxDiscount = restricted ? 10 : 50
+  // Opći artikli „po mjeri” se ne biraju s popisa — za njih je gumb „Po mjeri”.
+  const sellable = products.filter((p) => !p.madeToOrder)
   const reserved = reservedQty(orders)
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? '')
   const [employeeId, setEmployeeId] = useState(
@@ -53,14 +59,14 @@ export function NewOrderDialog({
   const [items, setItems] = useState<OrderItem[]>(
     initialItems?.length
       ? initialItems
-          .filter((i) => products.some((p) => p.id === i.productId))
+          .filter((i) => sellable.some((p) => p.id === i.productId))
           .map((i) => ({ productId: i.productId, qty: Math.max(1, i.qty), unitPrice: productById(i.productId).price, discountPct: 0 }))
-      : products[0]
+      : sellable[0]
       ? [
           {
-            productId: products[0].id,
+            productId: sellable[0].id,
             qty: 1,
-            unitPrice: products[0].price,
+            unitPrice: sellable[0].price,
             discountPct: 0,
           },
         ]
@@ -256,7 +262,15 @@ export function NewOrderDialog({
             Artikli
           </legend>
           <div className="space-y-2">
-            {items.map((it, i) => (
+            {items.map((it, i) => it.customKind ? (
+              <CustomItemCard
+                key={i}
+                item={it}
+                maxDiscount={maxDiscount}
+                onChange={(patch) => update(i, patch)}
+                onRemove={() => setItems((l) => l.filter((_, j) => j !== i))}
+              />
+            ) : (
               <div
                 key={i}
                 className="grid grid-cols-[1fr_70px_80px_auto] items-end gap-2 rounded-xl border border-walnut-200 bg-linen p-3 sm:grid-cols-[44px_1fr_70px_80px_110px_auto]"
@@ -277,7 +291,7 @@ export function NewOrderDialog({
                       })
                     }
                   >
-                    {products.map((p) => (
+                    {sellable.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} ({money(p.price)})
                         {p.stock <= 0
@@ -364,15 +378,28 @@ export function NewOrderDialog({
               setItems((l) => [
                 ...l,
                 {
-                  productId: products[0].id,
+                  productId: sellable[0].id,
                   qty: 1,
-                  unitPrice: products[0].price,
+                  unitPrice: sellable[0].price,
                   discountPct: 0,
                 },
               ])
             }
           >
             <Plus className="size-4" /> Dodaj artikal
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="mt-2"
+            onClick={() =>
+              setItems((l) => [
+                ...l,
+                { productId: '', customKind: 'kuhinja', customName: CUSTOM_KINDS.kuhinja.name, description: '', customImage: null, qty: 1, unitPrice: 0, discountPct: 0 },
+              ])
+            }
+          >
+            <Hammer className="size-4" /> Po mjeri (kuhinja, plakar…)
           </Button>
         </fieldset>
 
@@ -555,6 +582,128 @@ function VariantPicker({ options, value, onChange }: { options?: string; value: 
           </select>
         </label>
       ))}
+    </div>
+  )
+}
+
+/** Stavka namještaja po mjeri: vrsta, naziv za kupca, opis, cijena iz Palette CAD-a i slika (ide na ponudu). */
+function CustomItemCard({
+  item,
+  maxDiscount,
+  onChange,
+  onRemove,
+}: {
+  item: OrderItem
+  maxDiscount: number
+  onChange: (patch: Partial<OrderItem>) => void
+  onRemove: () => void
+}) {
+  const [price, setPrice] = useState(item.unitPrice ? String(item.unitPrice).replace('.', ',') : '')
+  const [imgError, setImgError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const thumb = item.customImage?.thumb
+  const kinds = Object.entries(CUSTOM_KINDS) as [CustomKind, { name: string }][]
+  return (
+    <div className="grid gap-3 rounded-xl border border-copper-200 bg-copper-50/40 p-3 sm:grid-cols-[120px_1fr]">
+      <label className="relative flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border border-dashed border-walnut-300 bg-white text-center text-[11px] font-semibold text-walnut-500 hover:border-copper-400">
+        {thumb ? (
+          <img src={`data:${thumb.mime};base64,${thumb.dataB64}`} alt="Slika po mjeri" className="absolute inset-0 size-full object-cover" />
+        ) : (
+          <>
+            <ImagePlus className="size-5" />
+            {loading ? 'Učitavam…' : 'Slika iz Palette CAD-a'}
+          </>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          aria-label="Slika stavke po mjeri"
+          onChange={async (e) => {
+            const f = e.target.files?.[0]
+            e.target.value = ''
+            if (!f) return
+            setImgError('')
+            setLoading(true)
+            try {
+              onChange({ customImage: await prepareImage(f, true) })
+            } catch (err) {
+              setImgError(err instanceof Error ? err.message : 'Slika nije učitana.')
+            } finally {
+              setLoading(false)
+            }
+          }}
+        />
+      </label>
+      <div className="grid grid-cols-6 gap-2">
+        <label className={`${lbl} col-span-6 sm:col-span-2`}>
+          Po mjeri
+          <select
+            className={inputCls}
+            value={item.customKind}
+            onChange={(e) => {
+              const k = e.target.value as CustomKind
+              const wasDefault = kinds.some(([, d]) => d.name === item.customName)
+              onChange({ customKind: k, ...(wasDefault || !item.customName ? { customName: CUSTOM_KINDS[k].name } : {}) })
+            }}
+          >
+            {kinds.map(([k, d]) => (
+              <option key={k} value={k}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={`${lbl} col-span-6 sm:col-span-4`}>
+          Naziv za kupca
+          <input className={inputCls} value={item.customName ?? ''} onChange={(e) => onChange({ customName: e.target.value })} placeholder="npr. Kuhinja po mjeri — bijeli mat, hrast" />
+        </label>
+        <label className={`${lbl} col-span-2 sm:col-span-1`}>
+          Kol.
+          <input className={inputCls} type="number" min={1} value={item.qty} onChange={(e) => onChange({ qty: Math.max(1, Number(e.target.value)) })} />
+        </label>
+        <label className={`${lbl} col-span-4 sm:col-span-2`}>
+          Cijena s PDV-om
+          <input
+            className={inputCls}
+            inputMode="decimal"
+            placeholder="iz Palette CAD-a"
+            value={price}
+            onChange={(e) => {
+              setPrice(e.target.value)
+              onChange({ unitPrice: Math.max(0, parseAmount(e.target.value)) })
+            }}
+          />
+        </label>
+        <label className={`${lbl} col-span-3 sm:col-span-2`}>
+          Popust %
+          <input
+            className={inputCls}
+            type="number"
+            min={0}
+            max={maxDiscount}
+            value={item.discountPct}
+            onChange={(e) => onChange({ discountPct: Math.min(maxDiscount, Math.max(0, Number(e.target.value))) })}
+          />
+        </label>
+        <button type="button" onClick={onRemove} className="col-span-3 mt-5 self-start justify-self-end rounded-lg p-2 sm:col-span-1 text-walnut-500 hover:bg-walnut-100" aria-label="Ukloni stavku po mjeri">
+          <Trash2 className="size-4" />
+        </button>
+        <label className={`${lbl} col-span-6`}>
+          Opis za kupca (ide na ponudu)
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={item.description ?? ''}
+            onChange={(e) => onChange({ description: e.target.value })}
+            placeholder="npr. Dužina 3,40 m + ugao 1,80 m, fronte bijeli mat, radna ploča hrast, uključeni okovi Blum i montaža"
+          />
+        </label>
+        {imgError && <p className="text-xs font-semibold text-rose-700 col-span-6">{imgError}</p>}
+        <p className="text-xs text-walnut-500 col-span-6">
+          Iznos: <b>{money(item.qty * item.unitPrice * (1 - item.discountPct / 100))}</b> · Kad prodaju potvrdite, radionica dobije radni nalog. Status „Spremna” je moguć kad je nalog gotov.
+        </p>
+      </div>
     </div>
   )
 }

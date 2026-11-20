@@ -48,6 +48,7 @@ import {
   Hourglass,
   Globe,
   Ship,
+  Hammer,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '../lib/store'
@@ -96,6 +97,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/zalihe', label: 'Zalihe', icon: Package, badge: 'low', area: 'zalihe' },
       { to: '/nabava', label: 'Nabava od dobavljača', icon: Send, area: 'nabava' },
       { to: '/primke', label: 'Prijem robe', icon: PackagePlus, area: 'primke' },
+      { to: '/radni-nalozi', label: 'Radni nalozi (po mjeri)', icon: Hammer, area: 'radionica' },
       { to: '/artikli', label: 'Artikli', icon: Boxes, area: 'artikli' },
       { to: '/inventura', label: 'Inventura', icon: ClipboardCheck, area: 'inventura' },
     ],

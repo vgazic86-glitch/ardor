@@ -72,6 +72,10 @@ export interface DocRow {
   cells: Record<string, string>
   /** Crvena napomena ispod naziva. */
   note?: string
+  /** Siva pojašnjenja ispod naziva (npr. opis namještaja po mjeri). */
+  detail?: string
+  /** Slika ispod naziva (JPEG ili PNG), npr. prikaz kuhinje iz Palette CAD-a. */
+  image?: { data: Uint8Array; mime: string }
 }
 
 export interface LetterDoc {
@@ -235,14 +239,28 @@ export async function renderLetterDoc(doc: LetterDoc) {
   }
   tableHead()
 
+  const images = await Promise.all(
+    doc.rows.map(async (r) => {
+      if (!r.image) return null
+      try {
+        return r.image.mime === 'image/png' ? await pdf.embedPng(r.image.data) : await pdf.embedJpg(r.image.data)
+      } catch {
+        return null
+      }
+    }),
+  )
   doc.rows.forEach((row, idx) => {
     const nameCol = cols.find((c) => c.key === 'name')!
     const nameW = nameCol.w - 12
     const nameLines = wrap(row.cells.name ?? '', M, 9.5, nameW)
     const noteLines = row.note ? wrap(row.note, R, 8, nameW) : []
+    const detailLines = row.detail ? wrap(row.detail, R, 8.5, nameW) : []
+    const img = images[idx]
+    const imgScale = img ? Math.min(220 / img.height, nameW / img.width, 1) : 0
+    const imgH = img ? img.height * imgScale + 8 : 0
     const codeCol = cols.find((c) => c.key === 'code')
     const codeLines = codeCol ? wrap(row.cells.code || '—', R, 8.5, codeCol.w - 10) : []
-    const rowH = Math.max(nameLines.length * 12 + noteLines.length * 10.5, codeLines.length * 11) + 12
+    const rowH = Math.max(nameLines.length * 12 + detailLines.length * 11 + noteLines.length * 10.5 + imgH, codeLines.length * 11) + 12
     if (y - rowH < FOOT + 10) {
       header(false)
       tableHead()
@@ -257,10 +275,20 @@ export async function renderLetterDoc(doc: LetterDoc) {
           text(s, x + 6, ly, 9.5, M, INK)
           ly -= 12
         })
+        detailLines.forEach((s) => {
+          text(s, x + 6, ly + 1, 8.5, R, MUTED)
+          ly -= 11
+        })
         noteLines.forEach((s) => {
           text(s, x + 6, ly + 1, 8, R, RED)
           ly -= 10.5
         })
+        if (img) {
+          const w = img.width * imgScale
+          const h = img.height * imgScale
+          page.drawImage(img, { x: x + 6, y: ly - h + 6, width: w, height: h })
+          page.drawRectangle({ x: x + 6, y: ly - h + 6, width: w, height: h, borderColor: LINE, borderWidth: 0.6 })
+        }
       } else if (c.key === 'code') codeLines.forEach((s, j) => text(s, x + 6, top - j * 11, 8.5, R, MUTED))
       else {
         const v = row.cells[c.key] ?? ''

@@ -55,3 +55,11 @@ describe('goodsBlock — „Spremna” / „Isporučena” dok prodaja čeka rob
     expect(goodsBlockMessage([{ productId: 'sofa', qty: 1, missing: 1 }], 'isporučena', () => 'Sofa')).toContain('Isporuka i dostava')
   })
 })
+
+describe('namještaj po mjeri', () => {
+  it('stavka po mjeri ne čeka robu', () => {
+    const orders: StockOrder[] = [{ id: '1', number: 'A', date: '2026-11-20', status: 'potvrđena', issuedAt: null, items: [{ productId: 'pm', qty: 1 }, { productId: 'x', qty: 2 }] }]
+    expect(waitingOrders(orders, [{ id: 'pm', stock: 0, madeToOrder: true }, { id: 'x', stock: 2 }]).get('1')).toBeUndefined()
+    expect(waitingOrders(orders, [{ id: 'pm', stock: 0, madeToOrder: true }, { id: 'x', stock: 1 }]).get('1')).toEqual([{ productId: 'x', qty: 2, missing: 1 }])
+  })
+})

@@ -155,6 +155,39 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'radni-nalozi',
+    route: '/radni-nalozi',
+    title: 'Namještaj po mjeri i radni nalozi',
+    purpose: 'Kuhinje, plakari i ostalo po mjeri: prodaja s cijenom i slikom iz Palette CAD-a, radni nalog za radionicu.',
+    fields: [
+      'U Novoj prodaji: „Po mjeri” → vrsta, naziv za kupca, opis, cijena s PDV-om (iz Palette CAD-a), slika.',
+      'Radni nalog: status (čeka početak, krojenje kod partnera, sklapanje, gotovo), rok izrade, bilješka.',
+    ],
+    details: [
+      {
+        h: 'Kod trgovca (prodaja)',
+        items: [
+          'U Palette CAD-u napravite projekt i kalkulaciju. Spremite sliku prikaza (JPG ili PNG).',
+          'U aplikaciji: Nova prodaja → „Po mjeri (kuhinja, plakar…)”. Izaberite vrstu, upišite naziv za kupca (npr. „Kuhinja po mjeri — bijeli mat, hrast”), kratki opis, ukupnu cijenu s PDV-om iz Palette CAD-a i dodajte sliku.',
+          'Za ponudu kupcu stavite status „Ponuda” i u prozoru prodaje kliknite PDF ponude: kupac vidi sliku, opis i ukupnu cijenu, bez detalja kalkulacije.',
+          'Kad kupac potvrdi, prodaju stavite na „Potvrđena” — radionica tada sama dobije radni nalog (RN-2026-0001 …). Uplate, rate i dostava rade kao kod svake prodaje.',
+          'Stavka po mjeri ne skida ništa sa zalihe i ne vodi se pod „Narudžbe kupaca” (ne čeka robu nego radionicu).',
+          'Status „Spremna” i isporuka mogući su tek kad je radni nalog „Gotovo”. Prodavač dobije obavijest u zvoncu kad radionica završi.',
+        ],
+      },
+      {
+        h: 'U radionici (radni nalozi)',
+        items: [
+          'Stranica Radni nalozi pokazuje sliku, opis, kupca, prodaju i datum dostave. Otvoreni nalozi su poredani po roku.',
+          'Kad iverica ode na krojenje kod partnera, kliknite „Krojenje kod partnera”; kad krene sklapanje, „Sklapanje u radionici”. Prodaja se tada sama prebaci u „U izradi”.',
+          'Kad je komad gotov, kliknite „Gotovo”. Upišite rok izrade i bilješku (npr. kad stiže iverica) — trgovac to vidi i može obavijestiti kupca.',
+          'Trgovac vidi naloge svojih prodaja, ali status mijenja radionica (i voditelj, operativa, uprava, dostava i montaža).',
+          'Troškovi naloga (krojenje kod partnera, okovi, sati rada) i zarada po kuhinji dolaze u sljedećoj fazi.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'izvoz',
     route: '/izvoz',
     title: 'Izvoz',

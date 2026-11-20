@@ -13,6 +13,7 @@ async function encode(
   bmp: ImageBitmap,
   max: number,
   quality: number,
+  jpeg = false,
 ): Promise<ImagePart> {
   const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
   const w = Math.max(1, Math.round(bmp.width * scale))
@@ -27,13 +28,14 @@ async function encode(
   ctx.drawImage(bmp, 0, 0, w, h)
   const toBlob = (type: string) =>
     new Promise<Blob | null>((r) => canvas.toBlob(r, type, quality))
-  let blob = await toBlob('image/webp')
+  let blob = jpeg ? null : await toBlob('image/webp')
   if (!blob || blob.type !== 'image/webp') blob = await toBlob('image/jpeg')
   if (!blob) throw new Error('Slika se ne može obraditi.')
   return { mime: blob.type, dataB64: await blobToB64(blob) }
 }
 
-export async function prepareImage(file: File): Promise<ProductImageUpload> {
+/** jpeg = true: JPEG umjesto WebP (slika ide i na PDF dokumente). */
+export async function prepareImage(file: File, jpeg = false): Promise<ProductImageUpload> {
   if (!file.type.startsWith('image/'))
     throw new Error('Odaberite sliku (JPG, PNG ili WebP).')
   if (file.size > 25 * 1024 * 1024) throw new Error('Slika je veća od 25 MB.')
@@ -48,8 +50,8 @@ export async function prepareImage(file: File): Promise<ProductImageUpload> {
   try {
     return {
       name: file.name,
-      image: await encode(bmp, 1200, 0.82),
-      thumb: await encode(bmp, 240, 0.78),
+      image: await encode(bmp, 1200, 0.82, jpeg),
+      thumb: await encode(bmp, 240, 0.78, jpeg),
     }
   } finally {
     bmp.close()

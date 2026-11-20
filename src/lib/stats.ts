@@ -107,13 +107,16 @@ export interface Missing {
  * Narudžbe kupaca koje čekaju robu: prodaje čija roba nije (u cijelosti) u salonu.
  * Zaliha se dodjeljuje najstarijim otvorenim prodajama; ko ostane bez pokrića, čeka robu.
  */
-export function waitingOrders(orders: StockOrder[], products: { id: string; stock: number }[]) {
+export function waitingOrders(orders: StockOrder[], products: { id: string; stock: number; madeToOrder?: boolean }[]) {
   const left = new Map(products.map((p) => [p.id, p.stock]))
+  // Namještaj po mjeri nema zalihu: ne čeka robu nego radni nalog.
+  const custom = new Set(products.filter((p) => p.madeToOrder).map((p) => p.id))
   const out = new Map<string, Missing[]>()
   const open = orders.filter(isReserving).sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number))
   for (const o of open) {
     const miss: Missing[] = []
     for (const i of o.items) {
+      if (custom.has(i.productId)) continue
       const have = Math.max(0, left.get(i.productId) ?? 0)
       const take = Math.min(have, i.qty)
       left.set(i.productId, have - take)
@@ -135,7 +138,7 @@ export const needsGoods = (s: OrderStatus) => s === 'spremna' || s === 'isporuč
  */
 export function goodsBlock(
   orders: StockOrder[],
-  products: { id: string; stock: number }[],
+  products: { id: string; stock: number; madeToOrder?: boolean }[],
   orderId: string,
   status: OrderStatus,
 ): Missing[] | null {

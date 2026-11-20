@@ -206,6 +206,7 @@ function audit2(d: Record<string, any>) {
 /** Koje serverske radnje se upisuju u dnevnik: [cjelina, radnja, opis]. Čitanja se ne upisuju. */
 const MAP: Record<string, [string, string, Detail?]> = {
   createOrderFn: ['Narudžba', 'nova'],
+  updateWorkOrderFn: ['Radni nalog', 'izmjena', (d) => [d.number ?? 'nalog ' + (d.id ?? ''), d.status && 'status ' + d.status, d.dueDate !== undefined && 'rok ' + (d.dueDate || '—'), d.note !== undefined && 'bilješka'].filter(Boolean).join(' · ')],
   saveExportOfferFn: ['Izvoz', 'ponuda spremljena', (d) => `${d.buyerName ?? ''}${d.id ? '' : ' · nova'}`],
   setExportOfferStatusFn: ['Izvoz', 'status ponude', (d) => `${d.number ?? 'ponuda ' + (d.id ?? '')} → ${d.status ?? ''}${d.status === 'prihvacena' ? ' (izdan račun)' : ''}`],
   deleteExportOfferFn: ['Izvoz', 'ponuda obrisana', (d) => `${d.number ?? 'ponuda ' + (d.id ?? '')}`],

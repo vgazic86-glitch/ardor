@@ -205,3 +205,16 @@ export async function ensureDailyTasks(today: string) {
   if (rows.length) await db.insert(t.tasks).values(rows)
   return rows.length
 }
+
+/** Obavijest zaposleniku (svim njegovim aktivnim računima). Greška ne smije srušiti radnju. */
+export async function notifyEmployee(employeeId: number, title: string, text: string) {
+  try {
+    const rows = await db
+      .select({ id: t.users.id })
+      .from(t.users)
+      .where(and(eq(t.users.active, true), eq(t.users.employeeId, employeeId)))
+    await addNotifications(rows.map((r) => r.id), title, text)
+  } catch (e) {
+    console.error('Obavijest zaposleniku nije upisana', e)
+  }
+}

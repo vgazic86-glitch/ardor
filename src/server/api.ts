@@ -41,6 +41,8 @@ const DELIVERY_FNS = new Set([
   'getInboxFn',
   'markInboxReadFn',
   'confirmAnnouncementFn',
+  'listWorkOrdersFn',
+  'updateWorkOrderFn',
 ])
 
 /** Svi pozivi osim prijave zahtijevaju prijavljenog korisnika. */
@@ -617,7 +619,7 @@ export const catalogFn = createServerFn({ method: 'POST' })
     const snap = await logic.loadSnapshot()
     const { reservedQty } = await import('../lib/stats')
     const res = reservedQty(snap.orders)
-    return snap.products.map((p) => ({
+    return snap.products.filter((p) => !p.madeToOrder).map((p) => ({
       id: p.id,
       sku: p.sku,
       name: p.name,
@@ -726,3 +728,11 @@ export const exportOfferPdfFn = createServerFn({ method: 'POST' }).middleware([o
 export const exportInvoicePdfFn = createServerFn({ method: 'POST' }).middleware([operations])
   .validator(pass<{ id: string }>())
   .handler(async ({ data }) => (await import('./izvoz')).invoicePdf(data.id))
+
+/** Radionica: radni nalozi za namještaj po mjeri. Trgovac vidi naloge svojih prodaja (samo čitanje), dostava/montaža i ostali mijenjaju. */
+export const listWorkOrdersFn = createServerFn({ method: 'GET' }).middleware([authed])
+  .handler(async ({ context }) => (await import('./radionica')).listWorkOrders(context.user))
+
+export const updateWorkOrderFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<import('./radionica').WorkOrderUpdate & { number?: string }>())
+  .handler(async ({ data, context }) => (await import('./radionica')).updateWorkOrder(context.user, data))

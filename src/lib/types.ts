@@ -77,6 +77,8 @@ export interface Product {
   thumbId: string | null
   /** Varijante: jedna grupa po redu, „Štof: siva, bež”. */
   options?: string
+  /** Opći artikal po mjeri (bez zalihe, radni nalog). */
+  madeToOrder?: boolean
 }
 
 export interface Customer {
@@ -106,12 +108,24 @@ export type Slot = '08–12' | '12–16' | '16–20'
 export const SLOTS: Slot[] = ['08–12', '12–16', '16–20']
 
 export interface OrderItem {
+  /** Id stavke u bazi (samo za stavke po mjeri). */
+  id?: string
   productId: string
   qty: number
   unitPrice: number
   discountPct: number
   /** Odabrana varijanta (štof, boja, dimenzija…). */
   variant?: string
+  /** Namještaj po mjeri: naziv za kupca, opis i slika (Palette CAD). */
+  customName?: string
+  description?: string
+  imageId?: string | null
+  thumbId?: string | null
+  /** Samo pri spremanju nove prodaje: vrsta opće stavke po mjeri i slika (JPEG). */
+  customKind?: import('./pomjeri').CustomKind
+  customImage?: import('../server/images').ProductImageUpload | null
+  /** Radni nalog radionice za ovu stavku (po mjeri, nakon potvrde prodaje). */
+  work?: { id: string; number: string; status: import('./pomjeri').WorkStatus; dueDate: string | null } | null
 }
 
 export interface Delivery {

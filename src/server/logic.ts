@@ -5,6 +5,9 @@ import { listTransfers } from './transfers'
 import { goodsBlock, goodsBlockMessage, needsGoods, type StockOrder } from '../lib/stats'
 import { planInstallments } from '../lib/collection'
 import { archivedSku, nextInternalSku } from '../lib/sku'
+import { CUSTOM_CATEGORY, CUSTOM_KINDS, needsWorkOrder, workBlockMessage, type CustomKind, type WorkStatus } from '../lib/pomjeri'
+import { nextNumber } from '../lib/izvoz'
+import { decodeImage, type ProductImageUpload } from './images'
 import { db, type Tx } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { seedDemo } from '../../db/seed.js'
@@ -72,7 +75,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
   await ensureBrandBook()
   await ensureManuals()
   await ensureHrSeeded()
-  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets, insts, reminders] =
+  const [emps, sups, prods, custs, ords, items, pays, dels, recs, moves, docs, targets, insts, reminders, works] =
     await Promise.all([
       db
         .select()
@@ -105,6 +108,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       db.select().from(t.employeeTargets),
       db.select().from(t.installments).orderBy(t.installments.orderId, t.installments.seq),
       db.select().from(t.paymentReminders).orderBy(t.paymentReminders.id),
+      db.select().from(t.workOrders),
     ])
   const targetsBy = new Map<number, Record<string, number>>()
   for (const r of targets) targetsBy.set(r.employeeId, { ...(targetsBy.get(r.employeeId) ?? {}), [r.month]: r.target })
@@ -134,6 +138,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
   const localDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo' })
   // Zadnji podsjetnik po prodaji (redovi su poredani po id-u, pa kasniji pregazi raniji).
   const reminderBy = new Map(reminders.map((r) => [r.orderId, r]))
+  const workBy = new Map(works.map((w) => [w.orderItemId, { id: String(w.id), number: w.number, status: w.status as WorkStatus, dueDate: w.dueDate }]))
 
   return {
     today: todayIso(),
@@ -182,6 +187,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
         imageId: str(p.imageId),
         thumbId: str(p.thumbId),
         options: p.options,
+        ...(p.madeToOrder ? { madeToOrder: true } : {}),
       }
     }),
     customers: custs.map((c) => ({
@@ -208,6 +214,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
           unitPrice: i.unitPrice,
           discountPct: i.discountPct,
           ...(i.variant ? { variant: i.variant } : {}),
+          ...(i.customName ? { id: String(i.id), customName: i.customName, description: i.description, imageId: str(i.imageId), thumbId: str(i.thumbId), work: workBy.get(i.id) ?? null } : {}),
         })),
         status: o.status as OrderStatus,
         paymentMethod: o.paymentMethod as PaymentMethod,
@@ -313,6 +320,7 @@ export async function avgCosts(tx: Tx, productIds: number[]) {
  */
 async function assertGoods(tx: Tx, orderId: number, status: OrderStatus) {
   if (!needsGoods(status)) return
+  await assertWorkDone(tx, orderId)
   const open = await tx
     .select()
     .from(t.orders)
@@ -327,6 +335,11 @@ async function assertGoods(tx: Tx, orderId: number, status: OrderStatus) {
     .select({ orderId: t.orderItems.orderId, productId: t.orderItems.productId, qty: t.orderItems.qty })
     .from(t.orderItems)
     .where(inArray(t.orderItems.orderId, open.map((o) => o.id)))
+  // Opći artikli po mjeri nemaju zalihu — za njih vrijedi radni nalog (assertWorkDone).
+  const custom = new Set(
+    (await tx.select({ id: t.products.id }).from(t.products).where(eq(t.products.madeToOrder, true))).map((p) => p.id),
+  )
+  for (let k = its.length - 1; k >= 0; k--) if (custom.has(its[k].productId)) its.splice(k, 1)
   const productIds = [...new Set(its.map((i) => i.productId))]
   if (!productIds.length) return
   const stockRows = await tx
@@ -357,6 +370,71 @@ async function assertGoods(tx: Tx, orderId: number, status: OrderStatus) {
   throw new Error(goodsBlockMessage(missing, status, nameOf))
 }
 
+/* ───────────────────────── namještaj po mjeri ───────────────────────── */
+
+/** Opći artikal po mjeri (kuhinja, plakar, ostalo) — napravi ga ako ga još nema. */
+async function ensureCustomProduct(tx: Tx, kind: CustomKind) {
+  const def = CUSTOM_KINDS[kind] ?? CUSTOM_KINDS.ostalo
+  const [p] = await tx.select({ id: t.products.id }).from(t.products).where(eq(t.products.sku, def.sku))
+  if (p) {
+    await tx.update(t.products).set({ active: true, madeToOrder: true }).where(eq(t.products.id, p.id))
+    return p.id
+  }
+  const [row] = await tx
+    .insert(t.products)
+    .values({ sku: def.sku, name: def.name, category: CUSTOM_CATEGORY, price: 0, purchasePrice: 0, minStock: 0, madeToOrder: true })
+    .returning()
+  return row.id
+}
+
+/** Slika stavke po mjeri (JPEG/PNG, da ide i na PDF) — velika i mala. */
+async function saveItemImage(tx: Tx, upload: ProductImageUpload) {
+  const img = decodeImage(upload.image)
+  const th = decodeImage(upload.thumb)
+  if (upload.image.mime === 'image/webp') throw new Error('Slika stavke po mjeri mora biti JPG ili PNG.')
+  const base = upload.name.replace(/\.[^.]+$/, '').slice(0, 100) || 'po-mjeri'
+  const ext = upload.image.mime === 'image/png' ? 'png' : 'jpg'
+  const [a] = await tx.insert(t.files).values({ name: `${base}.${ext}`, mime: upload.image.mime, size: img.length, data: img }).returning()
+  const [b] = await tx.insert(t.files).values({ name: `${base}-mala.${ext}`, mime: upload.thumb.mime, size: th.length, data: th }).returning()
+  return { imageId: a.id, thumbId: b.id }
+}
+
+/** Kad je prodaja potvrđena, svaka stavka po mjeri dobije radni nalog (jednom). */
+async function ensureWorkOrders(tx: Tx, orderId: number, status: string) {
+  if (!needsWorkOrder(status)) return
+  const its = await tx
+    .select({ id: t.orderItems.id })
+    .from(t.orderItems)
+    .innerJoin(t.products, eq(t.orderItems.productId, t.products.id))
+    .where(and(eq(t.orderItems.orderId, orderId), eq(t.products.madeToOrder, true)))
+  if (!its.length) return
+  const have = new Set(
+    (await tx.select({ itemId: t.workOrders.orderItemId }).from(t.workOrders).where(eq(t.workOrders.orderId, orderId))).map((w) => w.itemId),
+  )
+  const missing = its.filter((i) => !have.has(i.id))
+  if (!missing.length) return
+  const year = Number(todayIso().slice(0, 4))
+  const numbers = (await tx.execute(sql`select number from work_orders where number like ${`RN-${year}-%`} for update`)).rows as { number: string }[]
+  const used = numbers.map((r) => r.number)
+  const now = new Date()
+  for (const i of missing) {
+    const number = nextNumber('RN', year, used)
+    used.push(number)
+    await tx.insert(t.workOrders).values({ number, orderId, orderItemId: i.id, status: 'novi', createdAt: now, updatedAt: now })
+  }
+}
+
+/** „Spremna”/isporuka prodaje po mjeri tek kad su svi radni nalozi gotovi. */
+async function assertWorkDone(tx: Tx, orderId: number) {
+  const rows = await tx
+    .select({ number: t.workOrders.number, status: t.workOrders.status, name: t.orderItems.customName })
+    .from(t.workOrders)
+    .innerJoin(t.orderItems, eq(t.workOrders.orderItemId, t.orderItems.id))
+    .where(eq(t.workOrders.orderId, orderId))
+  const msg = workBlockMessage(rows.map((r) => ({ number: r.number, status: r.status as WorkStatus, name: r.name })))
+  if (msg) throw new Error(msg)
+}
+
 /** Roba je izašla iz salona: skini sa zaliha (jednom po narudžbi). */
 async function issueOrder(
   tx: Tx,
@@ -367,10 +445,15 @@ async function issueOrder(
   const [o] = await tx.select().from(t.orders).where(eq(t.orders.id, orderId))
   if (!o || o.issuedAt || o.status === 'otkazana' || o.status === 'ponuda')
     return
-  const its = await tx
-    .select()
-    .from(t.orderItems)
-    .where(eq(t.orderItems.orderId, orderId))
+  const its = (
+    await tx
+      .select({ i: t.orderItems, custom: t.products.madeToOrder })
+      .from(t.orderItems)
+      .innerJoin(t.products, eq(t.orderItems.productId, t.products.id))
+      .where(eq(t.orderItems.orderId, orderId))
+  )
+    .filter((r) => !r.custom)
+    .map((r) => r.i)
   const costs = await avgCosts(
     tx,
     its.map((i) => i.productId),
@@ -452,6 +535,11 @@ export interface CreateOrderInput {
     unitPrice: number
     discountPct: number
     variant?: string
+    /** Namještaj po mjeri: vrsta (opći artikal), naziv, opis i slika. */
+    customKind?: CustomKind
+    customName?: string
+    description?: string
+    customImage?: ProductImageUpload | null
   }[]
   status: OrderStatus
   paymentMethod: PaymentMethod
@@ -520,16 +608,27 @@ export async function createOrder(input: CreateOrderInput) {
       paymentMethod: input.paymentMethod,
       note: input.note,
     })
-    await tx.insert(t.orderItems).values(
-      input.items.map((i) => ({
+    const rows = []
+    for (const i of input.items) {
+      const custom = !!i.customKind
+      const name = String(i.customName ?? '').trim().slice(0, 160)
+      if (custom && !name) throw new Error('Upišite naziv stavke po mjeri (npr. „Kuhinja po mjeri — Petrović”).')
+      if (custom && !(i.unitPrice > 0)) throw new Error(`Upišite cijenu za „${name}”.`)
+      const img = custom && i.customImage ? await saveItemImage(tx, i.customImage) : null
+      rows.push({
         orderId: next,
-        productId: Number(i.productId),
+        productId: custom ? await ensureCustomProduct(tx, i.customKind!) : Number(i.productId),
         qty: Math.max(1, Math.round(i.qty)),
         unitPrice: round2(i.unitPrice),
         discountPct: Math.min(100, Math.max(0, i.discountPct)),
-        variant: String(i.variant ?? '').slice(0, 200),
-      })),
-    )
+        variant: custom ? '' : String(i.variant ?? '').slice(0, 200),
+        customName: custom ? name : '',
+        description: custom ? String(i.description ?? '').trim().slice(0, 2000) : '',
+        imageId: img?.imageId ?? null,
+        thumbId: img?.thumbId ?? null,
+      })
+    }
+    await tx.insert(t.orderItems).values(rows)
     const paid = round2(
       Math.min(total, Math.max(0, input.pickupNow ? total : input.paid)),
     )
@@ -559,6 +658,7 @@ export async function createOrder(input: CreateOrderInput) {
         status: 'zakazana',
       })
     }
+    await ensureWorkOrders(tx, next, status)
     // Nova prodaja odmah kao „Spremna” ili „kupac odmah preuzima” — samo ako je roba u salonu.
     await assertGoods(tx, next, status)
     if (input.pickupNow)
@@ -575,6 +675,7 @@ export async function setOrderStatus(
   const oid = Number(orderId)
   const today = todayIso()
   await db.transaction(async (tx) => {
+    await ensureWorkOrders(tx, oid, status)
     await assertGoods(tx, oid, status)
     await tx.update(t.orders).set({ status }).where(eq(t.orders.id, oid))
     if (status === 'isporučena') {

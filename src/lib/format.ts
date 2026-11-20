@@ -97,9 +97,11 @@ export const movementTone: Record<MovementType, string> = {
   izvoz: 'bg-orange-50 text-orange-800 ring-orange-200',
 }
 
-/** Parsira iznos s decimalnim zarezom ili tačkom. */
-export const parseAmount = (v: string) =>
-  Number(v.replace(/\s/g, '').replace(',', '.')) || 0
+/** Iznos iz polja: „8.450,00”, „8450,5”, „8450.5” → broj (uz zarez su tačke hiljade). */
+export const parseAmount = (v: string) => {
+  const t = String(v ?? '').replace(/\s/g, '')
+  return Number(t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t) || 0
+}
 
 export const orderStatusLabel: Record<OrderStatus, string> = {
   ponuda: 'Ponuda',

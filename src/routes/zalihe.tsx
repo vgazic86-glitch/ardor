@@ -56,7 +56,9 @@ function stateOf(p: Product, free: number) {
 }
 
 function StockPage() {
-  const { orders, products, suppliers, movements, productById, seesCosts } = useStore()
+  const { orders, products: allProducts, suppliers, movements, productById, seesCosts } = useStore()
+  // Opći artikli po mjeri nemaju zalihu.
+  const products = allProducts.filter((p) => !p.madeToOrder)
   const restricted = !seesCosts
   const { artikal, cijene } = Route.useSearch()
   const freshPrice = useFreshPrice()

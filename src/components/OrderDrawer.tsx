@@ -6,6 +6,7 @@ import {
   Phone,
   Truck,
   Wrench,
+  Hammer,
 } from 'lucide-react'
 import { useState } from 'react'
 import type { OrderStatus } from '../lib/types'
@@ -18,6 +19,7 @@ import {
 } from '../lib/format'
 import { goodsBlock, orderTotal, waitingOrders } from '../lib/stats'
 import { PaymentTerms } from './PaymentTerms'
+import { WORK_STATUS_LABEL } from '../lib/pomjeri'
 import { useStore } from '../lib/store'
 import { openDownload } from '../lib/files'
 import { customerDocPdfFn } from '../server/api'
@@ -83,6 +85,9 @@ export function OrderDrawer({
   const next = step >= 0 && step < flow.length - 1 ? flow[step + 1] : null
   // „Spremna” / „Isporučena” nisu dozvoljene dok prodaja čeka robu (provjerava i server).
   const blocked = next ? goodsBlock(orders, products, order.id, next) : null
+  // Po mjeri: „Spremna”/isporuka tek kad je radni nalog gotov (server provjerava isto).
+  const workOpen = order.items.filter((i) => i.customName && order.status !== 'ponuda' && i.work?.status !== 'gotovo')
+  const workBlocked = !!next && (next === 'spremna' || next === 'isporučena') && workOpen.length > 0
 
   return (
     <Modal
@@ -104,8 +109,8 @@ export function OrderDrawer({
         <div className="flex flex-wrap items-center gap-2">
           {next && (
             <Button
-              disabled={!!blocked}
-              title={blocked ? 'Prodaja čeka robu — status je moguć kad roba stigne u salon.' : undefined}
+              disabled={!!blocked || workBlocked}
+              title={blocked ? 'Prodaja čeka robu — status je moguć kad roba stigne u salon.' : workBlocked ? 'Namještaj po mjeri još nije gotov — status je moguć kad radionica označi nalog „Gotovo”.' : undefined}
               onClick={() => setOrderStatus(order.id, next)}
             >
               Označi: {orderStatusLabel[next]}
@@ -224,18 +229,37 @@ export function OrderDrawer({
 
       <h3 className="mt-6 mb-2 font-display text-lg font-semibold">Stavke</h3>
       <ul className="divide-y divide-walnut-100 rounded-xl border border-walnut-200 bg-white/70">
-        {order.items.map((it) => {
+        {order.items.map((it, idx) => {
           const p = productById(it.productId)
           return (
             <li
-              key={it.productId}
+              key={it.id ?? `${it.productId}-${idx}`}
               className="flex items-center gap-3 px-4 py-3 text-sm"
             >
+              {it.thumbId && (
+                <a href={`/api/slike/${it.imageId ?? it.thumbId}`} target="_blank" rel="noopener" title="Otvori sliku">
+                  <img src={`/api/slike/${it.thumbId}`} alt="" className="size-14 rounded-lg object-cover ring-1 ring-walnut-200" />
+                </a>
+              )}
               <div className="flex-1">
-                <div className="font-semibold">{p.name}</div>
+                <div className="font-semibold">{it.customName || p.name}</div>
                 {it.variant && <div className="text-xs font-medium text-copper-700">{it.variant}</div>}
+                {it.description && <div className="whitespace-pre-wrap text-xs text-walnut-600">{it.description}</div>}
+                {it.customName && (
+                  <div className="mt-0.5 flex items-center gap-1 text-xs font-semibold">
+                    <Hammer className="size-3 text-copper-600" />
+                    {it.work ? (
+                      <span className={it.work.status === 'gotovo' ? 'text-emerald-700' : 'text-copper-700'}>
+                        {it.work.number}: {WORK_STATUS_LABEL[it.work.status]}
+                        {it.work.dueDate ? ` · rok ${date(it.work.dueDate)}` : ''}
+                      </span>
+                    ) : (
+                      <span className="text-walnut-500">Po mjeri — radni nalog nastaje kad se prodaja potvrdi</span>
+                    )}
+                  </div>
+                )}
                 <div className="text-xs text-walnut-500">
-                  {p.sku} · {it.qty} × {money(it.unitPrice)}
+                  {it.customName ? 'po mjeri' : p.sku} · {it.qty} × {money(it.unitPrice)}
                   {it.discountPct ? ` · popust ${it.discountPct}%` : ''}
                 </div>
               </div>
