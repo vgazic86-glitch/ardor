@@ -162,7 +162,7 @@ export interface Installment {
 }
 
 export type MovementType =
-  'pocetno' | 'primka' | 'izlaz' | 'povrat' | 'korekcija' | 'premjestaj'
+  'pocetno' | 'primka' | 'izlaz' | 'povrat' | 'korekcija' | 'premjestaj' | 'izvoz'
 
 /** Gdje je roba: salon (prodaja) ili skladište. */
 export type StockLocation = 'salon' | 'skladiste'
@@ -476,6 +476,9 @@ export interface CompanyInfo {
   vatNumber: string
   bankAccount: string
   bank: string
+  /** Za uplate iz inozemstva (izvoz). */
+  iban: string
+  swift: string
 }
 
 export const DEFAULT_COMPANY: CompanyInfo = {
@@ -490,6 +493,8 @@ export const DEFAULT_COMPANY: CompanyInfo = {
   vatNumber: '',
   bankAccount: '',
   bank: '',
+  iban: '',
+  swift: '',
 }
 
 /* ───────────── radni zadaci ───────────── */

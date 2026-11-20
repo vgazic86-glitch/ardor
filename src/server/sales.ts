@@ -202,6 +202,9 @@ export async function exportAll() {
     ['Troškovi', 'expenses'],
     ['Zadaci', 'tasks'],
     ['Dokumenti', 'documents'],
+    ['Izvoz - ponude', 'export_offers'],
+    ['Izvoz - stavke ponuda', 'export_offer_items'],
+    ['Izvoz - računi', 'export_invoices'],
   ]
   const out: { sheet: string; header: string[]; rows: (string | number | null)[][] }[] = []
   for (const [sheet, table] of tables) {

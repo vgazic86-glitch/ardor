@@ -91,6 +91,8 @@ export interface LetterDoc {
   signer: { label: string; name: string; contact: string; extra?: string }
   /** Potpisna polja desno (npr. „Za ARDOR namještaj”, „Robu preuzeo”). */
   signatures: string[]
+  /** Visina okvira kupac/prodavac (zadano 74; više za duže adrese, npr. izvoz). */
+  boxHeight?: number
 }
 
 /** Opći dokument na memorandumu: zaglavlje s logom, dva okvira, tablica stavki, zbir, napomena, potpisi, podnožje. */
@@ -193,7 +195,7 @@ export async function renderLetterDoc(doc: LetterDoc) {
 
   // okviri (npr. dobavljač / naručitelj, kupac / prodavač)
   const boxW = (CW - 14) / 2
-  const boxH = 74
+  const boxH = doc.boxHeight ?? 74
   doc.boxes.slice(0, 2).forEach((box, i) => {
     const bx = ML + i * (boxW + 14)
     page.drawRectangle({ x: bx, y: y - boxH, width: boxW, height: boxH, color: TINT, borderColor: LINE, borderWidth: 0.6 })

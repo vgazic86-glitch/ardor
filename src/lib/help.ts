@@ -155,6 +155,48 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'izvoz',
+    route: '/izvoz',
+    title: 'Izvoz',
+    purpose: 'Ponude stranim kupcima (EUR, bez PDV-a); prihvaćena ponuda sama postaje račun.',
+    fields: [
+      'Kupac: naziv firme, zemlja, adresa, PDV/VAT broj, kontakt.',
+      'Uslovi: valuta i kurs, paritet (Incoterms), rok plaćanja u danima, isporuka, odakle roba izlazi.',
+      'Stavke: artikal iz kataloga ili slobodna stavka; cijena u valuti ponude, bez PDV-a; rabat.',
+    ],
+    details: [
+      {
+        h: 'Tok posla',
+        items: [
+          '„Nova ponuda” → upišite kupca, uslove i stavke → Spremi. Broj se dodijeli sam: IZP-2026-0001, IZP-2026-0002 …',
+          '„PDF” daje ponudu na memorandumu, dvojezično (bosanski / engleski), s IBAN-om i SWIFT-om firme. Pošaljite je kupcu i kliknite „Poslana kupcu”.',
+          'Kad kupac potvrdi, kliknite „Prihvaćena”. Aplikacija tada sama izda račun (IZR-2026-0001 …, redom, s današnjim datumom), postavi rok plaćanja i skine artikle iz kataloga sa zalihe (skladište ili salon, kako je odabrano na ponudi).',
+          'Odbijenu ponudu označite „Odbijena”; može se vratiti u otvorene. Ponuda kojoj je prošao rok važenja dobije oznaku „Istekla”.',
+          'Na kartici Računi: „Plaćen” kad uplata stigne; dospjeli neplaćeni računi su crveni.',
+        ],
+      },
+      {
+        h: 'Cijene, valuta i PDV',
+        items: [
+          'Predložena cijena artikla = maloprodajna bez PDV-a preračunata u valutu ponude. Promijenite je po dogovoru (npr. veleprodajna cijena).',
+          'EUR ima fiksni kurs 1,95583 KM. Za USD ili CHF upišite srednji kurs CBBiH na dan ponude. Na PDF-u se ispisuje i protuvrijednost u KM.',
+          'Izvoz je oslobođen PDV-a: na dokumentu je PDV 0 % i napomena o oslobođenju. Tekst napomene provjerite s knjigovođom (može se promijeniti na svakoj ponudi).',
+          'Naziv stavke možete napisati i na engleskom — to piše na PDF-u kupcu.',
+          'IBAN i SWIFT firme upisuje admin: Korisnici i pristup → Podaci o firmi.',
+        ],
+      },
+      {
+        h: 'Ispravke i storno',
+        items: [
+          'Prihvaćena ponuda se više ne mijenja. Ako je na računu greška, na kartici Računi kliknite „Storno”: račun ostaje zapisan s oznakom Storniran, roba se vraća na zalihu, a ponuda na „Poslana kupcu”. Ispravite je i ponovo kliknite „Prihvaćena” — dobit će novi broj računa.',
+          'Ponuda se može obrisati samo ako po njoj nikad nije izdan račun.',
+          'Na Zalihama i kartici artikla izlaz po izvozu vidi se kao „Izvoz (račun)”.',
+          'Fiskalni račun i knjiženje i dalje idu kroz knjigovodstveni program — ovaj račun je dokument za kupca i evidencija u aplikaciji.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'web',
     route: '/web',
     title: 'Web stranica',

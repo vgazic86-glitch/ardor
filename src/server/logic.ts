@@ -280,7 +280,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
 
 /* ───────────────────────── zalihe ───────────────────────── */
 
-async function avgCosts(tx: Tx, productIds: number[]) {
+export async function avgCosts(tx: Tx, productIds: number[]) {
   const map = new Map<number, number>()
   if (!productIds.length) return map
   const rows = await tx

@@ -206,6 +206,10 @@ function audit2(d: Record<string, any>) {
 /** Koje serverske radnje se upisuju u dnevnik: [cjelina, radnja, opis]. Čitanja se ne upisuju. */
 const MAP: Record<string, [string, string, Detail?]> = {
   createOrderFn: ['Narudžba', 'nova'],
+  saveExportOfferFn: ['Izvoz', 'ponuda spremljena', (d) => `${d.buyerName ?? ''}${d.id ? '' : ' · nova'}`],
+  setExportOfferStatusFn: ['Izvoz', 'status ponude', (d) => `${d.number ?? 'ponuda ' + (d.id ?? '')} → ${d.status ?? ''}${d.status === 'prihvacena' ? ' (izdan račun)' : ''}`],
+  deleteExportOfferFn: ['Izvoz', 'ponuda obrisana', (d) => `${d.number ?? 'ponuda ' + (d.id ?? '')}`],
+  setExportInvoiceStatusFn: ['Izvoz', 'status računa', (d) => `${d.number ?? 'račun ' + (d.id ?? '')} → ${d.status ?? ''}`],
   saveWebProductFn: ['Web stranica', 'artikal na webu', (d) => `${d.name ?? 'artikal ' + (d.productId ?? '')} · ${d.visible ? 'vidljiv' : 'skriven'}${d.oldPrice ? ` · akcija, stara cijena ${d.oldPrice} KM` : ''}`],
   setWebInquiryStatusFn: ['Web stranica', 'upit obrađen', (d) => `${d.name ?? 'upit ' + (d.id ?? '')} → ${d.status ?? ''}`],
   webInquiryToCustomerFn: ['Web stranica', 'upit → kupac', (d) => `${d.name ?? 'upit ' + (d.id ?? '')}`],

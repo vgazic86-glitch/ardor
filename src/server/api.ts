@@ -698,3 +698,31 @@ export const setWebInquiryStatusFn = createServerFn({ method: 'POST' }).middlewa
 export const webInquiryToCustomerFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<{ id: string; name?: string }>())
   .handler(({ data, context }) => web.inquiryToCustomer(context.user, data.id))
+
+/** Izvoz: ponude stranim kupcima i računi (prihvaćena ponuda automatski izdaje račun). Svi osim trgovca i dostave. */
+export const getExportFn = createServerFn({ method: 'GET' }).middleware([operations])
+  .handler(async () => (await import('./izvoz')).listExport())
+
+export const saveExportOfferFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<import('./izvoz').ExportOfferInput>())
+  .handler(async ({ data, context }) => (await import('./izvoz')).saveOffer(context.user, data))
+
+export const setExportOfferStatusFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ id: string; status: import('../lib/izvoz').ExportOfferStatus; number?: string }>())
+  .handler(async ({ data, context }) => (await import('./izvoz')).setOfferStatus(context.user, data.id, data.status))
+
+export const deleteExportOfferFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ id: string; number?: string }>())
+  .handler(async ({ data }) => (await import('./izvoz')).deleteOffer(data.id))
+
+export const setExportInvoiceStatusFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ id: string; status: import('../lib/izvoz').ExportInvoiceStatus; paidAt?: string; number?: string }>())
+  .handler(async ({ data }) => (await import('./izvoz')).setInvoiceStatus(data.id, data.status, data.paidAt))
+
+export const exportOfferPdfFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ id: string }>())
+  .handler(async ({ data }) => (await import('./izvoz')).offerPdf(data.id))
+
+export const exportInvoicePdfFn = createServerFn({ method: 'POST' }).middleware([operations])
+  .validator(pass<{ id: string }>())
+  .handler(async ({ data }) => (await import('./izvoz')).invoicePdf(data.id))

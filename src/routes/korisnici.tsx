@@ -349,6 +349,8 @@ const COMPANY_FIELDS: { key: keyof CompanyInfo; label: string; hint?: string }[]
   { key: 'vatNumber', label: 'PDV broj' },
   { key: 'bankAccount', label: 'Žiro račun' },
   { key: 'bank', label: 'Banka' },
+  { key: 'iban', label: 'IBAN (za uplate iz inozemstva)', hint: 'Ispisuje se na ponudama i računima za izvoz' },
+  { key: 'swift', label: 'SWIFT / BIC banke' },
 ]
 
 function CompanyForm() {

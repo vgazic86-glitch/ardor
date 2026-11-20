@@ -250,6 +250,10 @@ export const stockMovements = pgTable(
     transferId: integer('transfer_id').references((): AnyPgColumn => transfers.id, {
       onDelete: 'cascade',
     }),
+    /** Račun za izvoz, ako je roba izašla po njemu (storno ga briše). */
+    exportInvoiceId: integer('export_invoice_id').references((): AnyPgColumn => exportInvoices.id, {
+      onDelete: 'cascade',
+    }),
     createdAt: timestamp('created_at').defaultNow(),
   },
   (t) => [
@@ -760,4 +764,87 @@ export const webInquiryPhotos = pgTable(
     fileId: integer('file_id').notNull().references(() => files.id),
   },
   (t) => [index('web_inquiry_photos_idx').on(t.inquiryId)],
+)
+
+/* ───────────────────────── izvoz: ponude i računi stranim kupcima ───────────────────────── */
+
+export const exportOffers = pgTable(
+  'export_offers',
+  {
+    id: serial().primaryKey(),
+    /** IZP-2026-0001 */
+    number: text().notNull().unique(),
+    date: date({ mode: 'string' }).notNull(),
+    validUntil: date('valid_until', { mode: 'string' }).notNull(),
+    /** nacrt | poslana | prihvacena | odbijena */
+    status: text().notNull().default('nacrt'),
+    buyerName: text('buyer_name').notNull(),
+    buyerAddress: text('buyer_address').notNull().default(''),
+    buyerCity: text('buyer_city').notNull().default(''),
+    buyerCountry: text('buyer_country').notNull().default(''),
+    /** PDV / VAT / poreski broj kupca u njegovoj zemlji. */
+    buyerVatId: text('buyer_vat_id').notNull().default(''),
+    buyerContact: text('buyer_contact').notNull().default(''),
+    buyerEmail: text('buyer_email').notNull().default(''),
+    buyerPhone: text('buyer_phone').notNull().default(''),
+    /** EUR | KM | USD … */
+    currency: text().notNull().default('EUR'),
+    /** Koliko KM vrijedi 1 jedinica valute (EUR = 1,95583). */
+    rate: numeric({ precision: 14, scale: 6, mode: 'number' }).notNull().default(1.95583),
+    /** Paritet (Incoterms), npr. EXW Banja Luka, FCA, DAP. */
+    incoterms: text().notNull().default(''),
+    paymentDays: integer('payment_days').notNull().default(0),
+    paymentTerms: text('payment_terms').notNull().default(''),
+    deliveryTerms: text('delivery_terms').notNull().default(''),
+    /** Odakle roba izlazi kad se izda račun: skladiste | salon. */
+    location: text().notNull().default('skladiste'),
+    /** Napomena o oslobođenju od PDV-a (ide na ponudu i račun). */
+    vatNote: text('vat_note').notNull().default(''),
+    /** Napomena za kupca (ispisuje se). */
+    note: text().notNull().default(''),
+    employeeId: integer('employee_id').references(() => employees.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull(),
+    decidedAt: timestamp('decided_at'),
+  },
+  (t) => [index('export_offers_date_idx').on(t.date)],
+)
+
+export const exportOfferItems = pgTable('export_offer_items', {
+  id: serial().primaryKey(),
+  offerId: integer('offer_id')
+    .notNull()
+    .references(() => exportOffers.id, { onDelete: 'cascade' }),
+  /** Artikal iz kataloga (za skidanje sa zalihe); null = slobodna stavka. */
+  productId: integer('product_id').references(() => products.id, { onDelete: 'set null' }),
+  code: text().notNull().default(''),
+  name: text().notNull(),
+  qty: integer().notNull(),
+  unit: text().notNull().default('kom'),
+  /** Jedinična cijena u valuti ponude, bez PDV-a. */
+  unitPrice: money('unit_price').notNull(),
+  discountPct: money('discount_pct').notNull().default(0),
+})
+
+export const exportInvoices = pgTable(
+  'export_invoices',
+  {
+    id: serial().primaryKey(),
+    /** IZR-2026-0001 — redom, bez rupa (osim storniranih koji ostaju zapisani). */
+    number: text().notNull().unique(),
+    offerId: integer('offer_id')
+      .notNull()
+      .references(() => exportOffers.id),
+    date: date({ mode: 'string' }).notNull(),
+    dueDate: date('due_date', { mode: 'string' }).notNull(),
+    /** Iznos u valuti ponude (bez PDV-a, izvoz je oslobođen). */
+    total: money('total').notNull(),
+    currency: text().notNull(),
+    rate: numeric({ precision: 14, scale: 6, mode: 'number' }).notNull(),
+    /** izdan | placen | storniran */
+    status: text().notNull().default('izdan'),
+    paidAt: date('paid_at', { mode: 'string' }),
+    employeeId: integer('employee_id').references(() => employees.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull(),
+  },
+  (t) => [index('export_invoices_date_idx').on(t.date)],
 )
