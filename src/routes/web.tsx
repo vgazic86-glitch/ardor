@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Calendar, Camera, Eye, EyeOff, Globe, Inbox, Phone, Ruler, Search, Sparkles, Star, UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Modal } from '../components/Modal'
+import { WebArticles, WebTexts } from '../components/WebCms'
 import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader, Segmented, Select, Stat } from '../components/ui'
 import { date, money } from '../lib/format'
 import { useRemote } from '../lib/remote'
@@ -19,7 +20,7 @@ const opts = (m: Record<string, string>) => Object.entries(m).map(([value, label
 function WebPage() {
   const r = useRemote(() => getWebFn(), [])
   const canProducts = !!r.data?.products.length
-  const [tab, setTab] = useState<'upiti' | 'artikli'>('upiti')
+  const [tab, setTab] = useState<'upiti' | 'tekstovi' | 'clanci' | 'artikli'>('upiti')
   const inq = r.data?.inquiries ?? []
   const fresh = inq.filter((i) => i.status === 'novo')
 
@@ -28,7 +29,7 @@ function WebPage() {
       <PageHeader
         eyebrow="Prodaja"
         title="Web stranica"
-        description="Upiti kupaca s ardornamjestaj.com i artikli koji se prikazuju na webu."
+        description="Upiti kupaca s ardornamjestaj.com, tekstovi i članci na webu, artikli koji se prikazuju."
         actions={<a href={WEB_URL} target="_blank" rel="noopener" className="inline-flex items-center gap-2 rounded-lg border border-walnut-200 bg-linen px-3.5 py-2 text-sm font-semibold text-walnut-900 shadow-sm hover:bg-white"><Globe className="size-4" /> Otvori web</a>}
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -38,12 +39,19 @@ function WebPage() {
         {canProducts && <Stat label="Artikala na webu" value={String(r.data!.products.filter((p) => p.web.visible).length)} hint={`od ${r.data!.products.length} aktivnih`} />}
       </div>
       {r.error && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{r.error}</p>}
-      {canProducts && (
-        <div className="mb-4">
-          <Segmented value={tab} onChange={setTab} options={[{ value: 'upiti', label: `Upiti (${inq.length})` }, { value: 'artikli', label: 'Artikli na webu' }]} />
-        </div>
-      )}
-      {!r.data ? (
+      <div className="mb-4 overflow-x-auto">
+        <Segmented value={tab} onChange={setTab} options={[
+          { value: 'upiti', label: `Upiti (${inq.length})` },
+          { value: 'tekstovi', label: 'Tekstovi na webu' },
+          { value: 'clanci', label: 'Članci' },
+          ...(canProducts ? [{ value: 'artikli' as const, label: 'Artikli na webu' }] : []),
+        ]} />
+      </div>
+      {tab === 'tekstovi' ? (
+        <WebTexts />
+      ) : tab === 'clanci' ? (
+        <WebArticles />
+      ) : !r.data ? (
         <Card><div className="py-10 text-center text-sm text-walnut-500">Učitavam…</div></Card>
       ) : tab === 'upiti' || !canProducts ? (
         <Inquiries list={inq} busy={r.busy} run={r.run} />

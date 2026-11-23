@@ -697,6 +697,30 @@ export const setWebInquiryStatusFn = createServerFn({ method: 'POST' }).middlewa
   .validator(pass<{ id: string; status: string; note?: string; name?: string }>())
   .handler(async ({ data, context }) => (await web.setInquiryStatus(context.user, data), true))
 
+/* Uređivanje weba (CMS): tekstovi, traka, kontakt, članci. Pravila po ulogama u lib/webContent.ts (server ih provjerava). */
+export const getWebCmsFn = createServerFn({ method: 'GET' }).middleware([authed])
+  .handler(async () => (await import('./webCms')).cmsData())
+
+export const saveWebTextsFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ group: string; values: Record<string, string> }>())
+  .handler(async ({ data, context }) => ((await (await import('./webCms')).saveTexts(context.user, data.values)), true))
+
+export const setWebTextImageFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ key: string; image: images.ImagePart | null }>())
+  .handler(async ({ data, context }) => ((await (await import('./webCms')).setTextImage(context.user, data.key, data.image)), true))
+
+export const saveWebArticleFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<import('./webCms').ArticleSave>())
+  .handler(async ({ data, context }) => (await import('./webCms')).saveArticle(context.user, data))
+
+export const deleteWebArticleFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ id: string; title?: string }>())
+  .handler(async ({ data, context }) => ((await (await import('./webCms')).deleteArticle(context.user, data.id)), true))
+
+export const draftWebArticleFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ title: string; theme?: string; notes?: string }>())
+  .handler(async ({ data }) => (await import('./webCms')).draftArticle(data))
+
 export const webInquiryToCustomerFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<{ id: string; name?: string }>())
   .handler(({ data, context }) => web.inquiryToCustomer(context.user, data.id))

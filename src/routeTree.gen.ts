@@ -48,8 +48,10 @@ import { Route as ApiSlikeIdRouteImport } from './routes/api.slike.$id'
 import { Route as ApiWebUpitFotoIdRouteImport } from './routes/api.web-upit-foto.$id'
 import { Route as ApiWebKatalogRouteImport } from './routes/api.web.katalog'
 import { Route as ApiWebPitanjeRouteImport } from './routes/api.web.pitanje'
+import { Route as ApiWebSadrzajRouteImport } from './routes/api.web.sadrzaj'
 import { Route as ApiWebSavjetnikRouteImport } from './routes/api.web.savjetnik'
 import { Route as ApiWebUpitRouteImport } from './routes/api.web.upit'
+import { Route as ApiWebMedijiIdRouteImport } from './routes/api.web.mediji.$id'
 import { Route as ApiWebSlikeIdRouteImport } from './routes/api.web.slike.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -247,6 +249,11 @@ const ApiWebPitanjeRoute = ApiWebPitanjeRouteImport.update({
   path: '/api/web/pitanje',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebSadrzajRoute = ApiWebSadrzajRouteImport.update({
+  id: '/api/web/sadrzaj',
+  path: '/api/web/sadrzaj',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebSavjetnikRoute = ApiWebSavjetnikRouteImport.update({
   id: '/api/web/savjetnik',
   path: '/api/web/savjetnik',
@@ -255,6 +262,11 @@ const ApiWebSavjetnikRoute = ApiWebSavjetnikRouteImport.update({
 const ApiWebUpitRoute = ApiWebUpitRouteImport.update({
   id: '/api/web/upit',
   path: '/api/web/upit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebMedijiIdRoute = ApiWebMedijiIdRouteImport.update({
+  id: '/api/web/mediji/$id',
+  path: '/api/web/mediji/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWebSlikeIdRoute = ApiWebSlikeIdRouteImport.update({
@@ -303,8 +315,10 @@ export interface FileRoutesByFullPath {
   '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
   '/api/web/katalog': typeof ApiWebKatalogRoute
   '/api/web/pitanje': typeof ApiWebPitanjeRoute
+  '/api/web/sadrzaj': typeof ApiWebSadrzajRoute
   '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
   '/api/web/upit': typeof ApiWebUpitRoute
+  '/api/web/mediji/$id': typeof ApiWebMedijiIdRoute
   '/api/web/slike/$id': typeof ApiWebSlikeIdRoute
 }
 export interface FileRoutesByTo {
@@ -346,8 +360,10 @@ export interface FileRoutesByTo {
   '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
   '/api/web/katalog': typeof ApiWebKatalogRoute
   '/api/web/pitanje': typeof ApiWebPitanjeRoute
+  '/api/web/sadrzaj': typeof ApiWebSadrzajRoute
   '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
   '/api/web/upit': typeof ApiWebUpitRoute
+  '/api/web/mediji/$id': typeof ApiWebMedijiIdRoute
   '/api/web/slike/$id': typeof ApiWebSlikeIdRoute
 }
 export interface FileRoutesById {
@@ -391,8 +407,10 @@ export interface FileRoutesById {
   '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
   '/api/web/katalog': typeof ApiWebKatalogRoute
   '/api/web/pitanje': typeof ApiWebPitanjeRoute
+  '/api/web/sadrzaj': typeof ApiWebSadrzajRoute
   '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
   '/api/web/upit': typeof ApiWebUpitRoute
+  '/api/web/mediji/$id': typeof ApiWebMedijiIdRoute
   '/api/web/slike/$id': typeof ApiWebSlikeIdRoute
 }
 export interface FileRouteTypes {
@@ -437,8 +455,10 @@ export interface FileRouteTypes {
     | '/api/web-upit-foto/$id'
     | '/api/web/katalog'
     | '/api/web/pitanje'
+    | '/api/web/sadrzaj'
     | '/api/web/savjetnik'
     | '/api/web/upit'
+    | '/api/web/mediji/$id'
     | '/api/web/slike/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -480,8 +500,10 @@ export interface FileRouteTypes {
     | '/api/web-upit-foto/$id'
     | '/api/web/katalog'
     | '/api/web/pitanje'
+    | '/api/web/sadrzaj'
     | '/api/web/savjetnik'
     | '/api/web/upit'
+    | '/api/web/mediji/$id'
     | '/api/web/slike/$id'
   id:
     | '__root__'
@@ -524,8 +546,10 @@ export interface FileRouteTypes {
     | '/api/web-upit-foto/$id'
     | '/api/web/katalog'
     | '/api/web/pitanje'
+    | '/api/web/sadrzaj'
     | '/api/web/savjetnik'
     | '/api/web/upit'
+    | '/api/web/mediji/$id'
     | '/api/web/slike/$id'
   fileRoutesById: FileRoutesById
 }
@@ -567,8 +591,10 @@ export interface RootRouteChildren {
   ApiWebUpitFotoIdRoute: typeof ApiWebUpitFotoIdRoute
   ApiWebKatalogRoute: typeof ApiWebKatalogRoute
   ApiWebPitanjeRoute: typeof ApiWebPitanjeRoute
+  ApiWebSadrzajRoute: typeof ApiWebSadrzajRoute
   ApiWebSavjetnikRoute: typeof ApiWebSavjetnikRoute
   ApiWebUpitRoute: typeof ApiWebUpitRoute
+  ApiWebMedijiIdRoute: typeof ApiWebMedijiIdRoute
   ApiWebSlikeIdRoute: typeof ApiWebSlikeIdRoute
 }
 
@@ -847,6 +873,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebPitanjeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/web/sadrzaj': {
+      id: '/api/web/sadrzaj'
+      path: '/api/web/sadrzaj'
+      fullPath: '/api/web/sadrzaj'
+      preLoaderRoute: typeof ApiWebSadrzajRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/web/savjetnik': {
       id: '/api/web/savjetnik'
       path: '/api/web/savjetnik'
@@ -859,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/api/web/upit'
       fullPath: '/api/web/upit'
       preLoaderRoute: typeof ApiWebUpitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/web/mediji/$id': {
+      id: '/api/web/mediji/$id'
+      path: '/api/web/mediji/$id'
+      fullPath: '/api/web/mediji/$id'
+      preLoaderRoute: typeof ApiWebMedijiIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/web/slike/$id': {
@@ -923,8 +963,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebUpitFotoIdRoute: ApiWebUpitFotoIdRoute,
   ApiWebKatalogRoute: ApiWebKatalogRoute,
   ApiWebPitanjeRoute: ApiWebPitanjeRoute,
+  ApiWebSadrzajRoute: ApiWebSadrzajRoute,
   ApiWebSavjetnikRoute: ApiWebSavjetnikRoute,
   ApiWebUpitRoute: ApiWebUpitRoute,
+  ApiWebMedijiIdRoute: ApiWebMedijiIdRoute,
   ApiWebSlikeIdRoute: ApiWebSlikeIdRoute,
 }
 export const routeTree = rootRouteImport

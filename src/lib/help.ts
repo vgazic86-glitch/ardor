@@ -298,6 +298,50 @@ export const HELP: HelpTopic[] = [
           'Promjene se na webu vide nakon ponovne izgradnje stranice (nekoliko minuta).',
         ],
       },
+      {
+        h: 'Tekstovi na webu',
+        items: [
+          'Kartica „Tekstovi na webu”: lijevo odaberete dio stranice (Naslovnica, Obavijest na vrhu, O nama, Kontakt i radno vrijeme), desno mijenjate tekst.',
+          'Ispod svakog polja piše gdje se tekst vidi na webu. Brojač pokazuje koliko je znakova dozvoljeno; preko granice se ne može spremiti.',
+          'Za Naslovnicu i Obavijest gore je umanjeni prikaz — odmah vidite kako izgleda dok kucate.',
+          'Ništa nije na webu dok ne kliknete „Spremi i objavi”. Nakon toga web se osvježi za nekoliko minuta.',
+          '„Vrati izvorni tekst” vraća tekst koji je web imao na početku. Svaka izmjena se upisuje u Dnevnik izmjena (ko, kada, šta).',
+          'Obavijest na vrhu: upišite tekst (npr. „Black Friday: −20 % na garniture do nedjelje”), po želji link (npr. /akcije/) i datum do kada se prikazuje — nakon tog dana nestane sama.',
+          'Kontakt i radno vrijeme mijenja samo voditelj salona, uprava ili admin; ostali ga vide zaključano.',
+          'Velika fotografija naslovnice sprema se odmah po odabiru. Najbolje vodoravna, svijetla fotografija salona, bez teksta na slici.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'web-clanci',
+    route: '/web',
+    title: 'Članci na webu',
+    purpose: 'Savjeti za kupce u „Inspiracija i savjeti” — dovode kupce s Googlea.',
+    fields: [
+      'Naslov (kako bi kupac pitao Google), tema, kratki opis do 160 znakova, naslovna fotografija, tekst od barem 120 riječi.',
+      'Trgovac: „Spremi nacrt” ili „Pošalji na odobrenje”. Voditelj, uprava, admin: „Objavi na webu”.',
+    ],
+    details: [
+      {
+        h: 'Kako napisati članak',
+        items: [
+          'Klik „Novi članak”, upišite naslov, npr. „Kako odabrati madrac za bolna leđa” — onako kako bi kupac pitao Google.',
+          '„AI napiše prijedlog” napiše tekst prema naslovu za 10–30 sekundi. Obavezno ga pročitajte i popravite: AI ne zna naše cijene, akcije ni rokove i ne smije ih obećavati.',
+          'Pišete normalno: prazan red = novi odlomak. Gumbi iznad teksta dodaju podnaslov, nabrajanje, podebljani tekst ili link na stranicu weba (npr. /kontakt/).',
+          '„Pregled” pokazuje kako će članak izgledati na webu.',
+          'Desno je popis „Prije objave” — kad su sve kvačice zelene, članak se može poslati.',
+        ],
+      },
+      {
+        h: 'Odobrenje i objava',
+        items: [
+          'Trgovac članak šalje na odobrenje; voditelj salona, uprava i admin dobiju obavijest u zvoncu.',
+          'Voditelj članak pročita, po potrebi popravi i klikne „Objavi na webu”. Web se osvježi za nekoliko minuta.',
+          'Objavljeni članak mijenja ili skida s weba samo voditelj, uprava ili admin („Skloni s weba” vraća ga u nacrt).',
+          'Adresa objavljenog članka se ne mijenja ni kad se promijeni naslov, da linkovi iz Googlea ne puknu.',
+        ],
+      },
     ],
   },
   {

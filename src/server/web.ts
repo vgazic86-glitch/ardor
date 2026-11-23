@@ -150,7 +150,7 @@ const aiLimit = makeLimiter(20, 60 * 60_000)
 const GEMINI_URL = () => process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com'
 const GEMINI_MODEL = () => process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'
 
-async function gemini(system: string, user: string, json: boolean) {
+export async function gemini(system: string, user: string, json: boolean, maxTokens = 900) {
   const key = process.env.GEMINI_API_KEY
   if (!key) return null
   const res = await fetch(`${GEMINI_URL()}/v1beta/models/${encodeURIComponent(GEMINI_MODEL())}:generateContent`, {
@@ -159,9 +159,9 @@ async function gemini(system: string, user: string, json: boolean) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: 'user', parts: [{ text: user }] }],
-      generationConfig: { maxOutputTokens: 900, temperature: 0.4, ...(json ? { responseMimeType: 'application/json' } : {}) },
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4, ...(json ? { responseMimeType: 'application/json' } : {}) },
     }),
-    signal: AbortSignal.timeout(18_000),
+    signal: AbortSignal.timeout(maxTokens > 900 ? 45_000 : 18_000),
   })
   if (!res.ok) {
     console.error('Web AI: Gemini', res.status, (await res.text()).slice(0, 200))
@@ -310,6 +310,7 @@ export async function saveWebProduct(input: WebSaveInput) {
 let rebuildTimer: ReturnType<typeof setTimeout> | null = null
 /**
  * Ponovna izgradnja weba (WEB_DEPLOY_HOOK = „deploy hook” adresa s Cloudflare Pages / Netlify).
+ * Za GitHub: WEB_DEPLOY_HOOK = https://api.github.com/repos/<vlasnik>/<repo>/dispatches + WEB_DEPLOY_TOKEN.
  * Čeka 2 minute od zadnje izmjene, da više izmjena zaredom napravi samo jednu izgradnju.
  */
 export function scheduleWebRebuild() {
@@ -318,7 +319,14 @@ export function scheduleWebRebuild() {
   if (rebuildTimer) clearTimeout(rebuildTimer)
   rebuildTimer = setTimeout(() => {
     rebuildTimer = null
-    fetch(hook, { method: 'POST', signal: AbortSignal.timeout(15_000) }).catch((e) => console.error('Web: izgradnja nije pokrenuta', e))
+    // GitHub Actions (pregled na GitHub Pages): repository_dispatch s tokenom; inače običan deploy hook (Cloudflare/Netlify).
+    const token = process.env.WEB_DEPLOY_TOKEN
+    const gh = hook.startsWith('https://api.github.com/') && token
+    fetch(hook, {
+      method: 'POST',
+      ...(gh ? { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'content-type': 'application/json' }, body: JSON.stringify({ event_type: 'cms' }) } : {}),
+      signal: AbortSignal.timeout(15_000),
+    }).catch((e) => console.error('Web: izgradnja nije pokrenuta', e))
   }, 120_000)
 }
 

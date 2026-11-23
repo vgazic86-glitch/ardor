@@ -952,3 +952,31 @@ export const materialMoves = pgTable(
   },
   (t) => [index('material_moves_material_idx').on(t.materialId)],
 )
+
+/** Tekstovi web stranice koje uređuju zaposlenici (ključ → tekst). Prazno/nepostojeće = zadani tekst iz lib/webContent.ts. */
+export const webContent = pgTable('web_content', {
+  key: text().primaryKey(),
+  value: text().notNull().default(''),
+  updatedAt: timestamp('updated_at'),
+  updatedBy: text('updated_by').notNull().default(''),
+})
+
+/** Članci „Inspiracija i savjeti” na webu. Trgovac piše nacrt, voditelj/uprava/admin objavljuje. */
+export const webArticles = pgTable('web_articles', {
+  id: serial().primaryKey(),
+  slug: text().notNull().unique(),
+  title: text().notNull(),
+  summary: text().notNull().default(''),
+  /** Kuhinje | Dnevni boravak | Održavanje … (slobodan tekst, nudi se popis) */
+  theme: text().notNull().default(''),
+  room: text().notNull().default(''),
+  body: text().notNull().default(''),
+  imageId: integer('image_id').references(() => files.id, { onDelete: 'set null' }),
+  /** nacrt | ceka | objavljen */
+  status: text().notNull().default('nacrt'),
+  author: text().notNull().default(''),
+  approvedBy: text('approved_by').notNull().default(''),
+  publishedAt: timestamp('published_at'),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+})
