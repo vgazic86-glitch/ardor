@@ -2,7 +2,7 @@
  * Uređivanje web stranice iz aplikacije (CMS): tekstovi, obavijest na vrhu, kontakt, članci, fotografije.
  * Pravila i zadani tekstovi su u lib/webContent.ts. Svaka izmjena pokreće ponovnu izgradnju weba (scheduleWebRebuild).
  */
-import { desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { todayBL } from '../lib/motivation'
@@ -81,7 +81,23 @@ export async function cmsData() {
     status: a.status as ArticleStatus, imageId: a.imageId ? String(a.imageId) : null, author: a.author, approvedBy: a.approvedBy,
     updatedAt: a.updatedAt?.toISOString() ?? null, publishedAt: a.publishedAt?.toISOString() ?? null,
   }))
-  return { saved, texts: mergeTexts(saved), meta, articles }
+  // Sažetak kataloga za „Pregled weba” (vide ga i trgovci, bez cijena i zaliha).
+  const wp = await db
+    .select({ room: t.webProducts.room, featured: t.webProducts.featured, oldPrice: t.webProducts.oldPrice, price: t.products.price, imageId: t.products.imageId })
+    .from(t.webProducts)
+    .innerJoin(t.products, eq(t.webProducts.productId, t.products.id))
+    .where(and(eq(t.webProducts.visible, true), eq(t.products.active, true)))
+  const shown = wp.filter((x) => x.imageId)
+  const byRoom: Record<string, number> = {}
+  for (const x of shown) byRoom[x.room] = (byRoom[x.room] ?? 0) + 1
+  const catalog = {
+    total: shown.length,
+    byRoom,
+    featured: shown.filter((x) => x.featured).length,
+    sale: shown.filter((x) => x.oldPrice && x.oldPrice > x.price).length,
+    noImage: wp.length - shown.length,
+  }
+  return { saved, texts: mergeTexts(saved), meta, articles, catalog }
 }
 
 /** Sprema više polja odjednom (jedna grupa). Prazna vrijednost = vrati zadani tekst. */

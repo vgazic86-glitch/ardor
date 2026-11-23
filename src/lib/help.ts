@@ -271,8 +271,9 @@ export const HELP: HelpTopic[] = [
     id: 'web',
     route: '/web',
     title: 'Web stranica',
-    purpose: 'Upiti kupaca s ardornamjestaj.com i koji artikli se prikazuju na webu.',
+    purpose: 'Sve što kupci vide na webu: pregled stranica, upiti, artikli, tekstovi i članci.',
     fields: [
+      'Pregled weba: popis svih stranica weba, što je na njima i gumb „Uredi” koji vodi tačno na mjesto gdje se to mijenja.',
       'Upiti: status (Novo, U obradi, Zatvoreno), bilješka, „Dodaj u kupce”.',
       'Artikli na webu: prostorija, stil, boja, materijal, opis, mjere, stara cijena za akciju, „Vidljiv na webu”.',
     ],
@@ -291,7 +292,8 @@ export const HELP: HelpTopic[] = [
       {
         h: 'Artikli na webu',
         items: [
-          'Na web ide samo artikal s fotografijom i kvačicom „Vidljiv na webu”. Naziv, cijena i fotografija dolaze iz Artikala.',
+          'Artikli na webu → „Svi artikli” → upišite naziv → „Stavi na web”. U prozoru: 1. fotografija (klik ili povucite sliku; s mobitela je u redu), 2. gdje se prikazuje (prostorija, istaknut, akcija), 3. opis. Desno piše na kojim stranicama weba će se vidjeti.',
+          'Na web ide samo artikal s fotografijom i kvačicom „Vidljiv na webu”. Naziv i cijena dolaze iz Artikala; fotografija dodana ovdje vidi se i u Artiklima.',
           'Dostupnost se računa sama: ima li slobodne zalihe (nije rezervirana za prodaje) — „Odmah sa zalihe”, inače „Po narudžbi”. Količine se na webu ne vide, ni nabavne cijene.',
           'Za akciju upišite staru cijenu (veću od trenutne) — web je precrta i artikal stavi na stranicu Akcije.',
           '„Istaknut” artikal ide na početnu stranicu weba.',

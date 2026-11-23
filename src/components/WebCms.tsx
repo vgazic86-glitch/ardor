@@ -2,8 +2,8 @@
  * Uređivanje web stranice (CMS) za zaposlenike bez tehničkog znanja:
  * tekstovi po dijelovima stranice (s pregledom uživo) i članci „Inspiracija i savjeti”.
  */
-import { Bold, Check, CheckCircle2, Circle, Eye, FileText, Heading2, ImagePlus, Link2, List, Lock, Megaphone, Pencil, Phone, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Bold, Check, CheckCircle2, Circle, ExternalLink, Eye, FileText, Heading2, ImagePlus, Link2, List, Lock, Megaphone, Pencil, Phone, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Modal } from './Modal'
 import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, Select } from './ui'
 import { date } from '../lib/format'
@@ -13,7 +13,7 @@ import { useStore } from '../lib/store'
 import { WEB_ROOMS } from '../lib/web'
 import {
   ARTICLE_STATUS, ARTICLE_THEMES, articleHtml, canEditArticle, canEditGroup, canPublish, cleanArticle, readingMinutes, WEB_FIELDS, WEB_GROUPS, words,
-  type ArticleStatus, type WebField, type WebGroup,
+  WEB_SITE_URL, type ArticleStatus, type WebField, type WebGroup,
 } from '../lib/webContent'
 import { deleteWebArticleFn, draftWebArticleFn, getWebCmsFn, saveWebArticleFn, saveWebTextsFn, setWebTextImageFn } from '../server/api'
 import type { CmsArticle } from '../server/webCms'
@@ -26,10 +26,10 @@ const when = (iso: string | null) => (iso ? `${date(iso.slice(0, 10))} u ${iso.s
 
 const GROUP_ICON: Record<WebGroup, typeof FileText> = { naslovna: FileText, traka: Megaphone, onama: FileText, kontakt: Phone }
 
-export function WebTexts() {
+export function WebTexts({ initialGroup = 'naslovna' }: { initialGroup?: WebGroup }) {
   const { user } = useStore()
   const r = useRemote(() => getWebCmsFn(), [])
-  const [group, setGroup] = useState<WebGroup>('naslovna')
+  const [group, setGroup] = useState<WebGroup>(initialGroup)
   const [draft, setDraft] = useState<Record<string, string>>({})
   const fields = WEB_FIELDS.filter((f) => f.group === group)
   const allowed = canEditGroup(user.role, group)
@@ -175,7 +175,7 @@ function HeroPreview({ v, img }: { v: (k: string) => string; img?: string }) {
     <div>
       <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-walnut-500"><Eye className="size-3.5" /> Ovako izgleda vrh naslovnice</div>
       <div className="relative overflow-hidden rounded-xl bg-[#221C17] text-white shadow-md" style={{ minHeight: 230 }}>
-        <img src={img ? media(img) : 'https://vgazic86-glitch.github.io/ardor-stranica/img/grande.jpg'} alt="" className="absolute inset-0 size-full object-cover opacity-55" />
+        <img src={img ? media(img) : `${WEB_SITE_URL}/img/grande.jpg`} alt="" className="absolute inset-0 size-full object-cover opacity-55" />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(20,15,12,.85) 0%, rgba(20,15,12,.35) 70%, transparent)' }} />
         <div className="relative max-w-xl p-6">
           <div className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#F79328]">{v('naslovna.oznaka')}</div>
@@ -446,3 +446,119 @@ function ToolBtn({ icon: Icon, label, onClick }: { icon: typeof Bold; label: str
   )
 }
 
+/* ───────────────────────── pregled weba (karta stranica) ───────────────────────── */
+
+export type WebTab = 'pregled' | 'upiti' | 'tekstovi' | 'clanci' | 'artikli'
+export type ProductFilter = 'svi' | 'naWebu' | 'istaknuti' | 'akcija'
+export interface GoTo { tab: WebTab; group?: WebGroup; filter?: ProductFilter }
+export type Go = (to: GoTo) => void
+
+interface Row {
+  label: string
+  value: ReactNode
+  edit?: { label?: string; to: GoTo } | 'zakljucano'
+}
+
+const cut = (s: string, n = 70) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
+
+/** Karta web stranice: koja stranica ima koji sadržaj i gdje se uređuje — jednim klikom do pravog mjesta. */
+export function WebOverview({ go, canProducts, newInquiries }: { go: Go; canProducts: boolean; newInquiries: number }) {
+  const r = useRemote(() => getWebCmsFn(), [])
+  if (!r.data) return <Card><div className="py-10 text-center text-sm text-walnut-500">{r.error ?? 'Učitavam…'}</div></Card>
+  const x = r.data.texts
+  const c = r.data.catalog
+  const pub = r.data.articles.filter((a) => a.status === 'objavljen')
+  const waiting = r.data.articles.filter((a) => a.status === 'ceka').length
+  const prod = (to: GoTo): Row['edit'] => (canProducts ? { to } : 'zakljucano')
+  const tx = (group: WebGroup): Row['edit'] => ({ to: { tab: 'tekstovi', group } })
+  const pages: { title: string; path: string; note?: string; rows: Row[] }[] = [
+    {
+      title: 'Na svim stranicama',
+      path: '/',
+      note: 'Vidi se na vrhu i na dnu svake stranice.',
+      rows: [
+        { label: 'Obavijest na vrhu (traka)', value: x['traka.tekst'] ? <b className="text-copper-700">{cut(x['traka.tekst'])}{x['traka.do'] ? ` · do ${date(x['traka.do'])}` : ''}</b> : <span className="text-walnut-400">isključena</span>, edit: tx('traka') },
+        { label: 'Telefoni i radno vrijeme', value: `${x['kontakt.telefon']} · Viber ${x['kontakt.mobitel']} · radnim danom ${x['kontakt.radni']}`, edit: tx('kontakt') },
+      ],
+    },
+    {
+      title: 'Naslovnica',
+      path: '/',
+      rows: [
+        { label: 'Vrh: veliki naslov i fotografija', value: `„${cut(x['naslovna.naslov'].replace(/\n/g, ' '))}”`, edit: tx('naslovna') },
+        { label: 'Naša priča', value: `„${cut(x['naslovna.prica.naslov'])}”`, edit: tx('naslovna') },
+        { label: 'Namještaj po mjeri', value: `„${cut(x['naslovna.pomjeri.naslov'])}”`, edit: tx('naslovna') },
+        { label: 'Izdvojeno iz salona', value: c.featured >= 3 ? `${c.featured} istaknutih artikala (★)` : `istaknutih ${c.featured} — dok ih nije barem 3, prikazuje se prvih 6 artikala s weba`, edit: prod({ tab: 'artikli', filter: 'istaknuti' }) },
+        { label: 'Akcija (veliki okvir)', value: c.sale ? `${c.sale} artikala na akciji` : <span className="text-walnut-400">nema artikala na akciji — okvir se ne prikazuje</span>, edit: prod({ tab: 'artikli', filter: 'akcija' }) },
+        { label: 'Inspiracija i savjeti', value: pub.length ? `zadnja 3 članka: ${pub.slice(0, 3).map((a) => `„${cut(a.title, 30)}”`).join(', ')}` : 'zadnja 3 članka (zasad početni članci)', edit: { to: { tab: 'clanci' } } },
+        { label: 'Obrazac za upit', value: `naslov „${x['naslovna.kontakt.naslov']}” — poslani upiti stižu u Upiti`, edit: tx('naslovna') },
+      ],
+    },
+    {
+      title: 'Katalog',
+      path: '/namjestaj/',
+      note: 'Artikli s fotografijom i kvačicom „Vidljiv na webu”. Cijena i naziv dolaze iz Artikala.',
+      rows: [
+        { label: 'Artikala na webu', value: <>{c.total}{c.noImage ? <span className="text-amber-700"> · {c.noImage} označenih bez fotografije se ne vidi</span> : null}</>, edit: prod({ tab: 'artikli', filter: 'naWebu' }) },
+        { label: 'Po prostorijama', value: Object.keys(c.byRoom).length ? Object.entries(c.byRoom).map(([k, n]) => `${WEB_ROOMS[k as keyof typeof WEB_ROOMS] ?? k} ${n}`).join(' · ') : <span className="text-walnut-400">još nijedan artikal — web prikazuje primjere</span>, edit: prod({ tab: 'artikli', filter: 'svi' }) },
+      ],
+    },
+    { title: 'Akcije', path: '/akcije/', rows: [{ label: 'Artikli sa starom (precrtanom) cijenom', value: String(c.sale), edit: prod({ tab: 'artikli', filter: 'akcija' }) }] },
+    { title: 'Inspiracija i savjeti', path: '/inspiracija/', rows: [{ label: 'Članci', value: <>{pub.length} objavljeno iz aplikacije{waiting ? <b className="text-amber-700"> · {waiting} čeka odobrenje</b> : null} · uz to 3 početna članka</>, edit: { label: 'Napiši ili odobri', to: { tab: 'clanci' } } }] },
+    { title: 'O nama', path: '/o-nama/', rows: [{ label: 'Naslov i priča', value: `„${cut(x['onama.naslov'])}”`, edit: tx('onama') }] },
+    {
+      title: 'Kontakt',
+      path: '/kontakt/',
+      rows: [
+        { label: 'Telefoni i radno vrijeme', value: `${x['kontakt.telefon']} · subota ${x['kontakt.subota']} · nedjelja ${x['kontakt.nedjelja']}`, edit: tx('kontakt') },
+        { label: 'Obrasci (ponuda, posjet, mjerenje)', value: newInquiries ? <b className="text-copper-700">{newInquiries} novih upita čeka poziv</b> : 'nema novih upita', edit: { label: 'Otvori upite', to: { tab: 'upiti' } } },
+      ],
+    },
+  ]
+  return (
+    <div className="space-y-4">
+      <Card>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            ['1', 'Odaberi što mijenjaš', 'Svaki red ispod je jedan dio web stranice. „Uredi” te vodi tačno na to mjesto.'],
+            ['2', 'Promijeni i spremi', 'Tekst: „Spremi i objavi”. Artikal: fotografija + „Vidljiv na webu”. Članak: „Objavi” (voditelj).'],
+            ['3', 'Web se osvježi sam', 'Za najviše 30 minuta (7–22 h). „Pogledaj” otvara tu stranicu weba.'],
+          ].map(([n, h, p]) => (
+            <div key={n} className="flex gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-copper-600 text-sm font-bold text-white">{n}</span>
+              <div><div className="font-semibold">{h}</div><div className="text-sm text-walnut-500">{p}</div></div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {pages.map((pg) => (
+          <Card key={pg.title} flush>
+            <div className="flex items-center gap-2 border-b border-walnut-200/70 px-5 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="font-display text-lg font-semibold">{pg.title}</div>
+                <div className="truncate text-xs text-walnut-500">{pg.note ?? `ardornamjestaj.com${pg.path}`}</div>
+              </div>
+              <a href={`${WEB_SITE_URL}${pg.path}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 rounded-lg border border-walnut-200 px-2.5 py-1.5 text-xs font-semibold text-walnut-700 hover:bg-white"><ExternalLink className="size-3.5" /> Pogledaj</a>
+            </div>
+            <ul className="divide-y divide-walnut-100">
+              {pg.rows.map((row) => (
+                <li key={row.label} className="flex items-center gap-3 px-5 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-walnut-900">{row.label}</div>
+                    <div className="text-xs text-walnut-600">{row.value}</div>
+                  </div>
+                  {row.edit === 'zakljucano' ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-walnut-400" title="Artikle na webu uređuje operativa, voditelj, uprava ili admin"><Lock className="size-3" /> operativa / voditelj</span>
+                  ) : row.edit ? (
+                    <Button variant="outline" size="sm" onClick={() => go((row.edit as { to: GoTo }).to)}><Pencil className="size-3.5" /> {(row.edit as { label?: string }).label ?? 'Uredi'}</Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
