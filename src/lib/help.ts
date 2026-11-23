@@ -226,6 +226,31 @@ export const HELP: HelpTopic[] = [
     ],
   },
   {
+    id: 'pristupni-podaci',
+    route: '/pristupni-podaci',
+    title: 'Pristupni podaci',
+    purpose: 'Trezor službenih pristupnih podataka (mailovi, hosting, banke, društvene mreže, programi) — vidi ga samo administrator.',
+    fields: [
+      'Vrsta, naziv (npr. info@ardornamjestaj.com), korisničko ime, adresa za prijavu.',
+      'Lozinka i bilješka (npr. IMAP/SMTP postavke, PIN, kodovi za oporavak) — šifrirano.',
+    ],
+    details: [
+      {
+        h: 'Kako radi',
+        items: [
+          'Prvi put postavite lozinku trezora (najmanje 10 znakova, drukčija od lozinke za prijavu). Njome se šifriraju sve lozinke i bilješke.',
+          'Lozinka trezora se ne sprema nigdje. Ako je zaboravite, podatke nije moguće vratiti — zapišite je i čuvajte na sigurnom.',
+          'Trezor se otključava lozinkom trezora i sam se zaključa nakon 15 minuta bez rada, kad napustite stranicu ili gumbom „Zaključaj”.',
+          'Lozinka je skrivena dok ne kliknete oko (sama se sakrije nakon 30 sekundi). Gumb za kopiranje stavi lozinku u međuspremnik, pa je zalijepite u prijavu.',
+          '„Nova” u prozoru zapisa napravi jaku nasumičnu lozinku od 16 znakova.',
+          'U dnevniku izmjena se vidi tko je otvorio trezor, koju lozinku je prikazao i što je spremio ili obrisao — sama lozinka se nikad ne upisuje u dnevnik.',
+          'Lozinku trezora mijenjate gumbom „Lozinka trezora”: svi zapisi se ponovo šifriraju.',
+          'Vidi samo uloga administrator. Uprava, voditelj i ostali ne vide ni stavku u meniju.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'izvoz',
     route: '/izvoz',
     title: 'Izvoz',

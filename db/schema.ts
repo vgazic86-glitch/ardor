@@ -980,3 +980,21 @@ export const webArticles = pgTable('web_articles', {
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
 })
+
+/**
+ * Trezor pristupnih podataka (samo administrator): službeni mailovi, hosting, banke…
+ * Lozinka i bilješka su šifrirane ključem iz lozinke trezora (server/vaultCrypto.ts).
+ */
+export const vaultEntries = pgTable('vault_entries', {
+  id: serial().primaryKey(),
+  /** email | hosting | banka | drustvene | program | ostalo */
+  kind: text().notNull().default('email'),
+  title: text().notNull(),
+  username: text().notNull().default(''),
+  url: text().notNull().default(''),
+  secretEnc: text('secret_enc').notNull().default(''),
+  noteEnc: text('note_enc').notNull().default(''),
+  updatedBy: text('updated_by').notNull().default(''),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+})

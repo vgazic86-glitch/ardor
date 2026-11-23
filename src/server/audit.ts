@@ -287,6 +287,12 @@ const MAP: Record<string, [string, string, Detail?]> = {
   postAnnouncementFn: ['Oglasna ploča', 'objava', (d) => String(d.title ?? '').slice(0, 80)],
   confirmAnnouncementFn: ['Oglasna ploča', 'pročitano', (d) => `#${d.id}`],
   saveShiftsFn: ['Smjene', 'upisane', (d) => `${d.date}: ${(d.assignments ?? []).filter((a: { shift: string }) => a.shift).length} trgovaca`],
+  // Trezor: u dnevnik ide samo naziv zapisa — NIKAD lozinka ni bilješka (zato svaka stavka ima svoj opis).
+  vaultSetupFn: ['Pristupni podaci', 'trezor postavljen', () => ''],
+  vaultUnlockFn: ['Pristupni podaci', 'trezor otključan', () => ''],
+  vaultSaveFn: ['Pristupni podaci', 'zapis spremljen', (d) => `${String(d.entry?.title ?? '').slice(0, 80)}${d.entry?.id ? '' : ' · novi'}`],
+  vaultDeleteFn: ['Pristupni podaci', 'zapis obrisan', (d) => String(d.title ?? `#${d.id}`).slice(0, 80)],
+  vaultChangeMasterFn: ['Pristupni podaci', 'promijenjena lozinka trezora', () => ''],
 }
 
 /** Poziva se iz middlewarea nakon uspješne serverske radnje. */

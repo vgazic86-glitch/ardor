@@ -788,3 +788,40 @@ export const receiveMaterialsFn = createServerFn({ method: 'POST' }).middleware(
 export const countMaterialFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<{ materialId: string; counted: number; note: string; name?: string }>())
   .handler(async ({ data, context }) => (await import('./materijal')).countMaterial(context.user, data))
+
+/* ───────── trezor pristupnih podataka (samo administrator) ───────── */
+
+export const vaultStatusFn = createServerFn({ method: 'GET' }).middleware([authed])
+  .handler(async ({ context }) => (await import('./vault')).vaultStatus(context.user))
+
+export const vaultSetupFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ master: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultSetup(context.user, data.master))
+
+export const vaultUnlockFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ master: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultUnlock(context.user, data.master))
+
+export const vaultLockFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ token: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultLock(context.user, data.token))
+
+export const vaultListFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ token: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultList(context.user, data.token))
+
+export const vaultRevealFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ token: string; id: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultReveal(context.user, data.token, data.id))
+
+export const vaultSaveFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ token: string; entry: import('../lib/vault').VaultInput }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultSave(context.user, data.token, data.entry))
+
+export const vaultDeleteFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ token: string; id: string; title?: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultDelete(context.user, data.token, data.id))
+
+export const vaultChangeMasterFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ token: string; oldMaster: string; newMaster: string }>())
+  .handler(async ({ data, context }) => (await import('./vault')).vaultChangeMaster(context.user, data.token, data.oldMaster, data.newMaster))

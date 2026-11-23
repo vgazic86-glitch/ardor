@@ -121,6 +121,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: '/kadrovska', label: 'Kadrovska', icon: LockKeyhole, area: 'kadrovska' },
       { to: '/dokumenti', label: 'Dokumenti', icon: BookOpen, area: 'dokumenti' },
       { to: '/korisnici', label: 'Korisnici i pristup', icon: ShieldCheck, area: 'korisnici' },
+      { to: '/pristupni-podaci', label: 'Pristupni podaci', icon: KeyRound, area: 'pristupi' },
       { to: '/pomoc', label: 'Pomoć i upute', icon: LifeBuoy, area: 'pregled' },
     ],
   },

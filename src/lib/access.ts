@@ -27,6 +27,7 @@ export type Area =
   | 'izvoz'
   | 'radionica'
   | 'materijal'
+  | 'pristupi'
 
 /** Trgovac: samo ono što treba za prodaju i rad s kupcima. */
 const TRADER: Area[] = ['pregled', 'zadaci', 'narudzbe', 'naplata', 'kupci', 'web', 'reklamacije', 'dostave', 'zalihe', 'radno', 'dokumenti', 'radionica']
@@ -42,7 +43,7 @@ const DELIVERY: Area[] = ['dostave', 'radno', 'zadaci', 'dokumenti', 'radionica'
 
 export function canSee(user: SessionUser | null, area: Area) {
   if (!user) return false
-  if (area === 'korisnici') return user.role === 'admin'
+  if (area === 'korisnici' || area === 'pristupi') return user.role === 'admin'
   if (user.role === 'dostava') return DELIVERY.includes(area)
   if (user.role === 'trgovac') return TRADER.includes(area)
   if (user.role === 'operativa') return OPERATIONS.includes(area)
@@ -79,6 +80,7 @@ export function areaOf(path: string): Area | null {
     izvoz: 'izvoz',
     'radni-nalozi': 'radionica',
     radionica: 'materijal',
+    'pristupni-podaci': 'pristupi',
     naljepnice: 'artikli',
     kuf: 'izvjestaji',
   }
