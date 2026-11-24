@@ -145,6 +145,8 @@ Detaljno u skillu `objava`. Ukratko:
 3. Nakon ~3–5 min provjeri https://ardor-4mdu.onrender.com (prvo učitavanje na free planu može trajati do 1 min). Ako deploy padne, pogledaj log u Render Dashboardu (servis `ardor`).
 4. Ako se mijenja `package.json`, obavezno osvježi i `pnpm-lock.yaml` (`--frozen-lockfile` na Renderu).
 
+**Hetzner (proba, selidba u tijeku)** — https://app.ardornamjestaj.com, isti push na `main` objavljuje i tamo: server svake minute provjeri GitHub (`ardor-deploy.timer` → `/home/ardor/check-deploy.sh` → `deploy.sh`: izgradnja u novu mapu `releases/`, migracije, prebacivanje `current`, provjera; ako nova ne odgovara, vraća prethodnu). Log: `/home/ardor/deploy.log`. Vraćanje ručno: `/home/ardor/rollback.sh`. Tajne su u `/home/ardor/shared/.env` (samo na serveru). Kopija baze svaku noć u 02:00 (`/home/ardor/backups`, 14 dana). Ako repo postane privatan, serveru treba GitHub deploy ključ (samo čitanje).
+
 ## Sigurnost
 
 - Repo je bio **javan** — ne commitaj `.env`, lozinke, ključeve, stvarne podatke kupaca ni dokumente iz `../ardor-handoff/`.
