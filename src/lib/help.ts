@@ -320,6 +320,7 @@ export const HELP: HelpTopic[] = [
           'Artikli na webu su POSEBAN popis samo za web stranicu. Nisu povezani s Artiklima, zalihama ni cijenama u aplikaciji — promjena u Artiklima ne mijenja web, i obrnuto.',
           'Novi artikal: Artikli na webu → „Novi artikal za web”. U prozoru: 1. fotografije (do 6; klik ili povucite; s mobitela je u redu; prva je glavna), 2. naziv, vrsta, cijena u KM s PDV-om, prostorija i dostupnost, 3. opis i mjere. Desno piše na kojim stranicama weba će se vidjeti.',
           'Na web ide samo artikal s barem jednom fotografijom i kvačicom „Vidljiv na webu”. Da ga privremeno sklonite, maknite kvačicu; „Obriši” ga trajno briše zajedno s fotografijama.',
+          'Fotografije sustav sam priredi za web: oblik 4:3 kao na webu (fotografija blizu tog oblika se izreže po sredini, uspravna ide cijela na zamućenu podlogu od iste fotografije), ujednačena svjetlina i kontrast, blago izoštravanje, 1600 × 1200 px. Ako je fotografija premala ili mutna, prozor to napiše — tada je bolje snimiti ponovno.',
           'Dostupnost birate sami: „Odmah sa zalihe” ili „Po narudžbi”.',
           'Za akciju upišite staru cijenu (veću od cijene) — web je precrta i artikal stavi na stranicu Akcije.',
           '„Istaknut” artikal ide na početnu stranicu weba.',

@@ -6,7 +6,7 @@ import { Pager, usePaged } from '../components/Pager'
 import { WebArticles, WebOverview, WebTexts, type GoTo, type ProductFilter, type WebTab } from '../components/WebCms'
 import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader, Segmented, Select, Stat } from '../components/ui'
 import { date, money } from '../lib/format'
-import { prepareImage } from '../lib/image'
+import { prepareWebPhoto } from '../lib/image'
 import { useRemote } from '../lib/remote'
 import { INQUIRY_KINDS, INQUIRY_STATUS, WEB_AVAIL, WEB_COLORS, WEB_MATERIALS, WEB_ROOMS, WEB_STYLES } from '../lib/web'
 import { WEB_SITE_URL } from '../lib/webContent'
@@ -219,6 +219,9 @@ const num = (s: string) => Number(s.replace(/\s|KM/gi, '').replace(/\.(?=\d{3}(\
 function ItemDialog({ p, busy, run, onClose }: { p: WebItemRow | null; busy: boolean; run: Run; onClose: () => void }) {
   const [v, setV] = useState(() => (p ? { ...EMPTY, ...p, price: String(p.price), oldPrice: p.oldPrice ? String(p.oldPrice) : '' } : EMPTY))
   const [images, setImages] = useState<string[]>(p?.imageIds ?? [])
+  const [notes, setNotes] = useState<Record<string, { warnings: string[]; done: string[] }>>({})
+  const warned = images.map((id, i) => ({ n: i + 1, w: notes[id]?.warnings ?? [] })).filter((x) => x.w.length)
+  const lastDone = [...images].reverse().map((id) => notes[id]?.done).find(Boolean)
   const [more, setMore] = useState(false)
   const [uploading, setUploading] = useState(0)
   const [over, setOver] = useState(false)
@@ -245,9 +248,12 @@ function ItemDialog({ p, busy, run, onClose }: { p: WebItemRow | null; busy: boo
     setUploading(files.length)
     try {
       for (const f of files) {
-        const img = await prepareImage(f, true)
+        const img = await prepareWebPhoto(f)
         const r = await run(() => uploadWebItemImageFn({ data: { image: img.image } }))
-        if (r) setImages((s) => [...s, r.id])
+        if (r) {
+          setImages((s) => [...s, r.id])
+          setNotes((s) => ({ ...s, [r.id]: { warnings: img.warnings, done: img.done } }))
+        }
         setUploading((n) => n - 1)
       }
     } catch (e) {
@@ -306,7 +312,13 @@ function ItemDialog({ p, busy, run, onClose }: { p: WebItemRow | null; busy: boo
               )}
               <input ref={file} type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
             </div>
-            <p className="mt-2 text-xs text-walnut-600">Fotografije s mobitela su u redu — same se smanje. Prva je glavna (vidi se u katalogu). Najbolje: cijeli komad, svijetlo, bez nereda okolo.</p>
+            {warned.length > 0 && (
+              <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {warned.map((x) => <div key={x.n}><b>Fotografija {x.n}:</b> {x.w.join('; ')}. Bolje je snimiti ponovno ili je ukloni (✕).</div>)}
+              </div>
+            )}
+            {lastDone && <p className="mt-2 text-xs text-emerald-800">✓ Sustav je obradio fotografiju: {lastDone.join(', ')}.</p>}
+            <p className="mt-2 text-xs text-walnut-600">Svaku fotografiju sustav sam priredi za web: isti oblik kao na webu (4:3), ujednačena svjetlina i kontrast, izoštravanje. Prva je glavna (vidi se u katalogu). Najbolje: cijeli komad, svijetlo, bez nereda okolo.</p>
           </Step>
           <Step n={2} title="Naziv i cijena">
             <div className="grid gap-3 sm:grid-cols-2">
