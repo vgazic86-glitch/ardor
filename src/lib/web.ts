@@ -217,3 +217,86 @@ export function makeLimiter(max: number, windowMs: number) {
     return true
   }
 }
+
+/* ───────────────────────── web narudžbe (košarica, bez kartice) ───────────────────────── */
+
+export const WEB_DELIVERY = { dostava: 'Dostava na adresu', preuzimanje: 'Preuzimanje u salonu' } as const
+export const WEB_PAYMENT = { pouzece: 'Pouzećem (pri dostavi)', predracun: 'Uplata na račun (predračun)', salon: 'Plaćanje u salonu', rate: 'Na rate (partnerski kredit)' } as const
+export const WEB_ORDER_STATUS = { nova: 'Nova', u_obradi: 'U obradi', prodaja: 'Napravljena prodaja', otkazana: 'Otkazana' } as const
+export type WebDelivery = keyof typeof WEB_DELIVERY
+export type WebPayment = keyof typeof WEB_PAYMENT
+export type WebOrderStatus = keyof typeof WEB_ORDER_STATUS
+export const MAX_ORDER_LINES = 20
+export const MAX_ORDER_QTY = 20
+
+export interface WebOrderFields {
+  name: string
+  phone: string
+  email: string
+  city: string
+  address: string
+  delivery: WebDelivery
+  payment: WebPayment
+  message: string
+  /** Id artikla za web (broj iz „w12”) i količina; cijene računa server iz baze. */
+  lines: { itemId: number; qty: number }[]
+}
+
+/** Provjera narudžbe s weba. Isti artikal dvaput se zbraja. 'spam' = popunjeno skriveno polje. */
+export function validateWebOrder(f: Record<string, unknown>): { error: string } | { ok: WebOrderFields } {
+  if (txt(f.website, 200)) return { error: 'spam' }
+  const name = txt(f.ime, 80)
+  const phone = txt(f.telefon, 30)
+  const email = txt(f.email, 120)
+  const delivery = pick(WEB_DELIVERY, f.dostava, 'dostava') as WebDelivery
+  const payment = pick(WEB_PAYMENT, f.placanje, 'pouzece') as WebPayment
+  const city = txt(f.mjesto, 60)
+  const address = txt(f.adresa, 160)
+  if (!Array.isArray(f.stavke) || f.stavke.length === 0) return { error: 'Košarica je prazna.' }
+  const qty = new Map<number, number>()
+  for (const s of f.stavke.slice(0, 50)) {
+    const o = (s ?? {}) as Record<string, unknown>
+    const id = Number(String(o.id ?? '').replace(/^w/, ''))
+    const q = Math.floor(Number(o.kolicina))
+    if (!Number.isInteger(id) || id <= 0 || !Number.isFinite(q) || q < 1) continue
+    qty.set(id, Math.min(MAX_ORDER_QTY, (qty.get(id) ?? 0) + q))
+  }
+  if (qty.size === 0) return { error: 'Košarica je prazna.' }
+  if (qty.size > MAX_ORDER_LINES) return { error: `Najviše ${MAX_ORDER_LINES} različitih artikala u jednoj narudžbi.` }
+  if (name.length < 2) return { error: 'Upiši ime i prezime.' }
+  if (phone.replace(/\D/g, '').length < 6) return { error: 'Upiši ispravan broj telefona.' }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'E-mail adresa nije ispravna.' }
+  if (delivery === 'dostava' && city.length < 2) return { error: 'Upiši mjesto za dostavu.' }
+  if (delivery === 'dostava' && address.length < 4) return { error: 'Upiši adresu za dostavu (ulica i broj).' }
+  if (delivery === 'preuzimanje' && payment === 'pouzece') return { error: 'Pouzećem se plaća samo uz dostavu — izaberi drugi način plaćanja.' }
+  if (!f.uvjeti) return { error: 'Potrebno je prihvatiti uvjete kupovine.' }
+  return {
+    ok: {
+      name, phone, email, delivery, payment,
+      city: delivery === 'dostava' ? city : '',
+      address: delivery === 'dostava' ? address : '',
+      message: txt(f.napomena, 1000),
+      lines: [...qty].map(([itemId, q]) => ({ itemId, qty: q })),
+    },
+  }
+}
+
+export interface WebOrderLine { itemId: number; name: string; slug: string; room: string; price: number; qty: number }
+
+/** Stavke s cijenama iz baze; artikal koji više nije vidljiv na webu = greška s nazivom. */
+export function priceWebOrder(
+  lines: { itemId: number; qty: number }[],
+  items: { id: number; name: string; slug: string; room: string; price: number; visible: boolean; hasImage: boolean }[],
+): { error: string } | { ok: { lines: WebOrderLine[]; total: number } } {
+  const out: WebOrderLine[] = []
+  for (const l of lines) {
+    const it = items.find((x) => x.id === l.itemId)
+    if (!it || !it.visible || !it.hasImage) return { error: 'Neki artikal iz košarice više nije u ponudi. Osvježi stranicu košarice i pošalji ponovo.' }
+    out.push({ itemId: it.id, name: it.name, slug: it.slug, room: it.room, price: it.price, qty: l.qty })
+  }
+  const total = Math.round(out.reduce((s, l) => s + l.price * l.qty, 0) * 100) / 100
+  return { ok: { lines: out, total } }
+}
+
+/** Broj web narudžbe za kupca i aplikaciju: W-0012. */
+export const webOrderNumber = (id: number | string) => `W-${String(id).padStart(4, '0')}`

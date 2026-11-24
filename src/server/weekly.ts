@@ -8,6 +8,7 @@ import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { buildWeekly, weeklyHtml, weeklySubject, weeklyText, type Weekly } from '../lib/weekly'
 import { record } from './audit'
+import { sendMail } from './mail'
 import { listComplaints } from './complaints'
 import { loadSnapshot } from './logic'
 
@@ -49,18 +50,7 @@ export async function weeklyStatus() {
 }
 
 async function sendEmail(to: string[], subject: string, html: string, text: string) {
-  const key = process.env.RESEND_API_KEY
-  if (!key) throw new Error('E-pošta nije podešena: na Renderu nedostaje RESEND_API_KEY.')
-  // RESEND_API_URL služi samo za lokalno testiranje (lažni server); na Renderu se ne postavlja.
-  const res = await fetch(`${process.env.RESEND_API_URL || 'https://api.resend.com'}/emails`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM(), to, subject, html, text }),
-  })
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`Resend je odbio poruku (${res.status}). ${body.slice(0, 200)}`)
-  }
+  await sendMail({ from: FROM(), to, subject, html, text })
 }
 
 /** Sat i dan u sedmici po vremenu Sarajeva. */

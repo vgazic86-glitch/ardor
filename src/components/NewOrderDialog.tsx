@@ -27,6 +27,10 @@ export function NewOrderDialog({
   onCreated,
   initialItems,
   asOffer = false,
+  initialCustomer,
+  initialNote = '',
+  initialPayment,
+  initialDelivery,
 }: {
   onClose: () => void
   onCreated: (id: string) => void
@@ -34,6 +38,12 @@ export function NewOrderDialog({
   initialItems?: { productId: string; qty: number }[]
   /** Otvori kao ponudu. */
   asOffer?: boolean
+  /** Kupac unaprijed (npr. web narudžba): postojeći s istim telefonom ili novi s ovim podacima. */
+  initialCustomer?: { name: string; phone: string; city: string; address: string }
+  initialNote?: string
+  initialPayment?: PaymentMethod
+  /** false = kupac sam preuzima (bez dostave). */
+  initialDelivery?: boolean
 }) {
   const {
     addOrder,
@@ -52,7 +62,12 @@ export function NewOrderDialog({
   // Opći artikli „po mjeri” se ne biraju s popisa — za njih je gumb „Po mjeri”.
   const sellable = products.filter((p) => !p.madeToOrder)
   const reserved = reservedQty(orders)
-  const [customerId, setCustomerId] = useState(customers[0]?.id ?? '')
+  const digits = (x: string) => x.replace(/\D/g, '').replace(/^(00387|387|0)/, '')
+  const [customerId, setCustomerId] = useState(() => {
+    if (!initialCustomer) return customers[0]?.id ?? ''
+    const same = digits(initialCustomer.phone) && customers.find((c) => c.phone && digits(c.phone) === digits(initialCustomer.phone))
+    return same ? same.id : 'novi'
+  })
   const [employeeId, setEmployeeId] = useState(
     me && me.role !== 'Dostava i montaža' ? me.id : (salesPeople[0]?.id ?? ''),
   )
@@ -61,7 +76,7 @@ export function NewOrderDialog({
       ? initialItems
           .filter((i) => sellable.some((p) => p.id === i.productId))
           .map((i) => ({ productId: i.productId, qty: Math.max(1, i.qty), unitPrice: productById(i.productId).price, discountPct: 0 }))
-      : sellable[0]
+      : sellable[0] && !initialCustomer
       ? [
           {
             productId: sellable[0].id,
@@ -73,23 +88,23 @@ export function NewOrderDialog({
       : [],
   )
   const [status, setStatus] = useState<OrderStatus>(asOffer ? 'ponuda' : 'potvrđena')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Kartica')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialPayment ?? 'Kartica')
   const [paid, setPaid] = useState('')
   const [rateCount, setRateCount] = useState('6')
   const [rateFirst, setRateFirst] = useState(() => addMonths(TODAY, 1))
-  const [withDelivery, setWithDelivery] = useState(true)
+  const [withDelivery, setWithDelivery] = useState(initialDelivery ?? true)
   const [dDate, setDDate] = useState('')
   const [slot, setSlot] = useState<Delivery['slot']>('08–12')
   const [driverId, setDriverId] = useState(drivers[0]?.id ?? '')
   const [assembly, setAssembly] = useState(true)
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(initialNote)
 
   const total = itemsTotal(items)
   const [pickupNow, setPickupNow] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newPhone, setNewPhone] = useState('')
-  const [newCity, setNewCity] = useState('')
-  const [newAddress, setNewAddress] = useState('')
+  const [newName, setNewName] = useState(initialCustomer?.name ?? '')
+  const [newPhone, setNewPhone] = useState(initialCustomer?.phone ?? '')
+  const [newCity, setNewCity] = useState(initialCustomer?.city ?? '')
+  const [newAddress, setNewAddress] = useState(initialCustomer?.address ?? '')
   const customer = customers.find((c) => c.id === customerId) ?? {
     address: newAddress,
     city: newCity,

@@ -1031,3 +1031,34 @@ export const vaultEntries = pgTable('vault_entries', {
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
 })
+
+/**
+ * Narudžbe s web stranice (košarica): kupac bira artikle za web i način plaćanja (bez kartice).
+ * Cijene su prepisane s artikala za web u trenutku narudžbe (server ih računa, ne preglednik).
+ */
+export const webOrders = pgTable('web_orders', {
+  id: serial().primaryKey(),
+  at: timestamp().notNull(),
+  name: text().notNull(),
+  phone: text().notNull(),
+  email: text().notNull().default(''),
+  city: text().notNull().default(''),
+  address: text().notNull().default(''),
+  /** dostava | preuzimanje */
+  delivery: text().notNull().default('dostava'),
+  /** pouzece | predracun | salon | rate */
+  payment: text().notNull().default('pouzece'),
+  /** Napomena kupca. */
+  message: text().notNull().default(''),
+  /** Stavke kao JSON: [{ itemId, name, slug, room, price, qty }] */
+  lines: text().notNull().default('[]'),
+  total: money('total').notNull(),
+  ip: text().notNull().default(''),
+  /** nova | u_obradi | prodaja | otkazana */
+  status: text().notNull().default('nova'),
+  handledBy: text('handled_by').notNull().default(''),
+  note: text().notNull().default(''),
+  /** Prodaja napravljena iz ove narudžbe. */
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  emailSent: boolean('email_sent').notNull().default(false),
+})

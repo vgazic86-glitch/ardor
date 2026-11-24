@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allowedOrigin, cleanWebSettings, guessRoom, makeLimiter, parseSwatches, slugify, validateInquiry, webAvailability } from './web'
+import { allowedOrigin, MAX_ORDER_QTY, priceWebOrder, validateWebOrder, webOrderNumber, cleanWebSettings, guessRoom, makeLimiter, parseSwatches, slugify, validateInquiry, webAvailability } from './web'
 
 describe('web: slug i prostorija', () => {
   it('pravi adresu bez dijakritike', () => {
@@ -107,5 +107,38 @@ describe('web: artikli za web (vlastiti popis)', () => {
     expect(r.ok.avail).toBe('stanje')
     expect(r.ok.oldPrice).toBe(2990)
     expect(r.ok.slug).toBe('grande-garnitura')
+  })
+})
+
+describe('web narudžbe', () => {
+  const base = { ime: 'Ana Anić', telefon: '065 111 222', mjesto: 'Banja Luka', adresa: 'Krajiška 5', uvjeti: true, stavke: [{ id: 'w3', kolicina: 1 }] }
+  it('prihvata ispravnu narudžbu i zbraja isti artikal', () => {
+    const r = validateWebOrder({ ...base, stavke: [{ id: 'w3', kolicina: 1 }, { id: 'w3', kolicina: 2 }, { id: 'w7', kolicina: '1' }] })
+    expect('ok' in r && r.ok.lines).toEqual([{ itemId: 3, qty: 3 }, { itemId: 7, qty: 1 }])
+  })
+  it('traži adresu za dostavu, a za preuzimanje je ne sprema', () => {
+    expect(validateWebOrder({ ...base, adresa: '' })).toEqual({ error: 'Upiši adresu za dostavu (ulica i broj).' })
+    const r = validateWebOrder({ ...base, dostava: 'preuzimanje', placanje: 'salon' })
+    expect('ok' in r && [r.ok.city, r.ok.address]).toEqual(['', ''])
+  })
+  it('odbija pouzeće bez dostave, praznu košaricu, bez uvjeta i spam', () => {
+    expect('error' in validateWebOrder({ ...base, dostava: 'preuzimanje', placanje: 'pouzece' })).toBe(true)
+    expect(validateWebOrder({ ...base, stavke: [{ id: 'x', kolicina: 0 }] })).toEqual({ error: 'Košarica je prazna.' })
+    expect(validateWebOrder({ ...base, uvjeti: false })).toEqual({ error: 'Potrebno je prihvatiti uvjete kupovine.' })
+    expect(validateWebOrder({ ...base, website: 'http://spam' })).toEqual({ error: 'spam' })
+  })
+  it('količina je najviše 20 po artiklu', () => {
+    const r = validateWebOrder({ ...base, stavke: [{ id: 'w3', kolicina: 999 }] })
+    expect('ok' in r && r.ok.lines[0].qty).toBe(MAX_ORDER_QTY)
+  })
+  it('cijene računa iz baze, a skriven artikal odbija', () => {
+    const items = [
+      { id: 3, name: 'Garnitura', slug: 'g', room: 'dnevni-boravak', price: 1290.5, visible: true, hasImage: true },
+      { id: 7, name: 'Ormar', slug: 'o', room: 'ormari-i-plakari', price: 500, visible: false, hasImage: true },
+    ]
+    const r = priceWebOrder([{ itemId: 3, qty: 2 }], items)
+    expect('ok' in r && r.ok.total).toBe(2581)
+    expect('error' in priceWebOrder([{ itemId: 7, qty: 1 }], items)).toBe(true)
+    expect(webOrderNumber(12)).toBe('W-0012')
   })
 })

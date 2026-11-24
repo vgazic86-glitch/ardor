@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Calendar, Camera, ExternalLink, Eye, EyeOff, Globe, ImagePlus, Inbox, Loader2, Phone, Plus, Ruler, Search, Sparkles, Star, Trash2, UserPlus, X } from 'lucide-react'
+import { Calendar, Camera, ShoppingCart, Truck, Store, ExternalLink, Eye, EyeOff, Globe, ImagePlus, Inbox, Loader2, Phone, Plus, Ruler, Search, Sparkles, Star, Trash2, UserPlus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Modal } from '../components/Modal'
 import { Pager, usePaged } from '../components/Pager'
@@ -8,10 +8,13 @@ import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader, Seg
 import { date, money } from '../lib/format'
 import { prepareWebPhoto } from '../lib/image'
 import { useRemote } from '../lib/remote'
-import { INQUIRY_KINDS, INQUIRY_STATUS, WEB_AVAIL, WEB_COLORS, WEB_MATERIALS, WEB_ROOMS, WEB_STYLES } from '../lib/web'
+import { NewOrderDialog } from '../components/NewOrderDialog'
+import type { PaymentMethod } from '../lib/types'
+import { INQUIRY_KINDS, INQUIRY_STATUS, WEB_AVAIL, WEB_DELIVERY, WEB_ORDER_STATUS, WEB_PAYMENT, WEB_COLORS, WEB_MATERIALS, WEB_ROOMS, WEB_STYLES } from '../lib/web'
 import { WEB_SITE_URL } from '../lib/webContent'
-import { deleteWebItemFn, getWebFn, saveWebItemFn, setWebInquiryStatusFn, uploadWebItemImageFn, webInquiryToCustomerFn } from '../server/api'
+import { deleteWebItemFn, getWebFn, saveWebItemFn, setWebInquiryStatusFn, setWebOrderStatusFn, uploadWebItemImageFn, webInquiryToCustomerFn } from '../server/api'
 import type { WebInquiryRow, WebItemRow } from '../server/web'
+import type { WebOrderRow } from '../server/webOrders'
 
 export const Route = createFileRoute('/web')({ component: WebPage })
 
@@ -31,6 +34,8 @@ function WebPage() {
   const tab = nav.tab
   const inq = r.data?.inquiries ?? []
   const fresh = inq.filter((i) => i.status === 'novo')
+  const orders = r.data?.orders ?? []
+  const freshOrders = orders.filter((o) => o.status === 'nova')
 
   return (
     <div className="rise">
@@ -42,7 +47,7 @@ function WebPage() {
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat tone={fresh.length ? 'warn' : 'good'} icon={Inbox} label="Novi upiti" value={String(fresh.length)} hint="čekaju poziv" />
-        <Stat label="U obradi" value={String(inq.filter((i) => i.status === 'u_obradi').length)} hint="neko je preuzeo" />
+        <Stat tone={freshOrders.length ? 'warn' : 'good'} icon={ShoppingCart} label="Nove web narudžbe" value={String(freshOrders.length)} hint={freshOrders.length ? 'nazovi kupca' : `${orders.filter((o) => o.status === 'u_obradi').length} u obradi`} />
         <Stat label="Zakazani posjeti i mjerenja" value={String(inq.filter((i) => i.kind !== 'ponuda' && i.status !== 'zatvoreno').length)} hint="otvoreni termini" />
         {canProducts && <Stat label="Artikala na webu" value={String(r.data!.items.filter((p) => p.visible && p.imageIds.length).length)} hint={`od ${r.data!.items.length} upisanih`} />}
       </div>
@@ -51,6 +56,7 @@ function WebPage() {
         <Segmented<WebTab> value={tab} onChange={(t) => go({ tab: t })} options={[
           { value: 'pregled', label: 'Pregled weba' },
           { value: 'upiti', label: `Upiti${fresh.length ? ` (${fresh.length} novih)` : ''}` },
+          { value: 'narudzbe', label: `Narudžbe${freshOrders.length ? ` (${freshOrders.length} novih)` : ''}` },
           ...(canProducts ? [{ value: 'artikli' as const, label: 'Artikli na webu' }] : []),
           { value: 'tekstovi', label: 'Tekstovi' },
           { value: 'clanci', label: 'Članci' },
@@ -64,6 +70,8 @@ function WebPage() {
         <WebArticles />
       ) : !r.data ? (
         <Card><div className="py-10 text-center text-sm text-walnut-500">Učitavam…</div></Card>
+      ) : tab === 'narudzbe' ? (
+        <WebOrders list={orders} busy={r.busy} run={r.run} canSell={canProducts} />
       ) : tab === 'upiti' || !canProducts ? (
         <Inquiries list={inq} busy={r.busy} run={r.run} />
       ) : (
@@ -140,6 +148,107 @@ function InquiryRow({ i, busy, run }: { i: WebInquiryRow; busy: boolean; run: Ru
     </li>
   )
 }
+
+const orderTone: Record<string, string> = { nova: 'warn', u_obradi: 'info', prodaja: 'good', otkazana: 'neutral' }
+/** Način plaćanja s weba → način plaćanja u prodaji. */
+const PAY_TO_SALE: Record<string, PaymentMethod> = { pouzece: 'Gotovina', predracun: 'Virman', salon: 'Gotovina', rate: 'Rate' }
+
+function WebOrders({ list, busy, run, canSell }: { list: WebOrderRow[]; busy: boolean; run: Run; canSell: boolean }) {
+  const [filter, setFilter] = useState<'otvorene' | 'sve'>('otvorene')
+  const [sell, setSell] = useState<WebOrderRow | null>(null)
+  const shown = filter === 'sve' ? list : list.filter((o) => o.status === 'nova' || o.status === 'u_obradi')
+  return (
+    <Card flush>
+      <div className="flex flex-wrap items-center gap-2 border-b border-walnut-200/70 px-5 py-3">
+        <Chip active={filter === 'otvorene'} onClick={() => setFilter('otvorene')}>Otvorene</Chip>
+        <Chip active={filter === 'sve'} onClick={() => setFilter('sve')}>Sve</Chip>
+        <span className="ml-auto text-xs text-walnut-500">Kupac plaća pouzećem, predračunom, u salonu ili na rate — bez kartice na webu.</span>
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState icon={ShoppingCart} title="Nema otvorenih web narudžbi">Kad kupac na webu pošalje košaricu, narudžba se pojavi ovdje i u zvoncu. Nazovi ga, potvrdi dostupnost i rok, pa klikni „Napravi prodaju”.</EmptyState>
+      ) : (
+        <ul className="divide-y divide-walnut-100">{shown.map((o) => <WebOrderItem key={o.id} o={o} busy={busy} run={run} canSell={canSell} onSell={() => setSell(o)} />)}</ul>
+      )}
+      {sell && (
+        <NewOrderDialog
+          initialCustomer={{ name: sell.name, phone: sell.phone, city: sell.city, address: sell.address }}
+          initialPayment={PAY_TO_SALE[sell.payment]}
+          initialDelivery={sell.delivery === 'dostava'}
+          initialNote={[
+            `Web narudžba ${sell.number} (${date(sell.at.slice(0, 10))}): ${sell.lines.map((l) => `${l.name} × ${l.qty} — ${money(l.price * l.qty)}`).join('; ')}. Ukupno ${money(sell.total)}.`,
+            sell.delivery === 'dostava' ? `Dostava: ${[sell.address, sell.city].filter(Boolean).join(', ')}.` : 'Kupac preuzima u salonu.',
+            `Plaćanje: ${WEB_PAYMENT[sell.payment as keyof typeof WEB_PAYMENT] ?? sell.payment}.`,
+            sell.message ? `Napomena kupca: ${sell.message}` : '',
+          ].filter(Boolean).join(' ').slice(0, 900)}
+          onClose={() => setSell(null)}
+          onCreated={(orderId) => {
+            const o = sell
+            setSell(null)
+            void run(() => setWebOrderStatusFn({ data: { id: o.id, status: 'prodaja', orderId, number: o.number, name: o.name } }), `Prodaja je napravljena i povezana s ${o.number}.`)
+          }}
+        />
+      )}
+    </Card>
+  )
+}
+
+function WebOrderItem({ o, busy, run, canSell, onSell }: { o: WebOrderRow; busy: boolean; run: Run; canSell: boolean; onSell: () => void }) {
+  const [note, setNote] = useState(o.note)
+  const at = new Date(o.at)
+  const time = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+  const setStatus = (status: string) => run(() => setWebOrderStatusFn({ data: { id: o.id, status, note, number: o.number, name: o.name } }), 'Web narudžba je ažurirana.')
+  const open = o.status === 'nova' || o.status === 'u_obradi'
+  return (
+    <li className="grid gap-3 px-5 py-4 lg:grid-cols-[1fr_280px]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-sm font-semibold text-walnut-800">{o.number}</span>
+          <Badge tone={orderTone[o.status] ?? 'neutral'}>{WEB_ORDER_STATUS[o.status as keyof typeof WEB_ORDER_STATUS] ?? o.status}</Badge>
+          <span className="text-xs text-walnut-500">{date(o.at.slice(0, 10))} u {time}{o.handledBy ? ` · ${o.handledBy}` : ''}</span>
+        </div>
+        <div className="mt-1.5 font-display text-lg font-semibold">{o.name}</div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a className="inline-flex items-center gap-1 font-semibold text-copper-700 hover:underline" href={`tel:${o.phone.replace(/[^\d+]/g, '')}`}><Phone className="size-3.5" />{o.phone}</a>
+          {o.email && <a className="text-walnut-700 hover:underline" href={`mailto:${o.email}`}>{o.email}</a>}
+          {o.email && <span className="text-xs text-walnut-400">{o.emailSent ? '✓ potvrda poslana e-poštom' : 'potvrda e-poštom nije poslana'}</span>}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2 text-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 font-semibold text-sky-800">
+            {o.delivery === 'dostava' ? <Truck className="size-4" /> : <Store className="size-4" />}
+            {o.delivery === 'dostava' ? `Dostava: ${[o.address, o.city].filter(Boolean).join(', ')}` : WEB_DELIVERY.preuzimanje}
+          </span>
+          <span className="rounded-lg bg-walnut-100 px-2.5 py-1 font-semibold text-walnut-800">{WEB_PAYMENT[o.payment as keyof typeof WEB_PAYMENT] ?? o.payment}</span>
+        </div>
+        <table className="mt-3 w-full max-w-xl text-sm">
+          <tbody>
+            {o.lines.map((l) => (
+              <tr key={l.itemId} className="border-b border-walnut-100">
+                <td className="py-1.5 pr-2"><a className="hover:underline" href={`${WEB_URL.replace(/\/$/, '')}/namjestaj/${l.room}/${l.slug}/`} target="_blank" rel="noopener">{l.name}</a> <span className="text-walnut-500">× {l.qty}</span></td>
+                <td className="py-1.5 text-right text-walnut-500">{l.qty > 1 ? `${money(l.price)} / kom` : ''}</td>
+                <td className="py-1.5 pl-3 text-right font-semibold">{money(l.price * l.qty)}</td>
+              </tr>
+            ))}
+            <tr><td className="pt-2 font-semibold" colSpan={2}>Ukupno s PDV-om (bez dostave)</td><td className="pt-2 pl-3 text-right font-display text-base font-semibold">{money(o.total)}</td></tr>
+          </tbody>
+        </table>
+        {o.message && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-copper-50 px-2.5 py-1.5 text-sm text-copper-900"><b>Napomena kupca:</b> {o.message}</p>}
+      </div>
+      <div className="flex flex-col gap-2">
+        <Select label="Status" value={o.status} onChange={setStatus} options={opts(WEB_ORDER_STATUS)} />
+        <Field label="Bilješka (interno)">
+          <textarea className={inputCls} rows={2} value={note} onChange={(e) => setNote(e.target.value)} onBlur={() => note !== o.note && setStatus(o.status)} placeholder="npr. zvao 25. 11., garnitura na stanju, dostava u petak" />
+        </Field>
+        {o.orderNumber ? (
+          <a href="/narudzbe" className="text-xs font-semibold text-emerald-700">✓ Prodaja {o.orderNumber}</a>
+        ) : open && canSell ? (
+          <Button variant="copper" size="sm" disabled={busy} onClick={onSell}><Plus className="size-3.5" /> Napravi prodaju</Button>
+        ) : null}
+        {open && canSell && !o.orderNumber && <p className="text-[11px] leading-snug text-walnut-500">Otvori se „Nova prodaja” s kupcem, dostavom i plaćanjem; artikle izaberi iz kataloga aplikacije (popis s weba je u napomeni).</p>}
+      </div>
+    </li>
+  )
+}
+
 
 const FILTERS: Record<ProductFilter, string> = { svi: 'Svi', naWebu: 'Vidljivi na webu', istaknuti: 'Istaknuti na naslovnici', akcija: 'Na akciji' }
 const MAX_IMAGES = 6

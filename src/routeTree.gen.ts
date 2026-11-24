@@ -48,6 +48,7 @@ import { Route as DokumentiSlugRouteImport } from './routes/dokumenti/$slug'
 import { Route as ApiSlikeIdRouteImport } from './routes/api.slike.$id'
 import { Route as ApiWebUpitFotoIdRouteImport } from './routes/api.web-upit-foto.$id'
 import { Route as ApiWebKatalogRouteImport } from './routes/api.web.katalog'
+import { Route as ApiWebNarudzbaRouteImport } from './routes/api.web.narudzba'
 import { Route as ApiWebPitanjeRouteImport } from './routes/api.web.pitanje'
 import { Route as ApiWebSadrzajRouteImport } from './routes/api.web.sadrzaj'
 import { Route as ApiWebSavjetnikRouteImport } from './routes/api.web.savjetnik'
@@ -250,6 +251,11 @@ const ApiWebKatalogRoute = ApiWebKatalogRouteImport.update({
   path: '/api/web/katalog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebNarudzbaRoute = ApiWebNarudzbaRouteImport.update({
+  id: '/api/web/narudzba',
+  path: '/api/web/narudzba',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebPitanjeRoute = ApiWebPitanjeRouteImport.update({
   id: '/api/web/pitanje',
   path: '/api/web/pitanje',
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/api/slike/$id': typeof ApiSlikeIdRoute
   '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
   '/api/web/katalog': typeof ApiWebKatalogRoute
+  '/api/web/narudzba': typeof ApiWebNarudzbaRoute
   '/api/web/pitanje': typeof ApiWebPitanjeRoute
   '/api/web/sadrzaj': typeof ApiWebSadrzajRoute
   '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
@@ -367,6 +374,7 @@ export interface FileRoutesByTo {
   '/api/slike/$id': typeof ApiSlikeIdRoute
   '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
   '/api/web/katalog': typeof ApiWebKatalogRoute
+  '/api/web/narudzba': typeof ApiWebNarudzbaRoute
   '/api/web/pitanje': typeof ApiWebPitanjeRoute
   '/api/web/sadrzaj': typeof ApiWebSadrzajRoute
   '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
@@ -415,6 +423,7 @@ export interface FileRoutesById {
   '/api/slike/$id': typeof ApiSlikeIdRoute
   '/api/web-upit-foto/$id': typeof ApiWebUpitFotoIdRoute
   '/api/web/katalog': typeof ApiWebKatalogRoute
+  '/api/web/narudzba': typeof ApiWebNarudzbaRoute
   '/api/web/pitanje': typeof ApiWebPitanjeRoute
   '/api/web/sadrzaj': typeof ApiWebSadrzajRoute
   '/api/web/savjetnik': typeof ApiWebSavjetnikRoute
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/api/slike/$id'
     | '/api/web-upit-foto/$id'
     | '/api/web/katalog'
+    | '/api/web/narudzba'
     | '/api/web/pitanje'
     | '/api/web/sadrzaj'
     | '/api/web/savjetnik'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/api/slike/$id'
     | '/api/web-upit-foto/$id'
     | '/api/web/katalog'
+    | '/api/web/narudzba'
     | '/api/web/pitanje'
     | '/api/web/sadrzaj'
     | '/api/web/savjetnik'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/api/slike/$id'
     | '/api/web-upit-foto/$id'
     | '/api/web/katalog'
+    | '/api/web/narudzba'
     | '/api/web/pitanje'
     | '/api/web/sadrzaj'
     | '/api/web/savjetnik'
@@ -603,6 +615,7 @@ export interface RootRouteChildren {
   ApiSlikeIdRoute: typeof ApiSlikeIdRoute
   ApiWebUpitFotoIdRoute: typeof ApiWebUpitFotoIdRoute
   ApiWebKatalogRoute: typeof ApiWebKatalogRoute
+  ApiWebNarudzbaRoute: typeof ApiWebNarudzbaRoute
   ApiWebPitanjeRoute: typeof ApiWebPitanjeRoute
   ApiWebSadrzajRoute: typeof ApiWebSadrzajRoute
   ApiWebSavjetnikRoute: typeof ApiWebSavjetnikRoute
@@ -886,6 +899,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebKatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/web/narudzba': {
+      id: '/api/web/narudzba'
+      path: '/api/web/narudzba'
+      fullPath: '/api/web/narudzba'
+      preLoaderRoute: typeof ApiWebNarudzbaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/web/pitanje': {
       id: '/api/web/pitanje'
       path: '/api/web/pitanje'
@@ -983,6 +1003,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSlikeIdRoute: ApiSlikeIdRoute,
   ApiWebUpitFotoIdRoute: ApiWebUpitFotoIdRoute,
   ApiWebKatalogRoute: ApiWebKatalogRoute,
+  ApiWebNarudzbaRoute: ApiWebNarudzbaRoute,
   ApiWebPitanjeRoute: ApiWebPitanjeRoute,
   ApiWebSadrzajRoute: ApiWebSadrzajRoute,
   ApiWebSavjetnikRoute: ApiWebSavjetnikRoute,

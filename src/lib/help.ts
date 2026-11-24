@@ -296,10 +296,11 @@ export const HELP: HelpTopic[] = [
     id: 'web',
     route: '/web',
     title: 'Web stranica',
-    purpose: 'Sve što kupci vide na webu: pregled stranica, upiti, artikli, tekstovi i članci.',
+    purpose: 'Sve što kupci vide na webu: pregled stranica, upiti, narudžbe iz košarice, artikli, tekstovi i članci.',
     fields: [
       'Pregled weba: popis svih stranica weba, što je na njima i gumb „Uredi” koji vodi tačno na mjesto gdje se to mijenja.',
       'Upiti: status (Novo, U obradi, Zatvoreno), bilješka, „Dodaj u kupce”.',
+      'Narudžbe: košarica s weba (bez kartice) — kupac, dostava ili preuzimanje, način plaćanja, artikli i ukupno; status, bilješka, „Napravi prodaju”.',
       'Artikli na webu: poseban popis samo za web (nije povezan s Artiklima aplikacije) — fotografije, naziv, cijena, stara cijena za akciju, prostorija, dostupnost, opis, „Vidljiv na webu”.',
     ],
     details: [
@@ -312,6 +313,18 @@ export const HELP: HelpTopic[] = [
           '„Dodaj u kupce” pravi kupca u aplikaciji (ili ga poveže s postojećim kupcem istog telefona), da se može napraviti prodaja.',
           'Fotografije prostorije koje je kupac poslao otvaraju se klikom.',
           'Ako je kupac prošao AI savjetnika, vidi se i njegov prijedlog (prostorija, kvadratura, stil, budžet).',
+        ],
+      },
+      {
+        h: 'Web narudžbe (košarica)',
+        items: [
+          'Kupac na webu stavi artikle u košaricu i pošalje narudžbu. Ne plaća ništa na webu: bira pouzeće (samo uz dostavu), uplatu na račun po predračunu, plaćanje u salonu ili rate.',
+          'Narudžba stiže u Web stranica → Narudžbe i u zvonce trgovcima, voditelju i upravi, s brojem W-0001, W-0002… Cijene uzima server iz Artikala na webu, ne iz kupčevog preglednika.',
+          'Ako je kupac upisao e-mail, automatski dobije potvrdu prijema (uz narudžbu piše „potvrda poslana e-poštom”). Potvrda kaže da ćemo ga nazvati — kupoprodaja je zaključena tek kad je mi potvrdimo.',
+          'Kupca nazovite najkasnije sljedeći radni dan: potvrdite dostupnost, rok, trošak dostave i montaže. Stavite narudžbu „U obradi” i upišite bilješku.',
+          '„Napravi prodaju” otvara Novu prodaju s kupcem (postojeći s istim telefonom ili novi s podacima s weba), načinom plaćanja, dostavom i napomenom s popisom s weba. Artikle izaberite iz kataloga aplikacije (artikli za web nisu povezani sa zalihom). Kad spremite, narudžba dobije status „Napravljena prodaja” i broj prodaje.',
+          'Ako kupac odustane ili robe nema, stavite status „Otkazana” i upišite razlog u bilješku.',
+          'Uvjeti kupovine (povrat, rokovi) su na webu na stranici /uvjeti-kupovine/.',
         ],
       },
       {

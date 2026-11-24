@@ -705,6 +705,11 @@ export const setWebInquiryStatusFn = createServerFn({ method: 'POST' }).middlewa
   .validator(pass<{ id: string; status: string; note?: string; name?: string }>())
   .handler(async ({ data, context }) => (await web.setInquiryStatus(context.user, data), true))
 
+/** Web narudžbe (košarica na webu, bez kartice): status, bilješka, veza s napravljenom prodajom. */
+export const setWebOrderStatusFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ id: string; status: string; note?: string; orderId?: string | null; number?: string; name?: string }>())
+  .handler(async ({ data, context }) => ((await (await import('./webOrders')).setWebOrderStatus(context.user, data)), true))
+
 /* Uređivanje weba (CMS): tekstovi, traka, kontakt, članci. Pravila po ulogama u lib/webContent.ts (server ih provjerava). */
 export const getWebCmsFn = createServerFn({ method: 'GET' }).middleware([authed])
   .handler(async () => (await import('./webCms')).cmsData())

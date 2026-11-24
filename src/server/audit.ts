@@ -220,6 +220,7 @@ const MAP: Record<string, [string, string, Detail?]> = {
   saveWebItemFn: ['Web stranica', 'artikal na webu', (d) => `${d.id ? 'izmjena' : 'novi'}: ${d.name ?? ''} · ${d.price ?? ''} KM · ${d.visible === false ? 'skriven' : 'vidljiv'}${d.oldPrice ? ` · akcija, stara cijena ${d.oldPrice} KM` : ''}`],
   deleteWebItemFn: ['Web stranica', 'artikal obrisan s weba', (d) => `${d.name ?? 'artikal ' + (d.id ?? '')}`],
   setWebInquiryStatusFn: ['Web stranica', 'upit obrađen', (d) => `${d.name ?? 'upit ' + (d.id ?? '')} → ${d.status ?? ''}`],
+  setWebOrderStatusFn: ['Web stranica', 'web narudžba', (d) => `${d.number ?? 'W-' + (d.id ?? '')} ${d.name ?? ''} → ${d.status ?? ''}${d.orderId ? ' (prodaja ' + d.orderId + ')' : ''}`],
   saveWebTextsFn: ['Web stranica', 'tekstovi weba', (d) => `${({ naslovna: 'Naslovnica', traka: 'Obavijest na vrhu', onama: 'O nama', kontakt: 'Kontakt i radno vrijeme' } as Record<string, string>)[String(d.group)] ?? 'tekstovi'}: ${Object.entries((d.values ?? {}) as Record<string, string>).map(([k, v]) => `${k} = „${String(v).slice(0, 60)}”`).join('; ')}`.slice(0, 500)],
   setWebTextImageFn: ['Web stranica', 'fotografija weba', (d) => `${d.key ?? ''} · ${d.image ? 'nova fotografija' : 'vraćena zadana'}`],
   saveWebArticleFn: ['Web stranica', 'članak', (d) => `„${d.title ?? ''}” · ${({ nacrt: 'nacrt', ceka: 'poslan na odobrenje', objavljen: 'objavljen' } as Record<string, string>)[String(d.status)] ?? d.status}`],

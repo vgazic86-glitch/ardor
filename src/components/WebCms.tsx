@@ -448,7 +448,7 @@ function ToolBtn({ icon: Icon, label, onClick }: { icon: typeof Bold; label: str
 
 /* ───────────────────────── pregled weba (karta stranica) ───────────────────────── */
 
-export type WebTab = 'pregled' | 'upiti' | 'tekstovi' | 'clanci' | 'artikli'
+export type WebTab = 'pregled' | 'upiti' | 'narudzbe' | 'tekstovi' | 'clanci' | 'artikli'
 export type ProductFilter = 'svi' | 'naWebu' | 'istaknuti' | 'akcija'
 export interface GoTo { tab: WebTab; group?: WebGroup; filter?: ProductFilter }
 export type Go = (to: GoTo) => void

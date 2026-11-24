@@ -83,7 +83,7 @@ const inquiryLimit = makeLimiter(6, 10 * 60_000)
 const ALLOWED_IMG = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_PHOTO = 3 * 1024 * 1024
 
-async function salesUserIds() {
+export async function salesUserIds() {
   const rows = await db
     .select({ id: t.users.id })
     .from(t.users)
@@ -285,7 +285,8 @@ export async function webAdminData(user: SessionUser) {
     personal: w.personal, swatches: w.swatches, imageIds: splitIds(w.imageIds), featured: w.featured, visible: w.visible,
     updatedAt: w.updatedAt?.toISOString() ?? null, updatedBy: w.updatedBy,
   }))
-  return { inquiries, items, canItems: user.role !== 'dostava' }
+  const orders = await (await import('./webOrders')).listWebOrders()
+  return { inquiries, items, orders, canItems: user.role !== 'dostava' }
 }
 
 function assertItemEditor(user: SessionUser) {
