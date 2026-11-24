@@ -162,7 +162,7 @@ export async function gemini(system: string, user: string, json: boolean, maxTok
   return (body.candidates?.[0]?.content?.parts ?? []).filter((p) => !p.thought && p.text).map((p) => p.text).join('').trim() || null
 }
 
-const KNOWLEDGE = `ARDOR namještaj d.o.o., Banja Luka (Vojvode Pere Kreće 21), salon od 6000 m², od 1996.; vlastiti pogon za namještaj po mjeri od 2016.
+const KNOWLEDGE = `ARDOR namještaj d.o.o., Banja Luka (Vojvode Pere Krece 21), salon od 6000 m², od 1996.; vlastiti pogon za namještaj po mjeri od 2016.
 Po mjeri: kuhinje, ugradbeni plakari, američki ormari, komode. Materijali: akrilna iverica 18,6 mm (visoki sjaj), MDF 18 mm (lakiran u bilo kojoj boji), oplemenjena iverica 18/25/36 mm (dekori drveta), sjajna iverica 18 mm. Dodaci: LED rasvjeta, električni dodaci za kuhinju, okovi po izboru (tiho zatvaranje, push-to-open).
 Usluge: besplatno mjerenje, 3D prijedlog, dostava i montaža, garancija, plaćanje na rate uz partnerski kredit (iznos i rok kredita ne navodi — ratu i uslove dogovaramo u salonu). Studio spavanja: madraci i jastuci za isprobati.
 Radno vrijeme: radnim danom 08:00–20:30, subotom 08:00–19:00. Telefon 051 433 750, Viber/WhatsApp 065 436 420.`
