@@ -500,7 +500,7 @@ export function WebOverview({ go, canProducts, newInquiries }: { go: Go; canProd
       note: 'Artikli s fotografijom i kvačicom „Vidljiv na webu”. Upisuju se u kartici „Artikli na webu” — poseban popis, nije povezan s Artiklima u aplikaciji.',
       rows: [
         { label: 'Artikala na webu', value: <>{c.total}{c.noImage ? <span className="text-amber-700"> · {c.noImage} označenih bez fotografije se ne vidi</span> : null}</>, edit: prod({ tab: 'artikli', filter: 'naWebu' }) },
-        { label: 'Po prostorijama', value: Object.keys(c.byRoom).length ? Object.entries(c.byRoom).map(([k, n]) => `${WEB_ROOMS[k as keyof typeof WEB_ROOMS] ?? k} ${n}`).join(' · ') : <span className="text-walnut-400">još nijedan artikal — web prikazuje primjere</span>, edit: prod({ tab: 'artikli', filter: 'svi' }) },
+        { label: 'Po prostorijama', value: Object.keys(c.byRoom).length ? Object.entries(c.byRoom).map(([k, n]) => `${WEB_ROOMS[k as keyof typeof WEB_ROOMS] ?? k} ${n}`).join(' · ') : <span className="text-walnut-400">još nijedan artikal — katalog na webu je prazan (piše „uskoro”)</span>, edit: prod({ tab: 'artikli', filter: 'svi' }) },
       ],
     },
     { title: 'Akcije', path: '/akcije/', rows: [{ label: 'Artikli sa starom (precrtanom) cijenom', value: String(c.sale), edit: prod({ tab: 'artikli', filter: 'akcija' }) }] },

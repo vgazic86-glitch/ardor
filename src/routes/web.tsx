@@ -172,7 +172,7 @@ function Items({ list, busy, run, initialFilter = 'svi' }: { list: WebItemRow[];
         </div>
         {shown.length === 0 ? (
           <EmptyState icon={Globe} title={list.length ? 'Nema takvog artikla' : 'Još nema artikala za web'}>
-            {list.length ? 'Provjeri naziv ili odaberi „Svi”.' : <>Klikni „Novi artikal za web”, dodaj fotografije, naziv i cijenu. Dok ovdje nema ničega, web prikazuje primjere.</>}
+            {list.length ? 'Provjeri naziv ili odaberi „Svi”.' : <>Klikni „Novi artikal za web”, dodaj fotografije, naziv i cijenu. Dok ovdje nema ničega, katalog na webu je prazan.</>}
           </EmptyState>
         ) : (
           <ul className="divide-y divide-walnut-100">
