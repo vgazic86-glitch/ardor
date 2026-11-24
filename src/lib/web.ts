@@ -102,6 +102,44 @@ export function cleanWebSettings(i: WebSettingsInput, name: string, price: numbe
 }
 
 /** Slobodno za prodaju = zaliha − rezervirano za otvorene prodaje. */
+/* ───────── artikli za web (vlastiti popis, nije povezan s Artiklima aplikacije) ───────── */
+
+export const WEB_AVAIL = { stanje: 'Odmah sa zalihe', narudzba: 'Po narudžbi' } as const
+export const MAX_ITEM_IMAGES = 6
+
+export interface WebItemInput extends Omit<WebSettingsInput, 'oldPrice'> {
+  oldPrice?: number | string | null
+  name?: string
+  price?: number | string | null
+  avail?: string
+  imageIds?: string[]
+}
+
+/** Broj iz polja: „1.290,50”, „1290,5”, „1290” → 1290.5; prazno/neispravno → 0. */
+export function parsePrice(v: unknown) {
+  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0
+  if (typeof v !== 'string') return 0
+  let s = v.replace(/\s|KM/gi, '')
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.')
+  const n = Number(s)
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0
+}
+
+/** Provjera i čišćenje artikla za web. Vraća poruku za korisnika ako nešto fali. */
+export function cleanWebItem(i: WebItemInput): { error: string } | { ok: ReturnType<typeof cleanWebSettings> & { name: string; price: number; avail: string; imageIds: string } } {
+  const name = txt(i.name, 90)
+  if (name.length < 2) return { error: 'Upiši naziv artikla.' }
+  const price = parsePrice(i.price)
+  if (!price) return { error: 'Upiši cijenu (u KM, s PDV-om).' }
+  if (price > 1_000_000) return { error: 'Cijena je prevelika.' }
+  const old = parsePrice(i.oldPrice)
+  if (old && old <= price) return { error: `Stara cijena mora biti veća od cijene (${price} KM) — ili ostavi prazno.` }
+  const ids = [...new Set((i.imageIds ?? []).map(String).filter((x) => /^\d+$/.test(x)))].slice(0, MAX_ITEM_IMAGES)
+  if (i.visible !== false && !ids.length) return { error: 'Dodaj barem jednu fotografiju — bez nje artikal ne može na web.' }
+  const base = cleanWebSettings({ ...i, oldPrice: old || null }, name, price)
+  return { ok: { ...base, name, price, avail: pick(WEB_AVAIL, i.avail, 'stanje') as string, imageIds: ids.join(',') } }
+}
+
 export function webAvailability(stock: number, reserved: number): 'stanje' | 'narudzba' {
   return stock - reserved > 0 ? 'stanje' : 'narudzba'
 }

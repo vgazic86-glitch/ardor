@@ -3,17 +3,16 @@
  * Javne rute su u src/routes/api.web.*.ts; uređivanje (artikli na webu, obrada upita) ide kroz api.ts.
  * Van nikad ne idu nabavne cijene, količine zaliha, kupci ni zaposlenici.
  */
-import { and, desc, eq, inArray, or } from 'drizzle-orm'
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
-import { reservedQty } from '../lib/stats'
 import { todayBL } from '../lib/motivation'
 import {
-  cleanWebSettings, guessRoom, makeLimiter, parseSwatches, slugify, validateInquiry, webAvailability,
-  INQUIRY_KINDS, INQUIRY_STATUS, WEB_ROOMS, type InquiryStatus, type WebSettingsInput,
+  cleanWebItem, makeLimiter, parseSwatches, slugify, validateInquiry,
+  INQUIRY_KINDS, INQUIRY_STATUS, WEB_ROOMS, type InquiryStatus, type WebItemInput,
 } from '../lib/web'
 import type { SessionUser } from './auth'
-import { loadSnapshot } from './logic'
+import { decodeImage, type ImagePart } from './images'
 
 /* ───────────────────────── javni katalog ───────────────────────── */
 
@@ -39,48 +38,40 @@ export interface PublicProduct {
 }
 
 export async function publicCatalog(origin: string): Promise<PublicProduct[]> {
-  const rows = await db
-    .select({ w: t.webProducts, p: { id: t.products.id, name: t.products.name, category: t.products.category, price: t.products.price, imageId: t.products.imageId, active: t.products.active } })
-    .from(t.webProducts)
-    .innerJoin(t.products, eq(t.webProducts.productId, t.products.id))
-    .where(and(eq(t.webProducts.visible, true), eq(t.products.active, true)))
-  if (!rows.length) return []
-  const snap = await loadSnapshot()
-  const reserved = reservedQty(snap.orders)
-  const stock = new Map(snap.products.map((p) => [p.id, p.stock]))
-  return rows.map(({ w, p }) => {
-    const id = String(p.id)
-    return {
-      id,
+  const rows = await db.select().from(t.webItems).where(eq(t.webItems.visible, true)).orderBy(desc(t.webItems.featured), t.webItems.name)
+  return rows
+    .map((w) => ({
+      id: `w${w.id}`,
       slug: w.slug,
-      name: p.name,
-      type: w.typeLabel || p.category,
+      name: w.name,
+      type: w.typeLabel || WEB_ROOMS[w.room as keyof typeof WEB_ROOMS] || '',
       room: w.room,
       style: w.style,
       color: w.color,
       material: w.material,
-      avail: webAvailability(stock.get(id) ?? 0, reserved.get(id) ?? 0),
-      price: p.price,
-      ...(w.oldPrice && w.oldPrice > p.price ? { oldPrice: w.oldPrice } : {}),
-      images: p.imageId ? [`${origin}/api/web/slike/${p.imageId}`] : [],
+      avail: (w.avail === 'narudzba' ? 'narudzba' : 'stanje') as PublicProduct['avail'],
+      price: w.price,
+      ...(w.oldPrice && w.oldPrice > w.price ? { oldPrice: w.oldPrice } : {}),
+      images: splitIds(w.imageIds).map((id) => `${origin}/api/web/slike/${id}`),
       dimensions: w.dimensions,
       materials: w.materials,
       personal: w.personal,
       description: w.description,
       swatches: parseSwatches(w.swatches),
       featured: w.featured,
-    }
-  }).filter((x) => x.images.length > 0)
+    }))
+    .filter((x) => x.images.length > 0)
 }
+
+export const splitIds = (s: string) => s.split(',').filter((x) => /^\d+$/.test(x))
 
 /** Slika smije van samo ako pripada artiklu koji je vidljiv na webu. */
 export async function readWebImage(fileId: number) {
   if (!Number.isInteger(fileId) || fileId <= 0) return null
   const [ok] = await db
-    .select({ id: t.products.id })
-    .from(t.products)
-    .innerJoin(t.webProducts, eq(t.webProducts.productId, t.products.id))
-    .where(and(eq(t.products.imageId, fileId), eq(t.webProducts.visible, true), eq(t.products.active, true)))
+    .select({ id: t.webItems.id })
+    .from(t.webItems)
+    .where(and(eq(t.webItems.visible, true), sql`',' || ${t.webItems.imageIds} || ',' like ${'%,' + fileId + ',%'}`))
   if (!ok) return null
   const [f] = await db.select({ mime: t.files.mime, data: t.files.data }).from(t.files).where(eq(t.files.id, fileId))
   return f ?? null
@@ -229,15 +220,28 @@ export function plain(s: string) {
 
 /* ───────────────────────── uređivanje u aplikaciji ───────────────────────── */
 
-export interface WebAdminProduct {
-  productId: string
-  sku: string
+export interface WebItemRow {
+  id: string
+  slug: string
   name: string
-  category: string
+  typeLabel: string
+  room: string
+  style: string
+  color: string
+  material: string
+  avail: string
   price: number
-  hasImage: boolean
-  thumbId: string | null
-  web: (ReturnType<typeof cleanWebSettings> & { configured: boolean })
+  oldPrice: number | null
+  description: string
+  dimensions: string
+  materials: string
+  personal: string
+  swatches: string
+  imageIds: string[]
+  featured: boolean
+  visible: boolean
+  updatedAt: string | null
+  updatedBy: string
 }
 
 export interface WebInquiryRow {
@@ -274,37 +278,67 @@ export async function webAdminData(user: SessionUser) {
     status: i.status, handledBy: i.handledBy, note: i.note, customerId: i.customerId ? String(i.customerId) : null,
     photos: photos.filter((p) => p.inquiryId === i.id).map((p) => String(p.fileId)),
   }))
-  // Trgovac vidi upite; uređivanje artikala za web je za operativu i više (kao Artikli).
-  if (user.role === 'trgovac') return { inquiries, products: [] as WebAdminProduct[] }
-  const prods = await db
-    .select({ p: { id: t.products.id, sku: t.products.sku, name: t.products.name, category: t.products.category, price: t.products.price, imageId: t.products.imageId, thumbId: t.products.thumbId }, w: t.webProducts })
-    .from(t.products)
-    .leftJoin(t.webProducts, eq(t.webProducts.productId, t.products.id))
-    .where(eq(t.products.active, true))
-    .orderBy(t.products.name)
-  const products: WebAdminProduct[] = prods.map(({ p, w }) => ({
-    productId: String(p.id), sku: p.sku, name: p.name, category: p.category, price: p.price, hasImage: !!p.imageId, thumbId: p.thumbId ? String(p.thumbId) : null,
-    web: w
-      ? { configured: true, visible: w.visible, slug: w.slug, room: w.room, style: w.style, color: w.color, material: w.material, typeLabel: w.typeLabel, description: w.description, dimensions: w.dimensions, materials: w.materials, personal: w.personal, swatches: w.swatches, oldPrice: w.oldPrice, featured: w.featured }
-      : { configured: false, ...cleanWebSettings({ room: guessRoom(p.category) }, p.name, p.price) },
+  // Artikli za web su vlastiti popis (nisu Artikli aplikacije) — uređuju ih svi osim dostave.
+  const items: WebItemRow[] = (await db.select().from(t.webItems).orderBy(t.webItems.name)).map((w) => ({
+    id: String(w.id), slug: w.slug, name: w.name, typeLabel: w.typeLabel, room: w.room, style: w.style, color: w.color, material: w.material,
+    avail: w.avail, price: w.price, oldPrice: w.oldPrice, description: w.description, dimensions: w.dimensions, materials: w.materials,
+    personal: w.personal, swatches: w.swatches, imageIds: splitIds(w.imageIds), featured: w.featured, visible: w.visible,
+    updatedAt: w.updatedAt?.toISOString() ?? null, updatedBy: w.updatedBy,
   }))
-  return { inquiries, products }
+  return { inquiries, items, canItems: user.role !== 'dostava' }
 }
 
-export type WebSaveInput = WebSettingsInput & { productId: string; name?: string }
+function assertItemEditor(user: SessionUser) {
+  if (user.role === 'dostava') throw new Error('Nemate ovlaštenje za artikle na webu.')
+}
 
-export async function saveWebProduct(input: WebSaveInput) {
-  const pid = Number(input.productId)
-  const [p] = await db.select({ name: t.products.name, price: t.products.price, imageId: t.products.imageId }).from(t.products).where(eq(t.products.id, pid))
-  if (!p) throw new Error('Artikal nije pronađen.')
-  const v = cleanWebSettings(input, p.name, p.price)
-  if (v.visible && !p.imageId) throw new Error('Artikal bez fotografije ne može na web — dodaj sliku u Artiklima.')
-  // Jedinstvena adresa: ako je zauzeta, dodaj broj artikla.
-  const [taken] = await db.select({ id: t.webProducts.productId }).from(t.webProducts).where(eq(t.webProducts.slug, v.slug))
-  if (taken && taken.id !== pid) v.slug = slugify(`${v.slug}-${pid}`)
-  const row = { ...v, updatedAt: new Date() }
-  await db.insert(t.webProducts).values({ productId: pid, ...row }).onConflictDoUpdate({ target: t.webProducts.productId, set: row })
+export type WebItemSave = WebItemInput & { id?: string }
+
+export async function saveWebItem(user: SessionUser, input: WebItemSave) {
+  assertItemEditor(user)
+  const r = cleanWebItem(input)
+  if ('error' in r) throw new Error(r.error)
+  const v = r.ok
+  const id = input.id ? Number(input.id) : null
+  const [old] = id ? await db.select().from(t.webItems).where(eq(t.webItems.id, id)) : []
+  if (id && !old) throw new Error('Artikal nije pronađen (možda ga je neko obrisao).')
+  // Jedinstvena adresa: ako je zauzeta, dodaj broj.
+  const taken = await db.select({ id: t.webItems.id }).from(t.webItems).where(eq(t.webItems.slug, v.slug))
+  if (taken.some((x) => x.id !== id)) v.slug = slugify(`${v.slug}-${id ?? Date.now().toString(36).slice(-4)}`)
+  const now = new Date()
+  const row = { ...v, updatedAt: now, updatedBy: user.name }
+  let saved: number
+  if (old) {
+    await db.update(t.webItems).set(row).where(eq(t.webItems.id, old.id))
+    saved = old.id
+    // Uklonjene fotografije briši iz baze.
+    const gone = splitIds(old.imageIds).filter((x) => !splitIds(v.imageIds).includes(x)).map(Number)
+    if (gone.length) await db.delete(t.files).where(inArray(t.files.id, gone)).catch(() => {})
+  } else {
+    const [n] = await db.insert(t.webItems).values({ ...row, createdAt: now }).returning()
+    saved = n.id
+  }
   scheduleWebRebuild()
+  return { id: String(saved) }
+}
+
+export async function deleteWebItem(user: SessionUser, input: { id: string }) {
+  assertItemEditor(user)
+  const [old] = await db.select().from(t.webItems).where(eq(t.webItems.id, Number(input.id)))
+  if (!old) return
+  await db.delete(t.webItems).where(eq(t.webItems.id, old.id))
+  const ids = splitIds(old.imageIds).map(Number)
+  if (ids.length) await db.delete(t.files).where(inArray(t.files.id, ids)).catch(() => {})
+  scheduleWebRebuild()
+}
+
+/** Fotografija za artikal na webu: sprema se odmah, a uz artikal se veže pri „Spremi”. */
+export async function uploadWebItemImage(user: SessionUser, image: ImagePart) {
+  assertItemEditor(user)
+  const data = decodeImage(image)
+  if (data.length > 4 * 1024 * 1024) throw new Error('Fotografija je prevelika.')
+  const [f] = await db.insert(t.files).values({ name: `web-artikal-${Date.now()}.${image.mime === 'image/webp' ? 'webp' : 'jpg'}`, mime: image.mime, size: data.length, data }).returning()
+  return { id: String(f.id) }
 }
 
 let rebuildTimer: ReturnType<typeof setTimeout> | null = null

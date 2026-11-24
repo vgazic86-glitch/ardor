@@ -2,7 +2,7 @@
  * Uređivanje web stranice iz aplikacije (CMS): tekstovi, obavijest na vrhu, kontakt, članci, fotografije.
  * Pravila i zadani tekstovi su u lib/webContent.ts. Svaka izmjena pokreće ponovnu izgradnju weba (scheduleWebRebuild).
  */
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { desc, eq, inArray } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import * as t from '../../db/schema.js'
 import { todayBL } from '../lib/motivation'
@@ -53,9 +53,11 @@ export async function readWebMedia(fileId: number, loggedIn: boolean) {
     const [a] = await db.select({ status: t.webArticles.status }).from(t.webArticles).where(eq(t.webArticles.imageId, fileId))
     ok = !!a && (a.status === 'objavljen' || loggedIn)
   }
-  if (!ok) return null
-  const [f] = await db.select({ mime: t.files.mime, data: t.files.data }).from(t.files).where(eq(t.files.id, fileId))
-  return f ?? null
+  const [f] = await db.select({ name: t.files.name, mime: t.files.mime, data: t.files.data }).from(t.files).where(eq(t.files.id, fileId))
+  if (!f) return null
+  // Prijavljeni vide i fotografije artikala za web koje još nisu spremljene uz artikal (pregled u prozoru).
+  if (!ok && !(loggedIn && f.name.startsWith('web-artikal-'))) return null
+  return { mime: f.mime, data: f.data }
 }
 
 /* ───────────────────────── uređivanje ───────────────────────── */
@@ -83,10 +85,9 @@ export async function cmsData() {
   }))
   // Sažetak kataloga za „Pregled weba” (vide ga i trgovci, bez cijena i zaliha).
   const wp = await db
-    .select({ room: t.webProducts.room, featured: t.webProducts.featured, oldPrice: t.webProducts.oldPrice, price: t.products.price, imageId: t.products.imageId })
-    .from(t.webProducts)
-    .innerJoin(t.products, eq(t.webProducts.productId, t.products.id))
-    .where(and(eq(t.webProducts.visible, true), eq(t.products.active, true)))
+    .select({ room: t.webItems.room, featured: t.webItems.featured, oldPrice: t.webItems.oldPrice, price: t.webItems.price, imageId: t.webItems.imageIds })
+    .from(t.webItems)
+    .where(eq(t.webItems.visible, true))
   const shown = wp.filter((x) => x.imageId)
   const byRoom: Record<string, number> = {}
   for (const x of shown) byRoom[x.room] = (byRoom[x.room] ?? 0) + 1

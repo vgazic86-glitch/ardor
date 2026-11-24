@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Calendar, Camera, ExternalLink, Eye, EyeOff, Globe, ImagePlus, Inbox, Loader2, Phone, Ruler, Search, Sparkles, Star, UserPlus } from 'lucide-react'
+import { Calendar, Camera, ExternalLink, Eye, EyeOff, Globe, ImagePlus, Inbox, Loader2, Phone, Plus, Ruler, Search, Sparkles, Star, Trash2, UserPlus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Modal } from '../components/Modal'
 import { Pager, usePaged } from '../components/Pager'
@@ -8,10 +8,10 @@ import { Badge, Button, Card, Chip, EmptyState, Field, inputCls, PageHeader, Seg
 import { date, money } from '../lib/format'
 import { prepareImage } from '../lib/image'
 import { useRemote } from '../lib/remote'
-import { INQUIRY_KINDS, INQUIRY_STATUS, WEB_COLORS, WEB_MATERIALS, WEB_ROOMS, WEB_STYLES } from '../lib/web'
+import { INQUIRY_KINDS, INQUIRY_STATUS, WEB_AVAIL, WEB_COLORS, WEB_MATERIALS, WEB_ROOMS, WEB_STYLES } from '../lib/web'
 import { WEB_SITE_URL } from '../lib/webContent'
-import { getWebFn, saveWebProductFn, setProductImageFn, setWebInquiryStatusFn, webInquiryToCustomerFn } from '../server/api'
-import type { WebAdminProduct, WebInquiryRow } from '../server/web'
+import { deleteWebItemFn, getWebFn, saveWebItemFn, setWebInquiryStatusFn, uploadWebItemImageFn, webInquiryToCustomerFn } from '../server/api'
+import type { WebInquiryRow, WebItemRow } from '../server/web'
 
 export const Route = createFileRoute('/web')({ component: WebPage })
 
@@ -22,7 +22,7 @@ const opts = (m: Record<string, string>) => Object.entries(m).map(([value, label
 
 function WebPage() {
   const r = useRemote(() => getWebFn(), [])
-  const canProducts = !!r.data?.products.length
+  const canProducts = !!r.data?.canItems
   const [nav, setNav] = useState<GoTo & { n: number }>({ tab: 'pregled', n: 0 })
   const go = (to: GoTo) => {
     setNav((s) => ({ ...to, n: s.n + 1 }))
@@ -44,7 +44,7 @@ function WebPage() {
         <Stat tone={fresh.length ? 'warn' : 'good'} icon={Inbox} label="Novi upiti" value={String(fresh.length)} hint="čekaju poziv" />
         <Stat label="U obradi" value={String(inq.filter((i) => i.status === 'u_obradi').length)} hint="neko je preuzeo" />
         <Stat label="Zakazani posjeti i mjerenja" value={String(inq.filter((i) => i.kind !== 'ponuda' && i.status !== 'zatvoreno').length)} hint="otvoreni termini" />
-        {canProducts && <Stat label="Artikala na webu" value={String(r.data!.products.filter((p) => p.web.visible && p.hasImage).length)} hint={`od ${r.data!.products.length} aktivnih`} />}
+        {canProducts && <Stat label="Artikala na webu" value={String(r.data!.items.filter((p) => p.visible && p.imageIds.length).length)} hint={`od ${r.data!.items.length} upisanih`} />}
       </div>
       {r.error && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{r.error}</p>}
       <div className="mb-4 overflow-x-auto">
@@ -67,7 +67,7 @@ function WebPage() {
       ) : tab === 'upiti' || !canProducts ? (
         <Inquiries list={inq} busy={r.busy} run={r.run} />
       ) : (
-        <Products key={nav.n} list={r.data.products} busy={r.busy} run={r.run} initialFilter={nav.filter} />
+        <Items key={nav.n} list={r.data.items} busy={r.busy} run={r.run} initialFilter={nav.filter} />
       )}
     </div>
   )
@@ -141,69 +141,66 @@ function InquiryRow({ i, busy, run }: { i: WebInquiryRow; busy: boolean; run: Ru
   )
 }
 
-const FILTERS: Record<ProductFilter, string> = { svi: 'Svi artikli', naWebu: 'Na webu', istaknuti: 'Istaknuti na naslovnici', akcija: 'Na akciji' }
+const FILTERS: Record<ProductFilter, string> = { svi: 'Svi', naWebu: 'Vidljivi na webu', istaknuti: 'Istaknuti na naslovnici', akcija: 'Na akciji' }
+const MAX_IMAGES = 6
 
-function Products({ list, busy, run, initialFilter = 'naWebu' }: { list: WebAdminProduct[]; busy: boolean; run: Run; initialFilter?: ProductFilter }) {
+function Items({ list, busy, run, initialFilter = 'svi' }: { list: WebItemRow[]; busy: boolean; run: Run; initialFilter?: ProductFilter }) {
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState<ProductFilter>(initialFilter)
-  const [editId, setEditId] = useState<string | null>(null)
-  const edit = editId ? list.find((p) => p.productId === editId) ?? null : null
+  const [edit, setEdit] = useState<WebItemRow | 'novi' | null>(null)
   const count = (f: ProductFilter) => list.filter((p) => matches(p, f)).length
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return list.filter((p) => matches(p, filter) && (!s || `${p.name} ${p.sku} ${p.category}`.toLowerCase().includes(s)))
+    return list.filter((p) => matches(p, filter) && (!s || `${p.name} ${p.typeLabel}`.toLowerCase().includes(s)))
   }, [list, q, filter])
   const paged = usePaged(shown, `${q}|${filter}`)
   return (
     <>
       <Card className="mb-4">
-        <div className="text-sm font-semibold">Kako staviti artikal na web</div>
-        <ol className="mt-1 grid gap-1 text-sm text-walnut-600 sm:grid-cols-4">
-          <li><b className="text-copper-700">1.</b> Odaberi „Svi artikli” i upiši naziv.</li>
-          <li><b className="text-copper-700">2.</b> Klikni „Stavi na web”.</li>
-          <li><b className="text-copper-700">3.</b> Dodaj fotografiju i odaberi prostoriju.</li>
-          <li><b className="text-copper-700">4.</b> „Spremi” — na webu je za najviše 30 min.</li>
-        </ol>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold">Artikli koje prikazujemo na web stranici</div>
+            <p className="mt-1 text-sm text-walnut-600">Ovo je <b>poseban popis samo za web</b> — nije povezan s Artiklima, zalihama ni cijenama u aplikaciji. Što ovdje upišeš, to kupci vide na webu (za najviše 30 min).</p>
+          </div>
+          <Button variant="copper" onClick={() => setEdit('novi')}><Plus className="size-4" /> Novi artikal za web</Button>
+        </div>
       </Card>
       <Card flush>
         <div className="flex flex-wrap items-center gap-2 border-b border-walnut-200/70 px-5 py-3">
           {(Object.keys(FILTERS) as ProductFilter[]).map((f) => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{FILTERS[f]} ({count(f)})</Chip>)}
-          <label className="relative ml-auto min-w-56 flex-1 sm:max-w-xs"><Search className="absolute left-2.5 top-2.5 size-4 text-walnut-400" /><input className={`${inputCls} pl-8`} placeholder="Traži artikal po nazivu ili šifri…" value={q} onChange={(e) => setQ(e.target.value)} /></label>
+          <label className="relative ml-auto min-w-56 flex-1 sm:max-w-xs"><Search className="absolute left-2.5 top-2.5 size-4 text-walnut-400" /><input className={`${inputCls} pl-8`} placeholder="Traži po nazivu…" value={q} onChange={(e) => setQ(e.target.value)} /></label>
         </div>
         {shown.length === 0 ? (
-          <EmptyState icon={Globe} title={filter === 'svi' ? 'Nema takvog artikla' : 'Ovdje još nema artikala'}>
-            {filter === 'svi' ? 'Provjeri naziv ili šifru.' : <>Odaberi „Svi artikli”, pronađi artikal i klikni „Stavi na web”.</>}
+          <EmptyState icon={Globe} title={list.length ? 'Nema takvog artikla' : 'Još nema artikala za web'}>
+            {list.length ? 'Provjeri naziv ili odaberi „Svi”.' : <>Klikni „Novi artikal za web”, dodaj fotografije, naziv i cijenu. Dok ovdje nema ničega, web prikazuje primjere.</>}
           </EmptyState>
         ) : (
           <ul className="divide-y divide-walnut-100">
-            {paged.rows.map((p) => {
-              const live = p.web.visible && p.hasImage
-              return (
-                <li key={p.productId} className="flex items-center gap-3 px-5 py-2.5">
-                  {p.thumbId ? <img src={`/api/slike/${p.thumbId}`} alt="" className="size-12 rounded-lg object-cover" loading="lazy" /> : <span className="grid size-12 place-items-center rounded-lg bg-walnut-100 text-center text-[10px] leading-tight text-walnut-500">bez<br />slike</span>}
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">{p.name} {p.web.featured && <Star className="inline size-3.5 fill-amber-400 text-amber-500" />}</div>
-                    <div className="text-xs text-walnut-500">{p.sku} · {p.category}{p.web.configured ? ` · ${WEB_ROOMS[p.web.room as keyof typeof WEB_ROOMS]}` : ''}{p.web.oldPrice ? ` · akcija (bilo ${money(p.web.oldPrice)})` : ''}</div>
-                  </div>
-                  <div className="hidden text-sm font-semibold sm:block">{money(p.price)}</div>
-                  {live ? <Badge tone="good"><Eye className="size-3" /> na webu</Badge> : p.web.visible ? <Badge tone="warn">fali fotografija</Badge> : <Badge><EyeOff className="size-3" /> nije na webu</Badge>}
-                  <Button variant={p.web.visible ? 'outline' : 'copper'} size="sm" onClick={() => setEditId(p.productId)}>{p.web.visible ? 'Uredi' : 'Stavi na web'}</Button>
-                </li>
-              )
-            })}
+            {paged.rows.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 px-5 py-2.5">
+                {p.imageIds[0] ? <img src={`/api/web/mediji/${p.imageIds[0]}`} alt="" className="size-12 rounded-lg object-cover" loading="lazy" /> : <span className="grid size-12 place-items-center rounded-lg bg-walnut-100 text-center text-[10px] leading-tight text-walnut-500">bez<br />slike</span>}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold">{p.name} {p.featured && <Star className="inline size-3.5 fill-amber-400 text-amber-500" />}</div>
+                  <div className="text-xs text-walnut-500">{[p.typeLabel, WEB_ROOMS[p.room as keyof typeof WEB_ROOMS], WEB_AVAIL[p.avail as keyof typeof WEB_AVAIL], p.imageIds.length > 1 ? `${p.imageIds.length} fotografije` : ''].filter(Boolean).join(' · ')}</div>
+                </div>
+                <div className="hidden text-right text-sm font-semibold sm:block">{money(p.price)}{p.oldPrice ? <div className="text-xs font-normal text-walnut-400 line-through">{money(p.oldPrice)}</div> : null}</div>
+                {p.visible && p.imageIds.length ? <Badge tone="good"><Eye className="size-3" /> na webu</Badge> : <Badge><EyeOff className="size-3" /> skriven</Badge>}
+                <Button variant="outline" size="sm" onClick={() => setEdit(p)}>Uredi</Button>
+              </li>
+            ))}
           </ul>
         )}
         <Pager {...paged} className="border-t border-walnut-100 px-5 py-3" />
       </Card>
-      {edit && <ProductDialog p={edit} busy={busy} run={run} onClose={() => setEditId(null)} />}
+      {edit && <ItemDialog p={edit === 'novi' ? null : edit} busy={busy} run={run} onClose={() => setEdit(null)} />}
     </>
   )
 }
 
-function matches(p: WebAdminProduct, f: ProductFilter) {
-  if (f === 'naWebu') return p.web.visible
-  if (f === 'istaknuti') return p.web.visible && p.web.featured
-  if (f === 'akcija') return p.web.visible && !!p.web.oldPrice && p.web.oldPrice > p.price
+function matches(p: WebItemRow, f: ProductFilter) {
+  if (f === 'naWebu') return p.visible && p.imageIds.length > 0
+  if (f === 'istaknuti') return p.visible && p.featured
+  if (f === 'akcija') return p.visible && !!p.oldPrice && p.oldPrice > p.price
   return true
 }
 
@@ -216,86 +213,113 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   )
 }
 
-function ProductDialog({ p, busy, run, onClose }: { p: WebAdminProduct; busy: boolean; run: Run; onClose: () => void }) {
-  const [v, setV] = useState({ ...p.web, visible: p.web.configured ? p.web.visible : true, oldPrice: p.web.oldPrice ? String(p.web.oldPrice) : '' })
+const EMPTY = { name: '', typeLabel: '', room: 'dnevni-boravak', style: 'moderni', color: 'svijetla', material: 'tkanina', avail: 'stanje', price: '', oldPrice: '', description: '', dimensions: '', materials: '', personal: '', swatches: '', slug: '', featured: false, visible: true }
+const num = (s: string) => Number(s.replace(/\s|KM/gi, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')) || 0
+
+function ItemDialog({ p, busy, run, onClose }: { p: WebItemRow | null; busy: boolean; run: Run; onClose: () => void }) {
+  const [v, setV] = useState(() => (p ? { ...EMPTY, ...p, price: String(p.price), oldPrice: p.oldPrice ? String(p.oldPrice) : '' } : EMPTY))
+  const [images, setImages] = useState<string[]>(p?.imageIds ?? [])
   const [more, setMore] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploading, setUploading] = useState(0)
   const [over, setOver] = useState(false)
   const [err, setErr] = useState('')
   const file = useRef<HTMLInputElement>(null)
   const set = <K extends keyof typeof v>(k: K, val: (typeof v)[K]) => setV((s) => ({ ...s, [k]: val }))
-  const txt = (k: 'typeLabel' | 'dimensions' | 'materials' | 'personal' | 'swatches' | 'slug', label: string, hint?: string) => (
-    <Field label={label} hint={hint}><input className={inputCls} value={v[k]} onChange={(e) => set(k, e.target.value)} /></Field>
+  const txt = (k: 'typeLabel' | 'dimensions' | 'materials' | 'personal' | 'swatches' | 'slug', label: string, hint?: string, ph?: string) => (
+    <Field label={label} hint={hint}><input className={inputCls} value={v[k]} placeholder={ph} onChange={(e) => set(k, e.target.value)} /></Field>
   )
-  const old = Number(v.oldPrice.replace(',', '.')) || 0
+  const price = num(v.price)
+  const old = num(v.oldPrice)
+  const slug = v.slug || p?.slug || '…'
   const where = [
     { on: true, text: `Katalog → ${WEB_ROOMS[v.room as keyof typeof WEB_ROOMS]}`, href: `${WEB_URL}/namjestaj/${v.room}/` },
-    { on: true, text: 'Vlastita stranica artikla', href: `${WEB_URL}/namjestaj/${v.room}/${v.slug}/` },
+    { on: !!p, text: 'Vlastita stranica artikla', href: `${WEB_URL}/namjestaj/${v.room}/${slug}/` },
     { on: v.featured, text: 'Naslovnica → Izdvojeno iz salona', href: `${WEB_URL}/` },
-    { on: old > p.price, text: `Akcije (precrtano ${money(old)})`, href: `${WEB_URL}/akcije/` },
+    { on: old > price && price > 0, text: `Akcije (precrtano ${money(old)})`, href: `${WEB_URL}/akcije/` },
   ].filter((w) => w.on)
 
-  const upload = async (f?: File) => {
-    if (!f) return
+  const upload = async (list?: FileList | null) => {
+    const files = Array.from(list ?? []).slice(0, MAX_IMAGES - images.length)
+    if (!files.length) return
     setErr('')
-    setUploading(true)
+    setUploading(files.length)
     try {
-      const img = await prepareImage(f)
-      await run(() => setProductImageFn({ data: { productId: p.productId, image: img } }), 'Fotografija je spremljena (vidi se i u Artiklima).')
+      for (const f of files) {
+        const img = await prepareImage(f, true)
+        const r = await run(() => uploadWebItemImageFn({ data: { image: img.image } }))
+        if (r) setImages((s) => [...s, r.id])
+        setUploading((n) => n - 1)
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Fotografija nije spremljena.')
     } finally {
-      setUploading(false)
+      setUploading(0)
       if (file.current) file.current.value = ''
     }
   }
+  const move = (i: number) => setImages((s) => [s[i], ...s.filter((_, j) => j !== i)])
+  const remove = (i: number) => setImages((s) => s.filter((_, j) => j !== i))
+
   const save = async () => {
     setErr('')
-    if (v.visible && !p.hasImage) return setErr('Prvo dodaj fotografiju — bez nje artikal ne može na web.')
-    if (old && old <= p.price) return setErr(`Stara cijena mora biti veća od trenutne (${money(p.price)}).`)
-    if (await run(() => saveWebProductFn({ data: { productId: p.productId, name: p.name, ...v, oldPrice: old || null } }), v.visible ? 'Spremljeno. Na webu je za najviše 30 minuta.' : 'Spremljeno. Artikal je skriven s weba.')) onClose()
+    if (v.name.trim().length < 2) return setErr('Upiši naziv artikla.')
+    if (!price) return setErr('Upiši cijenu u KM.')
+    if (old && old <= price) return setErr(`Stara cijena mora biti veća od cijene (${money(price)}) — ili ostavi prazno.`)
+    if (v.visible && !images.length) return setErr('Dodaj barem jednu fotografiju (korak 1).')
+    const ok = await run(() => saveWebItemFn({ data: { ...v, id: p?.id, price, oldPrice: old || null, imageIds: images } }), v.visible ? 'Spremljeno. Na webu je za najviše 30 minuta.' : 'Spremljeno. Artikal je skriven s weba.')
+    if (ok) onClose()
+  }
+  const del = async () => {
+    if (!p || !confirm(`Obrisati „${p.name}” s weba? Fotografije se brišu, ovo se ne može vratiti.`)) return
+    if (await run(() => deleteWebItemFn({ data: { id: p.id, name: p.name } }), 'Artikal je obrisan s weba.')) onClose()
   }
 
   return (
-    <Modal title={p.web.visible ? `Na webu: ${p.name}` : `Stavi na web: ${p.name}`} subtitle={`${p.sku} · ${money(p.price)} (cijena i naziv iz Artikala)`} onClose={onClose} help="web" wide
+    <Modal title={p ? `Artikal za web: ${p.name}` : 'Novi artikal za web'} subtitle="Poseban popis samo za web — ne mijenja Artikle u aplikaciji" onClose={onClose} help="web" wide
       footer={<div className="flex flex-wrap items-center justify-end gap-2">
-        {err && <span className="mr-auto text-sm text-rose-600">{err}</span>}
+        {p && <Button variant="ghost" className="mr-auto text-rose-700" disabled={busy} onClick={del}><Trash2 className="size-4" /> Obriši</Button>}
+        {err && <span className={`${p ? '' : 'mr-auto '}text-sm text-rose-600`}>{err}</span>}
         <Button variant="ghost" onClick={onClose}>Odustani</Button>
-        <Button variant="copper" disabled={busy || uploading} onClick={save}>Spremi</Button>
+        <Button variant="copper" disabled={busy || uploading > 0} onClick={save}>Spremi</Button>
       </div>}>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div className="min-w-0 space-y-4">
-          <Step n={1} title="Fotografija">
+          <Step n={1} title={`Fotografije (do ${MAX_IMAGES})`}>
             <div
-              className={`flex flex-wrap items-center gap-4 rounded-xl ${over ? 'ring-2 ring-copper-400' : ''}`}
+              className={`flex flex-wrap items-start gap-3 rounded-xl ${over ? 'ring-2 ring-copper-400' : ''}`}
               onDragOver={(e) => { e.preventDefault(); setOver(true) }}
               onDragLeave={() => setOver(false)}
-              onDrop={(e) => { e.preventDefault(); setOver(false); upload(e.dataTransfer.files?.[0]) }}
+              onDrop={(e) => { e.preventDefault(); setOver(false); upload(e.dataTransfer.files) }}
             >
-              {p.thumbId ? (
-                <img src={`/api/slike/${p.thumbId}`} alt="" className="size-32 rounded-xl object-cover ring-1 ring-walnut-200" />
-              ) : (
-                <button type="button" onClick={() => file.current?.click()} className="grid size-32 place-items-center rounded-xl border-2 border-dashed border-copper-300 bg-copper-50/50 text-center text-xs font-semibold text-copper-700 hover:bg-copper-50">
-                  <span><ImagePlus className="mx-auto mb-1 size-6" />Klikni ili<br />povuci fotografiju</span>
+              {images.map((id, i) => (
+                <div key={id} className="relative">
+                  <img src={`/api/web/mediji/${id}`} alt="" className={`size-28 rounded-xl object-cover ring-1 ${i === 0 ? 'ring-2 ring-copper-500' : 'ring-walnut-200'}`} />
+                  {i === 0 ? <span className="absolute left-1.5 top-1.5 rounded bg-copper-600 px-1.5 py-0.5 text-[10px] font-bold text-white">glavna</span>
+                    : <button type="button" onClick={() => move(i)} className="absolute inset-x-1.5 bottom-1.5 rounded bg-white/90 px-1 py-0.5 text-[10px] font-semibold text-walnut-800 shadow hover:bg-white">učini glavnom</button>}
+                  <button type="button" onClick={() => remove(i)} title="Ukloni fotografiju" className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-white/90 text-rose-700 shadow hover:bg-white"><X className="size-3.5" /></button>
+                </div>
+              ))}
+              {images.length < MAX_IMAGES && (
+                <button type="button" disabled={uploading > 0} onClick={() => file.current?.click()} className="grid size-28 place-items-center rounded-xl border-2 border-dashed border-copper-300 bg-copper-50/50 text-center text-xs font-semibold text-copper-700 hover:bg-copper-50">
+                  {uploading ? <span><Loader2 className="mx-auto mb-1 size-6 animate-spin" />Spremam…</span> : <span><ImagePlus className="mx-auto mb-1 size-6" />Klikni ili<br />povuci fotografije</span>}
                 </button>
               )}
-              <div className="min-w-0 flex-1 text-sm text-walnut-600">
-                <Button variant={p.hasImage ? 'outline' : 'copper'} size="sm" disabled={uploading} onClick={() => file.current?.click()}>
-                  {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} {uploading ? 'Spremam…' : p.hasImage ? 'Zamijeni fotografiju' : 'Dodaj fotografiju'}
-                </Button>
-                <p className="mt-2 text-xs">Fotografija s mobitela je u redu — sama se smanji. Najbolje: cijeli komad, svijetlo, bez nereda okolo. Ista fotografija se vidi i u Artiklima.</p>
-              </div>
-              <input ref={file} type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+              <input ref={file} type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
             </div>
+            <p className="mt-2 text-xs text-walnut-600">Fotografije s mobitela su u redu — same se smanje. Prva je glavna (vidi se u katalogu). Najbolje: cijeli komad, svijetlo, bez nereda okolo.</p>
           </Step>
-          <Step n={2} title="Gdje se prikazuje">
-            <div className="mb-3 flex flex-wrap gap-2">
+          <Step n={2} title="Naziv i cijena">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Naziv na webu"><input className={inputCls} value={v.name} maxLength={90} onChange={(e) => set('name', e.target.value)} placeholder="npr. Grande ugaona garnitura" /></Field>
+              {txt('typeLabel', 'Vrsta', 'kratko, ispod naziva', 'npr. Ugaona garnitura')}
+              <Field label="Cijena (KM, s PDV-om)"><input className={inputCls} inputMode="decimal" value={v.price} onChange={(e) => set('price', e.target.value)} placeholder="npr. 2490" /></Field>
+              <Field label="Stara cijena — samo za akciju" hint="prazno = nije na akciji"><input className={inputCls} inputMode="decimal" value={v.oldPrice} onChange={(e) => set('oldPrice', e.target.value)} placeholder="npr. 2990" /></Field>
+              <Select label="Prostorija (stranica kataloga)" value={v.room} onChange={(x) => set('room', x)} options={opts(WEB_ROOMS)} />
+              <Select label="Dostupnost" value={v.avail} onChange={(x) => set('avail', x)} options={opts(WEB_AVAIL)} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
               <Chip active={v.visible} onClick={() => set('visible', !v.visible)}>{v.visible ? '✓ Vidljiv na webu' : 'Vidljiv na webu'}</Chip>
               <Chip active={v.featured} onClick={() => set('featured', !v.featured)}>{v.featured ? '★ Istaknut na naslovnici' : '☆ Istaknut na naslovnici'}</Chip>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Select label="Prostorija (stranica kataloga)" value={v.room} onChange={(x) => set('room', x)} options={opts(WEB_ROOMS)} />
-              <Field label="Stara cijena — samo za akciju" hint={`Veća od ${money(p.price)}; prazno = nije na akciji`}><input className={inputCls} inputMode="decimal" value={v.oldPrice} onChange={(e) => set('oldPrice', e.target.value)} placeholder="npr. 3490" /></Field>
             </div>
           </Step>
           <Step n={3} title="Opis za kupce">
@@ -310,10 +334,9 @@ function ProductDialog({ p, busy, run, onClose }: { p: WebAdminProduct; busy: bo
                 <Select label="Stil (filter)" value={v.style} onChange={(x) => set('style', x)} options={opts(WEB_STYLES)} />
                 <Select label="Boja (filter)" value={v.color} onChange={(x) => set('color', x)} options={opts(WEB_COLORS)} />
                 <Select label="Materijal (filter)" value={v.material} onChange={(x) => set('material', x)} options={opts(WEB_MATERIALS)} />
-                {txt('typeLabel', 'Vrsta (na webu)', `npr. „Ugaona garnitura”; prazno = ${p.category}`)}
                 {txt('personal', 'Personalizacija', 'npr. lijevi ili desni ugao, 12 boja tkanine')}
                 {txt('swatches', 'Boje (kružići)', 'hex kodovi odvojeni zarezom, npr. #E8E2D8, #B9B2A6')}
-                {txt('slug', 'Adresa na webu', `…/namjestaj/${v.room}/${v.slug}/`)}
+                {txt('slug', 'Adresa na webu', 'prazno = iz naziva')}
               </div>
             )}
           </Step>
@@ -322,14 +345,15 @@ function ProductDialog({ p, busy, run, onClose }: { p: WebAdminProduct; busy: bo
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-walnut-500">Gdje će se vidjeti</div>
           {!v.visible ? (
             <p className="text-sm text-walnut-600">Nigdje — artikal je skriven. Uključi „Vidljiv na webu”.</p>
-          ) : !p.hasImage ? (
+          ) : !images.length ? (
             <p className="text-sm text-amber-800">Nigdje dok ne dodaš fotografiju (korak 1).</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {where.map((w) => <li key={w.text}><a href={w.href} target="_blank" rel="noopener" className="inline-flex items-start gap-1.5 text-walnut-800 hover:text-copper-700"><ExternalLink className="mt-0.5 size-3.5 shrink-0 text-copper-600" />{w.text}</a></li>)}
             </ul>
           )}
-          <p className="mt-3 border-t border-walnut-200 pt-3 text-[11px] text-walnut-500">Cijena, naziv i dostupnost („odmah sa zalihe” / „po narudžbi”) dolaze same iz aplikacije. Linkovi rade nakon osvježavanja weba (do 30 min).</p>
+          <p className="mt-3 border-t border-walnut-200 pt-3 text-[11px] text-walnut-500">Naziv, cijena i dostupnost upisuju se ovdje i ne mijenjaju se kad se promijeni nešto u Artiklima. Linkovi rade nakon osvježavanja weba (do 30 min).</p>
+          {p?.updatedBy && <p className="mt-2 text-[11px] text-walnut-400">Zadnja izmjena: {p.updatedBy}{p.updatedAt ? `, ${date(p.updatedAt.slice(0, 10))}` : ''}</p>}
         </aside>
       </div>
     </Modal>

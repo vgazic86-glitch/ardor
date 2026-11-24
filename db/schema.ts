@@ -982,6 +982,39 @@ export const webArticles = pgTable('web_articles', {
 })
 
 /**
+ * Artikli za web stranicu — vlastiti popis, NIJE povezan s Artiklima (katalogom) aplikacije:
+ * naziv, cijena, fotografije i dostupnost upisuju se ovdje i idu samo na web.
+ */
+export const webItems = pgTable('web_items', {
+  id: serial().primaryKey(),
+  slug: text().notNull().unique(),
+  name: text().notNull(),
+  /** Vrsta na webu, npr. „Ugaona garnitura”. */
+  typeLabel: text('type_label').notNull().default(''),
+  room: text().notNull().default('dnevni-boravak'),
+  style: text().notNull().default('moderni'),
+  color: text().notNull().default('svijetla'),
+  material: text().notNull().default('tkanina'),
+  /** stanje = odmah sa zalihe | narudzba = po narudžbi */
+  avail: text().notNull().default('stanje'),
+  price: money('price').notNull(),
+  /** Stara (precrtana) cijena za akciju; null = nema akcije. */
+  oldPrice: money('old_price'),
+  description: text().notNull().default(''),
+  dimensions: text().notNull().default(''),
+  materials: text().notNull().default(''),
+  personal: text().notNull().default(''),
+  swatches: text().notNull().default(''),
+  /** Fotografije (id-jevi iz files), zarezom, prva je glavna. */
+  imageIds: text('image_ids').notNull().default(''),
+  featured: boolean().notNull().default(false),
+  visible: boolean().notNull().default(true),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+  updatedBy: text('updated_by').notNull().default(''),
+})
+
+/**
  * Trezor pristupnih podataka (samo administrator): službeni mailovi, hosting, banke…
  * Lozinka i bilješka su šifrirane ključem iz lozinke trezora (server/vaultCrypto.ts).
  */

@@ -685,13 +685,21 @@ export const createTransferFn = createServerFn({ method: 'POST' }).middleware([o
   .validator(pass<transfers.TransferInput>())
   .handler(({ data }) => transfers.createTransfer(data))
 
-/** Web stranica (ardornamjestaj.com): upiti s weba (svi osim dostave) i artikli na webu (operativa i više). */
+/** Web stranica (ardornamjestaj.com): upiti s weba (svi osim dostave) i artikli za web (vlastiti popis, svi osim dostave). */
 export const getWebFn = createServerFn({ method: 'GET' }).middleware([authed])
   .handler(({ context }) => web.webAdminData(context.user))
 
-export const saveWebProductFn = createServerFn({ method: 'POST' }).middleware([operations])
-  .validator(pass<web.WebSaveInput>())
-  .handler(async ({ data }) => (await web.saveWebProduct(data), true))
+export const saveWebItemFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<web.WebItemSave>())
+  .handler(({ data, context }) => web.saveWebItem(context.user, data))
+
+export const deleteWebItemFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ id: string; name?: string }>())
+  .handler(async ({ data, context }) => (await web.deleteWebItem(context.user, data), true))
+
+export const uploadWebItemImageFn = createServerFn({ method: 'POST' }).middleware([authed])
+  .validator(pass<{ image: images.ImagePart }>())
+  .handler(({ data, context }) => web.uploadWebItemImage(context.user, data.image))
 
 export const setWebInquiryStatusFn = createServerFn({ method: 'POST' }).middleware([authed])
   .validator(pass<{ id: string; status: string; note?: string; name?: string }>())

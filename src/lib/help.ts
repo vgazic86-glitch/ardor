@@ -300,7 +300,7 @@ export const HELP: HelpTopic[] = [
     fields: [
       'Pregled weba: popis svih stranica weba, što je na njima i gumb „Uredi” koji vodi tačno na mjesto gdje se to mijenja.',
       'Upiti: status (Novo, U obradi, Zatvoreno), bilješka, „Dodaj u kupce”.',
-      'Artikli na webu: prostorija, stil, boja, materijal, opis, mjere, stara cijena za akciju, „Vidljiv na webu”.',
+      'Artikli na webu: poseban popis samo za web (nije povezan s Artiklima aplikacije) — fotografije, naziv, cijena, stara cijena za akciju, prostorija, dostupnost, opis, „Vidljiv na webu”.',
     ],
     details: [
       {
@@ -317,11 +317,13 @@ export const HELP: HelpTopic[] = [
       {
         h: 'Artikli na webu',
         items: [
-          'Artikli na webu → „Svi artikli” → upišite naziv → „Stavi na web”. U prozoru: 1. fotografija (klik ili povucite sliku; s mobitela je u redu), 2. gdje se prikazuje (prostorija, istaknut, akcija), 3. opis. Desno piše na kojim stranicama weba će se vidjeti.',
-          'Na web ide samo artikal s fotografijom i kvačicom „Vidljiv na webu”. Naziv i cijena dolaze iz Artikala; fotografija dodana ovdje vidi se i u Artiklima.',
-          'Dostupnost se računa sama: ima li slobodne zalihe (nije rezervirana za prodaje) — „Odmah sa zalihe”, inače „Po narudžbi”. Količine se na webu ne vide, ni nabavne cijene.',
-          'Za akciju upišite staru cijenu (veću od trenutne) — web je precrta i artikal stavi na stranicu Akcije.',
+          'Artikli na webu su POSEBAN popis samo za web stranicu. Nisu povezani s Artiklima, zalihama ni cijenama u aplikaciji — promjena u Artiklima ne mijenja web, i obrnuto.',
+          'Novi artikal: Artikli na webu → „Novi artikal za web”. U prozoru: 1. fotografije (do 6; klik ili povucite; s mobitela je u redu; prva je glavna), 2. naziv, vrsta, cijena u KM s PDV-om, prostorija i dostupnost, 3. opis i mjere. Desno piše na kojim stranicama weba će se vidjeti.',
+          'Na web ide samo artikal s barem jednom fotografijom i kvačicom „Vidljiv na webu”. Da ga privremeno sklonite, maknite kvačicu; „Obriši” ga trajno briše zajedno s fotografijama.',
+          'Dostupnost birate sami: „Odmah sa zalihe” ili „Po narudžbi”.',
+          'Za akciju upišite staru cijenu (veću od cijene) — web je precrta i artikal stavi na stranicu Akcije.',
           '„Istaknut” artikal ide na početnu stranicu weba.',
+          'Artikle za web uređuju svi zaposleni osim dostave; svaka izmjena se vidi u Dnevniku izmjena.',
           'Promjene se na webu vide nakon ponovne izgradnje stranice (nekoliko minuta).',
         ],
       },

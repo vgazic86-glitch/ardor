@@ -497,7 +497,7 @@ export function WebOverview({ go, canProducts, newInquiries }: { go: Go; canProd
     {
       title: 'Katalog',
       path: '/namjestaj/',
-      note: 'Artikli s fotografijom i kvačicom „Vidljiv na webu”. Cijena i naziv dolaze iz Artikala.',
+      note: 'Artikli s fotografijom i kvačicom „Vidljiv na webu”. Upisuju se u kartici „Artikli na webu” — poseban popis, nije povezan s Artiklima u aplikaciji.',
       rows: [
         { label: 'Artikala na webu', value: <>{c.total}{c.noImage ? <span className="text-amber-700"> · {c.noImage} označenih bez fotografije se ne vidi</span> : null}</>, edit: prod({ tab: 'artikli', filter: 'naWebu' }) },
         { label: 'Po prostorijama', value: Object.keys(c.byRoom).length ? Object.entries(c.byRoom).map(([k, n]) => `${WEB_ROOMS[k as keyof typeof WEB_ROOMS] ?? k} ${n}`).join(' · ') : <span className="text-walnut-400">još nijedan artikal — web prikazuje primjere</span>, edit: prod({ tab: 'artikli', filter: 'svi' }) },
@@ -549,7 +549,7 @@ export function WebOverview({ go, canProducts, newInquiries }: { go: Go; canProd
                     <div className="text-xs text-walnut-600">{row.value}</div>
                   </div>
                   {row.edit === 'zakljucano' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-walnut-400" title="Artikle na webu uređuje operativa, voditelj, uprava ili admin"><Lock className="size-3" /> operativa / voditelj</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-walnut-400" title="Nemate pristup artiklima za web"><Lock className="size-3" /> zaključano</span>
                   ) : row.edit ? (
                     <Button variant="outline" size="sm" onClick={() => go((row.edit as { to: GoTo }).to)}><Pencil className="size-3.5" /> {(row.edit as { label?: string }).label ?? 'Uredi'}</Button>
                   ) : null}

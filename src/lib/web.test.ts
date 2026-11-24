@@ -81,3 +81,31 @@ describe('web: CORS i ograničenje', () => {
     expect(lim('a', 1500)).toBe(true)
   })
 })
+
+describe('web: artikli za web (vlastiti popis)', () => {
+  it('čita cijenu u domaćem zapisu', async () => {
+    const { parsePrice } = await import('./web')
+    expect(parsePrice('1.290,50')).toBe(1290.5)
+    expect(parsePrice('1290')).toBe(1290)
+    expect(parsePrice('2 490 KM')).toBe(2490)
+    expect(parsePrice('abc')).toBe(0)
+    expect(parsePrice(-5)).toBe(0)
+  })
+  it('traži naziv, cijenu i fotografiju za vidljiv artikal', async () => {
+    const { cleanWebItem } = await import('./web')
+    expect(cleanWebItem({ name: '', price: 100, imageIds: ['1'] })).toEqual({ error: 'Upiši naziv artikla.' })
+    expect('error' in cleanWebItem({ name: 'Grande', price: '', imageIds: ['1'] })).toBe(true)
+    expect('error' in cleanWebItem({ name: 'Grande', price: 100 })).toBe(true)
+    expect('ok' in cleanWebItem({ name: 'Grande', price: 100, visible: false })).toBe(true)
+    expect('error' in cleanWebItem({ name: 'Grande', price: 1000, oldPrice: 900, imageIds: ['1'] })).toBe(true)
+  })
+  it('čisti fotografije i dostupnost', async () => {
+    const { cleanWebItem } = await import('./web')
+    const r = cleanWebItem({ name: 'Grande garnitura', price: '2.490', oldPrice: '2990', avail: 'xx', imageIds: ['5', '5', 'x', '7'] })
+    if (!('ok' in r)) throw new Error(r.error)
+    expect(r.ok.imageIds).toBe('5,7')
+    expect(r.ok.avail).toBe('stanje')
+    expect(r.ok.oldPrice).toBe(2990)
+    expect(r.ok.slug).toBe('grande-garnitura')
+  })
+})
