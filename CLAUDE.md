@@ -2,7 +2,7 @@
 
 Interna web aplikacija salona namještaja **ARDOR** (Banja Luka): prodaja, narudžbe kupaca, nabava od dobavljača, zalihe, dostave i montaža, reklamacije, kupci, izvještaji, troškovi i zarada, kadrovska, zadaci, korisnici i dnevnik izmjena.
 
-- Uživo: https://ardor-4mdu.onrender.com (Render, Frankfurt). **Push na `main` = objava uživo** (Render auto-deploy).
+- Uživo: https://app.ardornamjestaj.com (vlastiti Hetzner server, Njemačka). **Push na `main` = objava uživo** (server sam preuzme novu verziju za ~1–3 min). Render (`ardor-4mdu.onrender.com`) se od 25. 11. 2026. više ne koristi (stara kopija; web i sve veze idu na Hetzner).
 - Repo: https://github.com/vgazic86-glitch/ardor
 - Vlasnik projekta: Vladimir (korisnik `vladimir`, uloga admin). Nije programer: objašnjavaj jednostavno.
 - Dokumenti, priručnici i alati koji **nisu u repou**: `../ardor-handoff/` (vidi `HANDOFF.md` tamo).
@@ -17,7 +17,7 @@ Interna web aplikacija salona namještaja **ARDOR** (Banja Luka): prodaja, narud
 
 ## Naredbe
 
-Node 22.13+ ili 24 (Render koristi 24), pnpm **12.21.0** (`npm i -g pnpm@12.21.0`).
+Node 22.13+ ili 24 (server koristi 24), pnpm **12.21.0** (`npm i -g pnpm@12.21.0`).
 
 ```bash
 pnpm install
@@ -25,20 +25,20 @@ pnpm migrate          # primijeni SQL migracije na DATABASE_URL (čita .env)
 pnpm dev              # razvoj s hot reloadom, http://localhost:3000 (čita .env)
 pnpm typecheck        # tsc --noEmit — mora proći bez grešaka
 pnpm test             # vitest (src/**/*.test.ts) — trenutno 170 testova
-pnpm build:node       # produkcijski build za Node/Render (DEPLOY_TARGET=node)
-pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao Render
-pnpm start            # isto, ali za Render (PORT i DATABASE_URL iz okruženja) — lokalno ne treba
+pnpm build:node       # produkcijski build za Node server (DEPLOY_TARGET=node)
+pnpm start:lokalno    # migracije + produkcijski server iz dist/ na :3000 (čita .env) — kao na serveru
+pnpm start            # isto, ali za server (PORT i DATABASE_URL iz okruženja) — lokalno ne treba
 npx drizzle-kit generate --name kratki_opis   # nova migracija iz db/schema.ts
 ```
 
 - Lokalne postavke su u `.env` (predložak `.env.example`; `.env` se ne commita). Skripte ga čitaju preko `node --env-file-if-exists=.env`.
 - `pnpm-workspace.yaml` ima `shellEmulator: true`, pa skripte (`VAR=x naredba`, `${PORT:-3000}`) rade i na Windowsu.
-- Skillovi u `.claude/skills/`: `provjera` (prije svakog commita), `objava` (push na Render), te TanStack Start upute (rute, server funkcije, loaderi).
+- Skillovi u `.claude/skills/`: `provjera` (prije svakog commita), `objava` (push na main → Hetzner), te TanStack Start upute (rute, server funkcije, loaderi).
 
 | Varijabla | Obavezno | Značenje |
 | --- | --- | --- |
 | `DATABASE_URL` | da | Postgres. Lokalno npr. `postgres://postgres:postgres@localhost:5432/ardor`. SSL se uključuje sam za render.com/neon. |
-| `PORT` | ne | port za `pnpm start` (Render ga postavlja). |
+| `PORT` | ne | port za `pnpm start` (server ga postavlja). |
 | `SESSION_SECRET` | ne | ključ za potpis sesija; bez njega se generira i sprema u `app_meta`. |
 | `ADMIN_LOZINKA` | ne | upravljačka lozinka (Kadrovska) i rezervni aktivacijski kod za admina. |
 | `GEMINI_API_KEY` | ne | AI asistent (Google Gemini, besplatni ključ iz AI Studija). Bez ključa asistent pretražuje pomoć lokalno. **Van ne idu osobni podaci** (`lib/pseudo.ts`: šifre Kupac-N/Zaposlenik-N, bez telefona i e-pošte). |
@@ -46,7 +46,7 @@ npx drizzle-kit generate --name kratki_opis   # nova migracija iz db/schema.ts
 | `RESEND_API_KEY` | ne | e-pošta (sedmični izvještaj) preko Resenda; domena ardornamjestaj.com potvrđena u Resendu. |
 | `IZVJESTAJ_TOKEN` | ne | tajni token za `POST /api/izvjestaj-sedmicni`; ista vrijednost kao GitHub secret `IZVJESTAJ_TOKEN`. |
 | `IZVJESTAJ_OD`, `APP_URL` | ne | pošiljalac (default `ARDOR izvještaji <izvjestaji@ardornamjestaj.com>`) i adresa aplikacije u poruci. |
-| `RESEND_API_URL` | ne | **samo lokalni test**: lažni Resend (npr. `http://localhost:4010`). Na Renderu se ne postavlja. |
+| `RESEND_API_URL` | ne | **samo lokalni test**: lažni Resend (npr. `http://localhost:4010`). Na serveru se ne postavlja. |
 | `WEB_ORIGINS` | ne | dodatne adrese web stranice koje smiju slati upite (CORS), zarezom; `https://www.ardornamjestaj.com`, `https://ardornamjestaj.com` i `localhost` su uvijek dopušteni. Npr. privremena `https://ardor-web.pages.dev`. |
 | `WEB_DEPLOY_HOOK` | ne | „deploy hook” adresa web stranice (Cloudflare Pages); aplikacija je pozove 2 min nakon izmjene artikla, teksta ili članka na webu. Za pregled na GitHub Pages: `https://api.github.com/repos/vgazic86-glitch/ardor-stranica/dispatches` + `WEB_DEPLOY_TOKEN`. |
 | `WEB_DEPLOY_TOKEN` | ne | GitHub token (fine-grained, samo repo ardor-stranica, Contents: read & write) za `repository_dispatch` „cms”. Bez njega pregled se osvježava svakih 30 min. |
@@ -77,7 +77,7 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 
 ## Recept: nova funkcija
 
-1. **Baza** — izmijeni `db/schema.ts`, pa `npx drizzle-kit generate --name opis`. Pregledaj generirani `migration.sql`. Migracije se primijene same pri `pnpm start` (i na Renderu). Postojeće migracije se nikad ne mijenjaju.
+1. **Baza** — izmijeni `db/schema.ts`, pa `npx drizzle-kit generate --name opis`. Pregledaj generirani `migration.sql`. Migracije se primijene same pri `pnpm start` (i na serveru). Postojeće migracije se nikad ne mijenjaju.
 2. **Server** — logika u `src/server/<podrucje>.ts`, izložena kroz `src/server/api.ts`:
    ```ts
    export const nestoFn = createServerFn({ method: 'POST' })
@@ -142,17 +142,17 @@ public/brand/           logo, knjiga grafičkih standarda, fontovi
 Detaljno u skillu `objava`. Ukratko:
 
 1. `pnpm typecheck && pnpm test && pnpm build:node` — sve mora proći.
-2. Commit s opisnom porukom, zatim **pitaj Vladimira prije `git push origin main`** (osim ako je izričito rekao „objavi”). Nikad `--force`. Push pokreće Render: `pnpm install --frozen-lockfile` → `build:node` → `npm run start` (migracije pa server).
-3. Nakon ~3–5 min provjeri https://ardor-4mdu.onrender.com (prvo učitavanje na free planu može trajati do 1 min). Ako deploy padne, pogledaj log u Render Dashboardu (servis `ardor`).
-4. Ako se mijenja `package.json`, obavezno osvježi i `pnpm-lock.yaml` (`--frozen-lockfile` na Renderu).
+2. Commit s opisnom porukom, zatim **pitaj Vladimira prije `git push origin main`** (osim ako je izričito rekao „objavi”). Nikad `--force`. Push → server u roku od minute: `pnpm install --frozen-lockfile` → `build:node` → migracije → restart.
+3. Nakon ~3 min provjeri https://app.ardornamjestaj.com. Ako objava padne, stara verzija radi dalje; log: `ssh -i ~/.ssh/ardor_hetzner root@app.ardornamjestaj.com tail -50 /home/ardor/deploy.log`.
+4. Ako se mijenja `package.json`, obavezno osvježi i `pnpm-lock.yaml` (`--frozen-lockfile` na serveru).
 
-**Hetzner (proba, selidba u tijeku)** — https://app.ardornamjestaj.com, isti push na `main` objavljuje i tamo: server svake minute provjeri GitHub (`ardor-deploy.timer` → `/home/ardor/check-deploy.sh` → `deploy.sh`: izgradnja u novu mapu `releases/`, migracije, prebacivanje `current`, provjera; ako nova ne odgovara, vraća prethodnu). Log: `/home/ardor/deploy.log`. Vraćanje ručno: `/home/ardor/rollback.sh`. Tajne su u `/home/ardor/shared/.env` (samo na serveru). Kopija baze svaku noć u 02:00 (`/home/ardor/backups`, 14 dana). Ako repo postane privatan, serveru treba GitHub deploy ključ (samo čitanje).
+**Server (Hetzner CX23, Ubuntu 24.04, Postgres 18, Caddy za HTTPS)** — svake minute provjeri GitHub (`ardor-deploy.timer` → `/home/ardor/check-deploy.sh` → `deploy.sh`: izgradnja u novu mapu `releases/`, migracije, prebacivanje `current`, provjera; ako nova ne odgovara, vraća prethodnu). Log: `/home/ardor/deploy.log`. Vraćanje ručno: `/home/ardor/rollback.sh`. Tajne su u `/home/ardor/shared/.env` (samo na serveru). Kopija baze svaku noć u 02:00 (`/home/ardor/backups`, 14 dana). Ako repo postane privatan, serveru treba GitHub deploy ključ (samo čitanje).
 
 ## Sigurnost
 
 - Repo je bio **javan** — ne commitaj `.env`, lozinke, ključeve, stvarne podatke kupaca ni dokumente iz `../ardor-handoff/`.
 - Nikad ne upisuj prave lozinke u kod, testove ni skripte. Testne račune i lozinke koristi **samo na lokalnoj bazi**, preko varijabli okruženja.
-- Produkcijsku bazu (Render) ne koristi za razvoj ni testove.
+- Produkcijsku bazu (Hetzner) ne koristi za razvoj ni testove.
 
 ## Kako radimo
 

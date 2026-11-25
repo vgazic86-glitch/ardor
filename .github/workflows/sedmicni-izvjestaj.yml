@@ -24,8 +24,8 @@ jobs:
           TOKEN: ${{ secrets.IZVJESTAJ_TOKEN }}
         run: |
           if [ -z "$TOKEN" ]; then echo "Nedostaje tajna IZVJESTAJ_TOKEN."; exit 1; fi
-          URL="https://ardor-4mdu.onrender.com"
-          # Besplatni Render se budi i do minutu.
+          URL="https://app.ardornamjestaj.com"
+          # Server je uvijek upaljen; nekoliko pokušaja za slučaj objave u tom trenutku.
           for i in 1 2 3 4 5 6; do
             curl -fsS --max-time 60 "$URL/favicon.svg" -o /dev/null && break
             echo "Čekam da se aplikacija probudi ($i)…"; sleep 15

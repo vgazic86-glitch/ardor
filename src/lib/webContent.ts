@@ -226,4 +226,4 @@ export function articleHtml(body: string) {
  * Adresa web stranice za linkove „Pogledaj”. Dok nova stranica nije na ardornamjestaj.com,
  * vodi na pregled na GitHub Pages. Pri prelasku na domenu promijeni u 'https://www.ardornamjestaj.com'.
  */
-export const WEB_SITE_URL = 'https://vgazic86-glitch.github.io/ardor-stranica'
+export const WEB_SITE_URL = 'https://www.ardornamjestaj.com'

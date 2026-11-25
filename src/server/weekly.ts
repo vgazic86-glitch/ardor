@@ -13,7 +13,7 @@ import { listComplaints } from './complaints'
 import { loadSnapshot } from './logic'
 
 const SENT_KEY = 'sedmicni_izvjestaj_poslan'
-const APP_URL = () => process.env.APP_URL || 'https://ardor-4mdu.onrender.com'
+const APP_URL = () => process.env.APP_URL || 'https://app.ardornamjestaj.com'
 const FROM = () => process.env.IZVJESTAJ_OD || 'ARDOR izvještaji <izvjestaji@ardornamjestaj.com>'
 
 /** Primaoci: aktivni administratori i uprava s upisanom e-poštom (Korisnici i pristup). */
